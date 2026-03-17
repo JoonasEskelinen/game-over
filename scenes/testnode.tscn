@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://cgi0ixaus5j84"]
+
+[ext_resource type="Script" uid="uid://kyce1q6fuf0n" path="res://scripts/helloworld.cs" id="1_rix41"]
+
+[node name="testnode" type="Node3D" unique_id=1426165380]
+script = ExtResource("1_rix41")
