@@ -1,10 +1,11 @@
 # 📋 Game Design Document (GDD)
 
-**Projekti:** [Pelin Nimi]  
-**Versio:** 0.1 — Draft  
+**Projekti:** Game Over  
+**Versio:** 0.2 — Päivitetty asiakaspalaverin jälkeen  
 **Päivämäärä:** 2025  
-**Tekijä:** [Harjoittelijan nimi]  
-**Asiakas:** [Asiakkaan nimi]
+**Tekijä:** Joonas Eskelinen  
+**Asiakas:** [Asiakkaan nimi]  
+**GitHub:** https://github.com/JoonasEskelinen/game-over
 
 ---
 
@@ -12,59 +13,82 @@
 
 ### 1.1 Konsepti
 
-Lyhyt lausuma:
-> "Mario-tyylinen seikkailupeli, jossa grafiikka olisi little nightmares / Teenage Mutant Ninja Turtles The Arcade Game tyylinen 2.5D peli, asiakkaan omalla hahmolla."
+> "2.5D action-platformer, jossa pelataan Game Over -hahmolla. Tyyli yhdistää Little Nightmares -tunnelman ja Teenage Mutant Ninja Turtles The Arcade Gamen toiminnan — sivulta kuvattu, värikäs ja hauska, mutta visuaalisesti rikas."
+
 ### 1.2 Genre
-- Sivulta kuvattu platformer pixelitaide / 2.5D idea, jossa voi liikkua osittain myös pystysuunnassa.
-- Yksittäispelaaja + co-op
+- 2.5D sivulta kuvattu action-platformer
+- Liike myös osittain pystysuunnassa (ei pelkästään vaaka)
+- Yksinpeli + paikallinen co-op (2 pelaajaa)
 
 ### 1.3 Kohderyhmä
 - Peliluolan asiakkaat (kaikenikäiset)
-- Retropelien nostalgikot
+- Retropelien nostalgikot (TMNT-tyylinen arcade-tunnelma)
 - Steam-pelaajat
 
 ### 1.4 Tunnelma & Tyyli
-- **Visuaalinen tyyli:** HD-2D / 2.5D — pikselitaide / + dynaaminen valaistus 
-- **Tunnelma:** Hauska, seikkailullinen, värikäs
-- **Vertailupisteet:** Super Mario Bros., little nightmares, Teenage Mutant Ninja Turtles The Arcade Game
+- **Visuaalinen tyyli:** 2.5D — 3D-maailma + pikselitaide-inspiroitu estetiikka, dynaaminen valaistus
+- **Tunnelma:** Hauska, seikkailullinen, värikäs — Little Nightmares visuaalisuus + TMNT toiminta
+- **Vertailupisteet:** Little Nightmares, Teenage Mutant Ninja Turtles The Arcade Game, Super Mario Bros.
 
 ---
 
 ## 2. Pelimekanikat
 
-### 2.1 Pelaajahahmo
+### 2.1 Pelaajahahmo — Game Over
 
-**Liikkuminen:**
-- Kävely / juoksu (vasen tatti)
-- Hyppy X-painike (yksinkertainen + ketjuhyppy mahdollisuus)
-- Kyykky Neliö-painike
-- miekka L2
-- kilpi R2
-- erikoisaseen aktivointi (joystick) käteen ympyrä-painikkeesta, jolloin aktivoituu erikoisaseen painikkeet (tarkentuu myöhemmin). co-op tilassa toinen puolustaa silloin muilta vihollisilta, yksinpeli tilassa tämä vielä auki, esim kilpi voisi tulla automaattisesti tietyksi ajaksi.
-  
+**Perusliikkuminen (PS5 DualSense):**
 
-**Ominaisuudet:**
-- hahmon perusaseena miekka ja kilpi. hahmolla mahdollisuus saada käteen "joystick", jolla ohjaa erikoisaseita, esim drone. Jokaisen kentän päätösviholliselta sen voitettuaan saa uuden erikoisaseen. Näitä voisi olla tuo edellä mainittu drone, 
-- Kuoleminen: pelaajalla kuluu healthia sitä mukaan kun tulee osumia.
+| Toiminto | Painike |
+|---|---|
+| Liiku | Vasen tatti |
+| Hyppy | ✕ (Cross) — yksinkertainen + ketjuhyppy |
+| Kyykky | □ (Neliö) |
+| Miekka (perusase) | L2 |
+| Kilpi (puolustus) | R2 |
+| Ota joystick käteen | ○ (Ympyrä) |
+| Erikoisaseen ohjaus | Joystick aktivoituna |
 
-### 2.2 Viholliset
+**Taistelusysteemi:**
+- **Perusase:** Miekka + kilpi — lähitaistelu ja puolustus
+- **Erikoisasejärjestelmä:** Painamalla ○ hahmo ottaa käteen "joystickin", jolla ohjataan erikoisaseita (esim. drone). Erikoisaseen painikkeet aktivoituvat joystickin kanssa.
 
-| Vihollinen | Käyttäytyminen | Tuhoaminen | Suojautuminen 
+**Co-op erikoisase:**
+- Toinen pelaaja puolustaa kilpivihollisista erikoisaseen aktivoinnin aikana
+- Yksinpelissä: kilpi nousee automaattisesti tietyksi ajaksi erikoisaseen käytön aikana (tarkennetaan)
+
+**Elinvoima:**
+- Healthia kuluu osumista — ei kuolema yhdestä osumasta
+- Tarkentuu: sydämet / healthbar (sovitaan myöhemmin)
+
+### 2.2 Erikoisasejärjestelmä
+
+Jokaisen maailman loppuvihollisen (boss) voittamisen jälkeen pelaaja saa uuden erikoisaseen.
+
+| Erikoisase | Saadaan | Käyttö |
+|---|---|---|
+| Drone | Boss 1 | Lentää ja hyökkää etäältä joystickin ohjaamana |
+| [Selventyy] | Boss 2 | [Täytetään myöhemmin] |
+| [Selventyy] | Boss 3 | [Täytetään myöhemmin] |
+
+### 2.3 Viholliset
+
+| Vihollinen | Käyttäytyminen | Tuhoaminen | Suojautuminen |
 |---|---|---|---|
-| Perusvihollinen | Patrolloi tasoa | miekka / erikoisase | kilpi
-| Lentävä vihollinen (drone) | Lentää pelaajaa kohti | Hyppäämällä + miekalla / erikoisaseella | kilpi
-| [Lisää asiakkaan toiveiden mukaan] | | |
+| Perusvihollinen | Patrolloi tasoa | Miekka / erikoisase | Kilpi |
+| Lentävä vihollinen (drone) | Lentää pelaajaa kohti | Miekka hypyllä / erikoisase | Kilpi |
+| Boss (per maailma) | Ainutlaatuinen pattern | Miekka + erikoisaseet | Vaihtelee |
+| [Lisää myöhemmin] | | | |
 
-### 2.3 Keräilyt & Power-upit
+### 2.4 Keräilyt & Power-upit
 
--
+- [Täytetään myöhemmin asiakkaan kanssa]
 
-### 2.4 Tasomekanikat
+### 2.5 Tasomekanikat
 
 - Tarkistuspisteet (checkpoints) — lippu/maalilinja
 - Liikkuvat alustat
-- selviää myöhemmin
-- Vaara-alueet: piikki, syvyys, muita lisää myöhemmin
+- Vaara-alueet: piikki, syvyys + lisää myöhemmin
+- [Lisää selventyy kehityksen myötä]
 
 ---
 
@@ -73,25 +97,32 @@ Lyhyt lausuma:
 ### 3.1 Rakenne
 
 ```
-Maailma 1: [Teema, esim. Metsä]
-  └── Taso 1-1: Tutoriaali (opitaan perusmekanikat)
-  └── Taso 1-2: Haaste kasvaa
-  └── Taso 1-3: Bonus/salainen taso
-  └── Taso 1-BOSS: Pomovihollainen
+Maailma 1: Metsä
+  └── Taso 1-1: Tutoriaali (opitaan perusmekanikat: liike, hyppy, miekka, kilpi)
+  └── Taso 1-2: Haaste kasvaa (uusia vihollisia)
+  └── Taso 1-3: Bonus / salainen taso
+  └── Taso 1-BOSS: Pomovihollinen → palkinto: 1. erikoisase (Drone)
 
-Maailma 2: [Teema, esim. Luola]
-  └── ...
+Maailma 2: Luola
+  └── [Rakenne selventyy]
+
+Maailma 3: Futuristinen pelimaailma
+  └── [Rakenne selventyy]
+
+Maailma 4: [Myöhemmin]
+  └── [Rakenne selventyy]
 ```
+
+> **Huom:** Maailmojen määrä ja tasojen lukumäärä tarkentuvat kehityksen myötä.
 
 ### 3.2 Visuaaliset teemat
 
 | Maailma | Teema | Väripaletti | Erikoisuus |
 |---|---|---|---|
-| 1 | Metsä | Vihreä, kulta | Parallax puustot |
-| 2 | Luola | Tumma, sininen | Kimaltelevat kristallit |
-| 3 | Futuristinen pelimaailma |
-| 4 | [Myöhemmin lisää] | | |
-
+| 1 | Metsä | Vihreä, kulta | Parallax puustot, luonnonvalo |
+| 2 | Luola | Tumma, sininen | Kimaltelevat kristallit, pistemäinen valo |
+| 3 | Futuristinen pelimaailma | Neon, tumma | Sci-fi elementit, hologrammit |
+| 4 | [Myöhemmin] | | |
 
 ---
 
@@ -100,27 +131,29 @@ Maailma 2: [Teema, esim. Luola]
 ### 4.1 Musiikki
 - Tyyli: Chiptune + modernit instrumentit (kuten Sea of Stars)
 - Jokainen maailma: oma teema
-- Boss-taistelu: intensiivisempi versio teemasta
+- Boss-taistelu: intensiivisempi versio maailman teemasta
 
 ### 4.2 Ääniefektit
-- Hyppy, kolikko, vahinko, kuolema
-- Ympäristöäänet (linnut, tuuli, vesi)
-- PS5 DualSense haptinen palaute: hyppyihin ja vahinkoihin
+- Hyppy, miekkalyönti, kilven parry, vahinko, kuolema
+- Erikoisaseen aktivointi ja drone-äänet
+- Ympäristöäänet (linnut, tuuli, vesi, luola-kaiku)
+- PS5 DualSense haptinen palaute: hyppyihin, osumiin, erikoisaseen aktivointiin (ehkä)
 
 ---
 
 ## 5. UI / HUD
 
 ### 5.1 Pelin aikana (HUD)
-- Elinvoima (ylävasen)
-- Aika (keskellä ylhäällä) — valinnainen
-- taso (keskellä ylhäällä) 
+- Elinvoima / healthbar (ylävasen)
+- Tason nimi / numero (keskellä ylhäällä)
+- Aika (valinnainen, keskellä ylhäällä)
+- Aktiivinen erikoisase ja sen status (alaosa)
 
 ### 5.2 Valikot
-- Päävalikko: Aloita, Jatka, Asetukset, Lopeta
-- kenttävalikko, tähän oma minimaailma
-- Asetukset: Äänenvoimakkuus, CRT-shader on/off, ohjainasetus
-- Peli ohi / tason läpäisy -näyttö
+- **Päävalikko:** Aloita, Jatka, Asetukset, Lopeta
+- **Kenttävalikko:** Oma minimaailma — ei perinteinen lista vaan visuaalinen kartta
+- **Asetukset:** Äänenvoimakkuus, CRT-shader on/off, ohjainasetus
+- **Tason läpäisy / Game Over -näyttö**
 
 ---
 
@@ -128,42 +161,52 @@ Maailma 2: [Teema, esim. Luola]
 
 ### 6.1 Kohdealustat
 
-| Alusta | Tavoite | Huomio |
+| Alusta | Tavoite FPS | Huomio |
 |---|---|---|
-| Raspberry Pi 5 (8GB) | 60 FPS | ARM64 export, optimointi tärkeää |
+| Raspberry Pi 5 (8GB) | 60 FPS | ARM64 Linux export, optimointi tärkeää |
 | Windows (Steam) | 60 FPS | Pääasiallinen julkaisualusta |
 | Linux (Steam) | 60 FPS | Sama buildi kuin Pi |
 
-### 6.2 Pelimoottori
-- **Godot 4.x** (GDScript)
-- 2D-renderöinti + CanvasModulate valaistukseen
-- Steamworks GDNative -integraatio
+### 6.2 Pelimoottori & Teknologia
+- **Godot 4.x (.NET / C#)**
+- 2.5D: 3D-maailma + sivukamera kiinteällä Z-akselilla
+- Dynaaminen valaistus (Forward+ tai Compatibility Pi:llä)
+- GodotSteam -plugin Steam-integraatioon
 
-### 6.3 Resoluutio & Renderöinti
-- Sisäinen resoluutio: 320×180 (retro feel)
-- Skaalataan näyttöön integer-skaalauksella (terävä pikselitaide)
-- CRT-shader valinnainen päälle/pois
+### 6.3 Renderöinti
+- Sisäinen resoluutio: [tarkentuu — 320×180 retro tai korkeampi 2.5D:lle]
+- CRT-shader valinnainen päälle/pois asetuksista
+- Raspberry Pi: Compatibility-renderöijä suorituskyvyn varmistamiseksi
+
+### 6.4 Ohjaimet
+- PS5 DualSense — täysi tuki
+- Näppäimistö (kehityskäyttö)
+- DualSense haptinen palaute: ehkä (tutkitaan)
 
 ---
 
-## 7. Projektin aikataulu (alustava)
+## 7. Projektin aikataulu
 
-| Vaihe | Sisältö | Kesto |
+| Vaihe | Sisältö | Viikot |
 |---|---|---|
-| Pre-production | GDD, prototyyppi, asset-lista | Viikko 1-2 |
-| Prototype | Pelaajaliike, yksi testikenttä | Viikko 3-4 |
-| Alpha | 1 maailma pelattavissa | Viikko 5-8 |
-| Beta | Kaikki sisältö, bugitestaus | Viikko 9-11 |
-| Release | Steam + Pi -buildit valmiit | Viikko 12 |
+| Pre-production | GDD, palaveri, projektirakenne, GitHub | 1–2 |
+| Prototype | Pelaajaliike, miekka/kilpi, yksi testikenttä | 3–4 |
+| Alpha | Maailma 1 pelattavissa, boss, drone-erikoisase | 5–8 |
+| Beta | Kaikki sisältö, co-op, bugitestaus | 9–10 |
+| Release | Steam + Pi -buildit, dokumentaatio viimeistely | 10 |
 
 ---
 
 ## 8. Avoimet kysymykset
 
-- [ gameover hahmo ] Asiakkaan hahmon nimi ja tarinan taustat?
-- [ selventyy sitä mukaan kun kehitetään ja ideoidaan ] Montako maailmaa / tasoa toivotaan?
-- [ on ] Onko boss-vihollisia?
-- [ ] Millainen juoni / narratiivi (jos ollenkaan)?
-- [ kyllä ] Moninpeli nyt tai tulevaisuudessa?
+- [x] Hahmon nimi → **Game Over**
+- [ ] Hahmon tarkempi ulkonäkö ja taustatarina?
+- [ ] Juoni / narratiivi — onko tarinaa vai pelkkiä tasoja?
+- [x] Boss-vihollisia → **Kyllä, yksi per maailma**
+- [x] Co-op → **Kyllä, paikallinen 2 pelaajaa**
+- [ ] Maailmojen lopullinen määrä?
+- [ ] Keräilyt ja power-upit — mitä haluaa peliin?
 - [ ] Steam-saavutukset?
-- [ehkä ] DualSense haptinen palaute prioriteetti?
+- [x] DualSense haptinen palaute → **Ehkä, tutkitaan**
+- [ ] Erikoisaseiden tarkemmat ideat (boss 2, boss 3...)?
+- [ ] Kenttävalikon minimaailman visuaalinen idea tarkemmin?
