@@ -13,11 +13,10 @@
 ### 1.1 Konsepti
 
 Lyhyt lausuma:
-> "Mario-tyylinen platformer, jossa pelataan asiakkaan omalla hahmolla modernilla HD-2D -visuaalisella tyylillä."
-
+> "Mario-tyylinen seikkailupeli, jossa grafiikka olisi little nightmares / Teenage Mutant Ninja Turtles The Arcade Game tyylinen 2.5D peli, asiakkaan omalla hahmolla."
 ### 1.2 Genre
-- Sivulta kuvattu platformer (Side-scrolling platformer)
-- Yksittäispelaaja
+- Sivulta kuvattu platformer pixelitaide / 2.5D idea, jossa voi liikkua osittain myös pystysuunnassa.
+- Yksittäispelaaja + co-op
 
 ### 1.3 Kohderyhmä
 - Peliluokan asiakkaat (kaikenikäiset)
@@ -25,9 +24,9 @@ Lyhyt lausuma:
 - Steam-pelaajat
 
 ### 1.4 Tunnelma & Tyyli
-- **Visuaalinen tyyli:** HD-2D — pikselitaide + dynaaminen valaistus
+- **Visuaalinen tyyli:** HD-2D / 2.5D — pikselitaide / + dynaaminen valaistus 
 - **Tunnelma:** Hauska, seikkailullinen, värikäs
-- **Vertailupisteet:** Super Mario Bros., Shovel Knight, Sea of Stars
+- **Vertailupisteet:** Super Mario Bros., little nightmares, Teenage Mutant Ninja Turtles The Arcade Game
 
 ---
 
@@ -41,23 +40,22 @@ Lyhyt lausuma:
 - Kyykky (alas + hyppy = pitkä hyppy / lasku alas tasanteelta)
 
 **Ominaisuudet:**
-- Elämä: 3 sydäntä (laajennettavissa keräilyesineillä)
-- Kuoleminen: törmäys viholliseen tai kuoppaan → menettää sydämen / respawn
+- hahmon perusaseena miekka ja kilpi. hahmolla mahdollisuus saada käteen "joystick", jolla ohjaa erikoisaseita, esim drone. Jokaisen kentän päätösviholliselta sen voitettuaan saa uuden erikoisaseen. Näitä voisi olla tuo edellä mainittu drone, 
+- Kuoleminen:
 
 ### 2.2 Viholliset
 
-| Vihollinen | Käyttäytyminen | Tuhoaminen |
-|---|---|---|
-| Perusvihollinen | Patrolloi tasoa | Hyppäämällä päälle |
-| Lentävä vihollinen | Lentää pelaajaa kohti | Hyppäämällä / erikoiskyky |
+| Vihollinen | Käyttäytyminen | Tuhoaminen | Suojautuminen 
+|---|---|---|---|
+| Perusvihollinen | Patrolloi tasoa | miekka + erikoisase |
+| Lentävä vihollinen (drone) | Lentää pelaajaa kohti | Hyppäämällä + miekalla + erikoisaseella | kilpi
 | [Lisää asiakkaan toiveiden mukaan] | | |
 
 ### 2.3 Keräilyt & Power-upit
 
-- **Kolikot** — pisteet
+- **timantit** — pisteet
 - **Sydämet** — lisää elinvoimaa
-- **[Asiakkaan erikoisesine]** — power-up, teeman mukainen
-- **Tähdet** — tilapäinen voittamattomuus
+- **[Asiakkaan erikoisesine]** — joystick päähahmolle tietystä painikkeesta, jolla ohjaa erikoisasetta. 
 
 ### 2.4 Tasomekanikat
 
