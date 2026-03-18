@@ -89,7 +89,9 @@ Maailma 2: [Teema, esim. Luola]
 |---|---|---|---|
 | 1 | Metsä | Vihreä, kulta | Parallax puustot |
 | 2 | Luola | Tumma, sininen | Kimaltelevat kristallit |
-| 3 | [Asiakkaan toive] | | |
+| 3 | Futuristinen pelimaailma |
+| 4 | [Myöhemmin lisää] | | |
+
 
 ---
 
