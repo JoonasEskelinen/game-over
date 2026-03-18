@@ -19,7 +19,7 @@ Lyhyt lausuma:
 - Yksittäispelaaja + co-op
 
 ### 1.3 Kohderyhmä
-- Peliluokan asiakkaat (kaikenikäiset)
+- Peliluolan asiakkaat (kaikenikäiset)
 - Retropelien nostalgikot
 - Steam-pelaajat
 
@@ -35,34 +35,36 @@ Lyhyt lausuma:
 ### 2.1 Pelaajahahmo
 
 **Liikkuminen:**
-- Kävely / juoksu (R2 pohjassa)
-- Hyppy (yksinkertainen + ketjuhyppy mahdollisuus)
-- Kyykky (alas + hyppy = pitkä hyppy / lasku alas tasanteelta)
+- Kävely / juoksu (vasen tatti)
+- Hyppy X-painike (yksinkertainen + ketjuhyppy mahdollisuus)
+- Kyykky Neliö-painike
+- miekka L2
+- kilpi R2
+- erikoisaseen aktivointi (joystick) käteen ympyrä-painikkeesta, jolloin aktivoituu erikoisaseen painikkeet (tarkentuu myöhemmin). co-op tilassa toinen puolustaa silloin muilta vihollisilta, yksinpeli tilassa tämä vielä auki, esim kilpi voisi tulla automaattisesti tietyksi ajaksi.
+  
 
 **Ominaisuudet:**
 - hahmon perusaseena miekka ja kilpi. hahmolla mahdollisuus saada käteen "joystick", jolla ohjaa erikoisaseita, esim drone. Jokaisen kentän päätösviholliselta sen voitettuaan saa uuden erikoisaseen. Näitä voisi olla tuo edellä mainittu drone, 
-- Kuoleminen:
+- Kuoleminen: pelaajalla kuluu healthia sitä mukaan kun tulee osumia.
 
 ### 2.2 Viholliset
 
 | Vihollinen | Käyttäytyminen | Tuhoaminen | Suojautuminen 
 |---|---|---|---|
-| Perusvihollinen | Patrolloi tasoa | miekka + erikoisase |
-| Lentävä vihollinen (drone) | Lentää pelaajaa kohti | Hyppäämällä + miekalla + erikoisaseella | kilpi
+| Perusvihollinen | Patrolloi tasoa | miekka / erikoisase | kilpi
+| Lentävä vihollinen (drone) | Lentää pelaajaa kohti | Hyppäämällä + miekalla / erikoisaseella | kilpi
 | [Lisää asiakkaan toiveiden mukaan] | | |
 
 ### 2.3 Keräilyt & Power-upit
 
-- **timantit** — pisteet
-- **Sydämet** — lisää elinvoimaa
-- **[Asiakkaan erikoisesine]** — joystick päähahmolle tietystä painikkeesta, jolla ohjaa erikoisasetta. 
+-
 
 ### 2.4 Tasomekanikat
 
 - Tarkistuspisteet (checkpoints) — lippu/maalilinja
 - Liikkuvat alustat
-- Trampoliinit / hyppyalustat
-- Vaara-alueet: piikki, laava, syvyys
+- selviää myöhemmin
+- Vaara-alueet: piikki, syvyys, muita lisää myöhemmin
 
 ---
 
@@ -108,13 +110,13 @@ Maailma 2: [Teema, esim. Luola]
 ## 5. UI / HUD
 
 ### 5.1 Pelin aikana (HUD)
-- Pisteet (ylävasen)
-- Elinvoima / sydämet (ylävasen)
+- Elinvoima (ylävasen)
 - Aika (keskellä ylhäällä) — valinnainen
-- Kerätyt kolikot (yläoikea)
+- taso (keskellä ylhäällä) 
 
 ### 5.2 Valikot
 - Päävalikko: Aloita, Jatka, Asetukset, Lopeta
+- kenttävalikko, tähän oma minimaailma
 - Asetukset: Äänenvoimakkuus, CRT-shader on/off, ohjainasetus
 - Peli ohi / tason läpäisy -näyttö
 
@@ -156,10 +158,10 @@ Maailma 2: [Teema, esim. Luola]
 
 ## 8. Avoimet kysymykset
 
-- [ ] Asiakkaan hahmon nimi ja tarinan taustat?
-- [ ] Montako maailmaa / tasoa toivotaan?
-- [ ] Onko boss-vihollisia?
+- [ gameover hahmo ] Asiakkaan hahmon nimi ja tarinan taustat?
+- [ selventyy sitä mukaan kun kehitetään ja ideoidaan ] Montako maailmaa / tasoa toivotaan?
+- [ on ] Onko boss-vihollisia?
 - [ ] Millainen juoni / narratiivi (jos ollenkaan)?
-- [ ] Moninpeli nyt tai tulevaisuudessa?
+- [ kyllä ] Moninpeli nyt tai tulevaisuudessa?
 - [ ] Steam-saavutukset?
-- [ ] DualSense haptinen palaute prioriteetti?
+- [ehkä ] DualSense haptinen palaute prioriteetti?
