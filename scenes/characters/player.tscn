@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://vbg00ynsdulu"]
 
 [ext_resource type="Script" uid="uid://dbnuuc81wmgi4" path="res://scripts/player/PlayerController.cs" id="1_rp718"]
+[ext_resource type="Script" uid="uid://diej68d7flpvd" path="res://scripts/player/HealthComponent.cs" id="2_yewv4"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_wocps"]
 
@@ -14,3 +15,6 @@ shape = SubResource("CapsuleShape3D_wocps")
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=1367723426]
 mesh = SubResource("CapsuleMesh_rp718")
+
+[node name="HealthComponent" type="Node" parent="." unique_id=1619680333]
+script = ExtResource("2_yewv4")

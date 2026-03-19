@@ -1,13 +1,33 @@
 [gd_scene format=3 uid="uid://d2m7272w51ns5"]
 
 [ext_resource type="Script" uid="uid://kyce1q6fuf0n" path="res://scripts/helloworld.cs" id="1_jbqir"]
+[ext_resource type="Script" uid="uid://cdno0yakghq2r" path="res://scripts/CameraFollow.cs" id="2_fr1um"]
 [ext_resource type="PackedScene" uid="uid://vbg00ynsdulu" path="res://scenes/characters/player.tscn" id="2_yautc"]
+[ext_resource type="PackedScene" uid="uid://uh6pto3nrmqe" path="res://scenes/ui/hud.tscn" id="4_v45ci"]
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_jbqir"]
 size = Vector3(20, 1, 4)
 
 [sub_resource type="BoxMesh" id="BoxMesh_yautc"]
 size = Vector3(20, 1, 4)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_fr1um"]
+size = Vector3(5, 0.5, 4)
+
+[sub_resource type="BoxMesh" id="BoxMesh_v45ci"]
+size = Vector3(5, 0.5, 4)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_v45ci"]
+size = Vector3(5, 0.5, 4)
+
+[sub_resource type="BoxMesh" id="BoxMesh_48ne7"]
+size = Vector3(5, 0.5, 4)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_6xh4u"]
+size = Vector3(5, 0.5, 4)
+
+[sub_resource type="BoxMesh" id="BoxMesh_cyt5c"]
+size = Vector3(5, 0.5, 4)
 
 [node name="testnode" type="Node3D" unique_id=1426165380]
 script = ExtResource("1_jbqir")
@@ -24,6 +44,37 @@ mesh = SubResource("BoxMesh_yautc")
 
 [node name="Camera3D" type="Camera3D" parent="World" unique_id=670380684]
 transform = Transform3D(1, 0, 0, 0, 0.9961947, 0.08715574, 0, -0.08715574, 0.9961947, 0, 2, 10)
+script = ExtResource("2_fr1um")
+PlayerPath = NodePath("../Player")
 
 [node name="Player" parent="World" unique_id=1514760592 instance=ExtResource("2_yautc")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
+
+[node name="Platform1" type="StaticBody3D" parent="World" unique_id=1885744860]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 2, 0)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="World/Platform1" unique_id=1400539437]
+shape = SubResource("BoxShape3D_fr1um")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="World/Platform1" unique_id=1459543206]
+mesh = SubResource("BoxMesh_v45ci")
+
+[node name="Platform2" type="StaticBody3D" parent="World" unique_id=1314676956]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5, 3, 0)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="World/Platform2" unique_id=1582777498]
+shape = SubResource("BoxShape3D_v45ci")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="World/Platform2" unique_id=1157314369]
+mesh = SubResource("BoxMesh_48ne7")
+
+[node name="Platform3" type="StaticBody3D" parent="World" unique_id=893076581]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 4, 0)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="World/Platform3" unique_id=1490237761]
+shape = SubResource("BoxShape3D_6xh4u")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="World/Platform3" unique_id=1128543936]
+mesh = SubResource("BoxMesh_cyt5c")
+
+[node name="HUD" parent="World" unique_id=499664610 instance=ExtResource("4_v45ci")]
