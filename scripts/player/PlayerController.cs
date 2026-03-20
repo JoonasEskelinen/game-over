@@ -14,8 +14,11 @@ public partial class PlayerController : CharacterBody3D
 	// Painovoima — kuinka nopeasti pelaaja putoaa
 	[Export] public float Gravity = 20.0f;
 
-	// Viittaus pelaajan näkyvään meshiin — tarvitaan kääntymistä varten
+	// Viittaus pelaajan näkyvään kapselimeshiin — piilotettu mutta vielä käytössä törmäykseen
 	private MeshInstance3D _mesh;
+
+	// Viittaus hahmon 3D-malliin — tarvitaan kääntymistä varten
+	private Node3D _characterModel;
 
 	// Viittaus HealthComponentiin — haetaan _Ready:ssä
 	private HealthComponent _healthComponent;
@@ -25,6 +28,9 @@ public partial class PlayerController : CharacterBody3D
 	{
 		// Haetaan MeshInstance3D pelaajan lapsista nimellä
 		_mesh = GetNode<MeshInstance3D>("MeshInstance3D");
+
+		// Haetaan GameOverCharacter-node Playerin lapsista kääntymistä varten
+		_characterModel = GetNode<Node3D>("gameover_character");
 
 		// Haetaan HealthComponent pelaajan lapsista nimellä
 		_healthComponent = GetNode<HealthComponent>("HealthComponent");
@@ -55,14 +61,14 @@ public partial class PlayerController : CharacterBody3D
 		float direction = Input.GetAxis("move_left", "move_right");
 		velocity.X = direction * Speed;
 
-		// Käännetään mesh liikkeen mukaan
-		// Scale X = 1 → oikealle, Scale X = -1 → vasemmalle (peilikuva)
+		// Käännetään hahmo liikkeen mukaan Rotationilla
+		// Y = 180 astetta → oikealle, Y = 0 astetta → vasemmalle
 		if (direction > 0)
-			_mesh.Scale = new Vector3(1, 1, 1);
+			_characterModel.Rotation = new Vector3(Mathf.DegToRad(-90), Mathf.DegToRad(90), 0);
 		else if (direction < 0)
-			_mesh.Scale = new Vector3(-1, 1, 1);
+			_characterModel.Rotation = new Vector3(Mathf.DegToRad(-90), Mathf.DegToRad(-90), 0);
 
-		// Testitarkoitus: R-näppäimellä tai Kolmio-painikkeella otetaan vahinkoa
+		// Testitarkoitus: R-näppäimellä otetaan vahinkoa
 		// Tämä poistetaan myöhemmin kun viholliset on tehty
 		if (Input.IsActionJustPressed("test_damage"))
 			_healthComponent.TakeDamage(1);
