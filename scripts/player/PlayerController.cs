@@ -3,7 +3,7 @@ using Godot;
 public partial class PlayerController : CharacterBody3D
 {
 	[Export] public float Speed = 5.0f;
-	[Export] public float JumpVelocity = 8.0f;
+	[Export] public float JumpVelocity = 10.0f;
 	[Export] public float Gravity = 20.0f;
 	// Säädä tätä arvoa kunnes ponnistus täsmää animaatioon (sekunteina)
 	[Export] public float JumpWindupTime = 0.35f;
@@ -242,6 +242,19 @@ public partial class PlayerController : CharacterBody3D
 			PlayAnim("mixamo_com");
 	}
 
+	// Respawn — kutsutaan KillZone:sta tai Game Over -tilanteesta
+	public void Respawn(Vector3 position)
+	{
+		GlobalPosition = position;
+		Velocity = Vector3.Zero;
+		_isAttacking = false;
+		_isBlocking = false;
+		_isWindingUp = false;
+		_jumpTimer = 0f;
+		_weaponState = WeaponState.Normal;
+		PlayAnim("mixamo_com");
+	}
+
 	private void OnHealthChanged(int currentHealth, int maxHealth)
 	{
 		GD.Print($"UI päivitys: {currentHealth}/{maxHealth}");
@@ -250,5 +263,6 @@ public partial class PlayerController : CharacterBody3D
 	private void OnPlayerDied()
 	{
 		GD.Print("Game Over!");
+		Respawn(Checkpoint.LastPosition);
 	}
 }
