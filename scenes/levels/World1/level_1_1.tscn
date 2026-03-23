@@ -1,269 +1,253 @@
-[gd_scene format=3 uid="uid://level11_world1"]
+[gd_scene format=3 uid="uid://b2xcxgsxcmot6"]
 
-[ext_resource type="Script" uid="uid://camfollow" path="res://scripts/CameraFollow.cs" id="1_camfollow"]
+[ext_resource type="Script" uid="uid://cdno0yakghq2r" path="res://scripts/CameraFollow.cs" id="1_camfollow"]
 [ext_resource type="PackedScene" uid="uid://vbg00ynsdulu" path="res://scenes/characters/player.tscn" id="2_player"]
 [ext_resource type="PackedScene" uid="uid://uh6pto3nrmqe" path="res://scenes/ui/hud.tscn" id="3_hud"]
-[ext_resource type="Script" path="res://scripts/levels/KillZone.cs" id="4_killzone"]
-[ext_resource type="Script" path="res://scripts/levels/Checkpoint.cs" id="5_checkpoint"]
-[ext_resource type="Script" path="res://scripts/levels/LevelExit.cs" id="6_levelexit"]
+[ext_resource type="Script" uid="uid://cm6ish6f52c7m" path="res://scripts/levels/KillZone.cs" id="4_killzone"]
+[ext_resource type="Script" uid="uid://fyuld8j8elh7" path="res://scripts/levels/Checkpoint.cs" id="5_checkpoint"]
+[ext_resource type="Script" uid="uid://yrhp24buqcg3" path="res://scripts/levels/LevelExit.cs" id="6_levelexit"]
 
-; ===== MATERIAALIT =====
-[sub_resource type="StandardMaterial3D" id="mat_ground"]
-albedo_color = Color(0.35, 0.25, 0.15, 1)
-
-[sub_resource type="StandardMaterial3D" id="mat_platform"]
-albedo_color = Color(0.45, 0.38, 0.28, 1)
-
-[sub_resource type="StandardMaterial3D" id="mat_background"]
-albedo_color = Color(0.08, 0.18, 0.08, 1)
-
-[sub_resource type="StandardMaterial3D" id="mat_exit"]
-albedo_color = Color(0.9, 0.8, 0.1, 1)
-emission_enabled = true
-emission = Color(0.9, 0.7, 0.0, 1)
-emission_energy_multiplier = 0.5
-
-[sub_resource type="StandardMaterial3D" id="mat_checkpoint"]
-albedo_color = Color(0.9, 0.9, 0.9, 1)
-emission_enabled = true
-emission = Color(0.6, 0.6, 1.0, 1)
-emission_energy_multiplier = 0.3
-
-; ===== GROUND_START: x=[-5, 21], y=[-1, 0], z=[-2, 2] =====
-[sub_resource type="BoxShape3D" id="shape_ground_start"]
-size = Vector3(26, 1, 4)
-
-[sub_resource type="BoxMesh" id="mesh_ground_start"]
-size = Vector3(26, 1, 4)
-material = SubResource("mat_ground")
-
-; ===== PLATFORM_JUMP1: x=[20, 28] — ensimmäinen hyppy (sama korkeus, gap) =====
-[sub_resource type="BoxShape3D" id="shape_8x1x4"]
-size = Vector3(8, 1, 4)
-
-[sub_resource type="BoxMesh" id="mesh_8x1x4"]
-size = Vector3(8, 1, 4)
-material = SubResource("mat_platform")
-
-; ===== PLATFORM_JUMP2: x=[30, 38], y=1 — nouseva alusta =====
-[sub_resource type="BoxShape3D" id="shape_8x1x4_b"]
-size = Vector3(8, 1, 4)
-
-[sub_resource type="BoxMesh" id="mesh_8x1x4_b"]
-size = Vector3(8, 1, 4)
-material = SubResource("mat_platform")
-
-; ===== GROUND_MIDDLE: x=[40, 65] — leveä välikenttä + checkpoint alue =====
-[sub_resource type="BoxShape3D" id="shape_ground_mid"]
-size = Vector3(25, 1, 4)
-
-[sub_resource type="BoxMesh" id="mesh_ground_mid"]
-size = Vector3(25, 1, 4)
-material = SubResource("mat_ground")
-
-; ===== PLATFORM_HIGH1: x=[67, 75], y=2 =====
-[sub_resource type="BoxShape3D" id="shape_7x1x4"]
-size = Vector3(8, 1, 4)
-
-[sub_resource type="BoxMesh" id="mesh_7x1x4"]
-size = Vector3(8, 1, 4)
-material = SubResource("mat_platform")
-
-; ===== PLATFORM_HIGH2: x=[77, 83], y=3.5 — korkein kohta =====
-[sub_resource type="BoxShape3D" id="shape_6x1x4"]
-size = Vector3(6, 1, 4)
-
-[sub_resource type="BoxMesh" id="mesh_6x1x4"]
-size = Vector3(6, 1, 4)
-material = SubResource("mat_platform")
-
-; ===== PLATFORM_DESCEND: x=[85, 91], y=1.5 — laskeutuminen =====
-[sub_resource type="BoxShape3D" id="shape_6x1x4_b"]
-size = Vector3(6, 1, 4)
-
-[sub_resource type="BoxMesh" id="mesh_6x1x4_b"]
-size = Vector3(6, 1, 4)
-material = SubResource("mat_platform")
-
-; ===== GROUND_END: x=[93, 110] — loppukenttä + exit =====
-[sub_resource type="BoxShape3D" id="shape_ground_end"]
-size = Vector3(17, 1, 4)
-
-[sub_resource type="BoxMesh" id="mesh_ground_end"]
-size = Vector3(17, 1, 4)
-material = SubResource("mat_ground")
-
-; ===== BACKGROUND: metsätausta =====
-[sub_resource type="BoxMesh" id="mesh_background"]
-size = Vector3(150, 35, 0.2)
-material = SubResource("mat_background")
-
-; ===== KILL ZONE muoto =====
-[sub_resource type="BoxShape3D" id="shape_killzone"]
-size = Vector3(200, 4, 20)
-
-; ===== CHECKPOINT muoto =====
-[sub_resource type="BoxShape3D" id="shape_checkpoint"]
-size = Vector3(2, 3, 4)
-
-; ===== LEVEL EXIT muoto =====
-[sub_resource type="BoxShape3D" id="shape_exit"]
-size = Vector3(3, 5, 4)
-
-; ===== EXIT MESH (visuaalinen portti) =====
-[sub_resource type="BoxMesh" id="mesh_exit"]
-size = Vector3(3, 5, 0.3)
-material = SubResource("mat_exit")
-
-; ===== CHECKPOINT MESH =====
-[sub_resource type="BoxMesh" id="mesh_checkpoint"]
-size = Vector3(0.4, 3, 0.4)
-material = SubResource("mat_checkpoint")
-
-; ===== ENVIRONMENT =====
 [sub_resource type="Environment" id="env_forest"]
 background_mode = 1
 background_color = Color(0.38, 0.55, 0.38, 1)
 ambient_light_color = Color(0.5, 0.65, 0.45, 1)
 ambient_light_energy = 0.4
 fog_enabled = true
-fog_density = 0.015
 fog_light_color = Color(0.3, 0.5, 0.3, 1)
+fog_density = 0.015
 
-; ========== NODE TREE ==========
+[sub_resource type="StandardMaterial3D" id="mat_background"]
+albedo_color = Color(0.08, 0.18, 0.08, 1)
 
-[node name="Level_1_1" type="Node3D"]
+[sub_resource type="BoxMesh" id="mesh_background"]
+material = SubResource("mat_background")
+size = Vector3(150, 35, 0.2)
 
-[node name="World" type="Node3D" parent="."]
+[sub_resource type="BoxShape3D" id="shape_ground_start"]
+size = Vector3(26, 1, 4)
 
-[node name="WorldEnvironment" type="WorldEnvironment" parent="World"]
+[sub_resource type="StandardMaterial3D" id="mat_ground"]
+albedo_color = Color(0.35, 0.25, 0.15, 1)
+
+[sub_resource type="BoxMesh" id="mesh_ground_start"]
+material = SubResource("mat_ground")
+size = Vector3(26, 1, 4)
+
+[sub_resource type="BoxShape3D" id="shape_8x1x4"]
+size = Vector3(8, 1, 4)
+
+[sub_resource type="StandardMaterial3D" id="mat_platform"]
+albedo_color = Color(0.45, 0.38, 0.28, 1)
+
+[sub_resource type="BoxMesh" id="mesh_8x1x4"]
+material = SubResource("mat_platform")
+size = Vector3(8, 1, 4)
+
+[sub_resource type="BoxShape3D" id="shape_8x1x4_b"]
+size = Vector3(8, 1, 4)
+
+[sub_resource type="BoxMesh" id="mesh_8x1x4_b"]
+material = SubResource("mat_platform")
+size = Vector3(8, 1, 4)
+
+[sub_resource type="BoxShape3D" id="shape_ground_mid"]
+size = Vector3(25, 1, 4)
+
+[sub_resource type="BoxMesh" id="mesh_ground_mid"]
+material = SubResource("mat_ground")
+size = Vector3(25, 1, 4)
+
+[sub_resource type="BoxShape3D" id="shape_7x1x4"]
+size = Vector3(8, 1, 4)
+
+[sub_resource type="BoxMesh" id="mesh_7x1x4"]
+material = SubResource("mat_platform")
+size = Vector3(8, 1, 4)
+
+[sub_resource type="BoxShape3D" id="shape_6x1x4"]
+size = Vector3(6, 1, 4)
+
+[sub_resource type="BoxMesh" id="mesh_6x1x4"]
+material = SubResource("mat_platform")
+size = Vector3(6, 1, 4)
+
+[sub_resource type="BoxShape3D" id="shape_6x1x4_b"]
+size = Vector3(6, 1, 4)
+
+[sub_resource type="BoxMesh" id="mesh_6x1x4_b"]
+material = SubResource("mat_platform")
+size = Vector3(6, 1, 4)
+
+[sub_resource type="BoxShape3D" id="shape_ground_end"]
+size = Vector3(17, 1, 4)
+
+[sub_resource type="BoxMesh" id="mesh_ground_end"]
+material = SubResource("mat_ground")
+size = Vector3(17, 1, 4)
+
+[sub_resource type="BoxShape3D" id="shape_killzone"]
+size = Vector3(200, 4, 20)
+
+[sub_resource type="BoxShape3D" id="shape_checkpoint"]
+size = Vector3(2, 3, 4)
+
+[sub_resource type="StandardMaterial3D" id="mat_checkpoint"]
+albedo_color = Color(0.9, 0.9, 0.9, 1)
+emission_enabled = true
+emission = Color(0.6, 0.6, 1, 1)
+emission_energy_multiplier = 0.3
+
+[sub_resource type="BoxMesh" id="mesh_checkpoint"]
+material = SubResource("mat_checkpoint")
+size = Vector3(0.4, 3, 0.4)
+
+[sub_resource type="BoxShape3D" id="shape_exit"]
+size = Vector3(3, 5, 4)
+
+[sub_resource type="StandardMaterial3D" id="mat_exit"]
+albedo_color = Color(0.9, 0.8, 0.1, 1)
+emission_enabled = true
+emission = Color(0.9, 0.7, 0, 1)
+emission_energy_multiplier = 0.5
+
+[sub_resource type="BoxMesh" id="mesh_exit"]
+material = SubResource("mat_exit")
+size = Vector3(3, 5, 0.3)
+
+[node name="Level_1_1" type="Node3D" unique_id=1702315531]
+
+[node name="World" type="Node3D" parent="." unique_id=69325958]
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="World" unique_id=1014526222]
 environment = SubResource("env_forest")
 
-; --- Valaistus ---
-[node name="Sun" type="DirectionalLight3D" parent="World"]
+[node name="Sun" type="DirectionalLight3D" parent="World" unique_id=156475384]
 transform = Transform3D(0.866, -0.354, 0.354, 0, 0.707, 0.707, -0.5, -0.612, 0.612, 55, 20, -10)
-light_color = Color(1.0, 0.95, 0.8, 1)
+light_color = Color(1, 0.95, 0.8, 1)
 light_energy = 1.2
 shadow_enabled = true
 
-[node name="AmbientFill" type="DirectionalLight3D" parent="World"]
+[node name="AmbientFill" type="DirectionalLight3D" parent="World" unique_id=1366330255]
 transform = Transform3D(1, 0, 0, 0, 0, -1, 0, 1, 0, 0, 5, 5)
 light_color = Color(0.4, 0.6, 0.4, 1)
 light_energy = 0.3
-shadow_enabled = false
 
-; --- Metsätausta ---
-[node name="Background" type="MeshInstance3D" parent="World"]
+[node name="Background" type="MeshInstance3D" parent="World" unique_id=31674722]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 53, 10, -6)
 mesh = SubResource("mesh_background")
 
-; ===== MAASTO =====
-[node name="Terrain" type="Node3D" parent="World"]
+[node name="Terrain" type="Node3D" parent="World" unique_id=1571890916]
 
-; --- Aloitusalue (opetellaan liikkuminen) ---
-[node name="Ground_Start" type="StaticBody3D" parent="World/Terrain"]
+[node name="Ground_Start" type="StaticBody3D" parent="World/Terrain" unique_id=1921126777]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, -0.5, 0)
-[node name="CollisionShape3D" type="CollisionShape3D" parent="World/Terrain/Ground_Start"]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="World/Terrain/Ground_Start" unique_id=1208547676]
 shape = SubResource("shape_ground_start")
-[node name="MeshInstance3D" type="MeshInstance3D" parent="World/Terrain/Ground_Start"]
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="World/Terrain/Ground_Start" unique_id=1222099392]
 mesh = SubResource("mesh_ground_start")
 
-; --- Ensimmäinen hyppy (gap) ---
-[node name="Platform_Jump1" type="StaticBody3D" parent="World/Terrain"]
+[node name="Platform_Jump1" type="StaticBody3D" parent="World/Terrain" unique_id=1072994371]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 24, -0.5, 0)
-[node name="CollisionShape3D" type="CollisionShape3D" parent="World/Terrain/Platform_Jump1"]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="World/Terrain/Platform_Jump1" unique_id=1600944193]
 shape = SubResource("shape_8x1x4")
-[node name="MeshInstance3D" type="MeshInstance3D" parent="World/Terrain/Platform_Jump1"]
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="World/Terrain/Platform_Jump1" unique_id=1190200961]
 mesh = SubResource("mesh_8x1x4")
 
-; --- Nouseva alusta ---
-[node name="Platform_Jump2" type="StaticBody3D" parent="World/Terrain"]
+[node name="Platform_Jump2" type="StaticBody3D" parent="World/Terrain" unique_id=980732183]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 34, 0.5, 0)
-[node name="CollisionShape3D" type="CollisionShape3D" parent="World/Terrain/Platform_Jump2"]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="World/Terrain/Platform_Jump2" unique_id=1727761242]
 shape = SubResource("shape_8x1x4_b")
-[node name="MeshInstance3D" type="MeshInstance3D" parent="World/Terrain/Platform_Jump2"]
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="World/Terrain/Platform_Jump2" unique_id=1348627994]
 mesh = SubResource("mesh_8x1x4_b")
 
-; --- Välikohta + checkpoint ---
-[node name="Ground_Middle" type="StaticBody3D" parent="World/Terrain"]
+[node name="Ground_Middle" type="StaticBody3D" parent="World/Terrain" unique_id=12715925]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 52.5, -0.5, 0)
-[node name="CollisionShape3D" type="CollisionShape3D" parent="World/Terrain/Ground_Middle"]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="World/Terrain/Ground_Middle" unique_id=239019206]
 shape = SubResource("shape_ground_mid")
-[node name="MeshInstance3D" type="MeshInstance3D" parent="World/Terrain/Ground_Middle"]
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="World/Terrain/Ground_Middle" unique_id=2095415416]
 mesh = SubResource("mesh_ground_mid")
 
-; --- Korkea alusta 1 ---
-[node name="Platform_High1" type="StaticBody3D" parent="World/Terrain"]
+[node name="Platform_High1" type="StaticBody3D" parent="World/Terrain" unique_id=1577332470]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 71, 1.5, 0)
-[node name="CollisionShape3D" type="CollisionShape3D" parent="World/Terrain/Platform_High1"]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="World/Terrain/Platform_High1" unique_id=1621968737]
 shape = SubResource("shape_7x1x4")
-[node name="MeshInstance3D" type="MeshInstance3D" parent="World/Terrain/Platform_High1"]
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="World/Terrain/Platform_High1" unique_id=612642018]
 mesh = SubResource("mesh_7x1x4")
 
-; --- Korkein kohta ---
-[node name="Platform_High2" type="StaticBody3D" parent="World/Terrain"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 80, 3.0, 0)
-[node name="CollisionShape3D" type="CollisionShape3D" parent="World/Terrain/Platform_High2"]
+[node name="Platform_High2" type="StaticBody3D" parent="World/Terrain" unique_id=1332402000]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 80, 3, 0)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="World/Terrain/Platform_High2" unique_id=1367268928]
 shape = SubResource("shape_6x1x4")
-[node name="MeshInstance3D" type="MeshInstance3D" parent="World/Terrain/Platform_High2"]
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="World/Terrain/Platform_High2" unique_id=422242523]
 mesh = SubResource("mesh_6x1x4")
 
-; --- Laskeutumisalusta ---
-[node name="Platform_Descend" type="StaticBody3D" parent="World/Terrain"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 88, 1.0, 0)
-[node name="CollisionShape3D" type="CollisionShape3D" parent="World/Terrain/Platform_Descend"]
+[node name="Platform_Descend" type="StaticBody3D" parent="World/Terrain" unique_id=388093121]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 88, 1, 0)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="World/Terrain/Platform_Descend" unique_id=133369278]
 shape = SubResource("shape_6x1x4_b")
-[node name="MeshInstance3D" type="MeshInstance3D" parent="World/Terrain/Platform_Descend"]
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="World/Terrain/Platform_Descend" unique_id=2061280093]
 mesh = SubResource("mesh_6x1x4_b")
 
-; --- Loppukenttä ---
-[node name="Ground_End" type="StaticBody3D" parent="World/Terrain"]
+[node name="Ground_End" type="StaticBody3D" parent="World/Terrain" unique_id=1398202736]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 101.5, -0.5, 0)
-[node name="CollisionShape3D" type="CollisionShape3D" parent="World/Terrain/Ground_End"]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="World/Terrain/Ground_End" unique_id=623446098]
 shape = SubResource("shape_ground_end")
-[node name="MeshInstance3D" type="MeshInstance3D" parent="World/Terrain/Ground_End"]
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="World/Terrain/Ground_End" unique_id=451628388]
 mesh = SubResource("mesh_ground_end")
 
-; ===== TRIGGERIT =====
-[node name="Triggers" type="Node3D" parent="World"]
+[node name="Triggers" type="Node3D" parent="World" unique_id=1816102538]
 
-; --- Kill zone (putoaminen) ---
-[node name="KillZone" type="Area3D" parent="World/Triggers"]
+[node name="KillZone" type="Area3D" parent="World/Triggers" unique_id=1894820336]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 53, -12, 0)
 script = ExtResource("4_killzone")
-[node name="CollisionShape3D" type="CollisionShape3D" parent="World/Triggers/KillZone"]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="World/Triggers/KillZone" unique_id=471582245]
 shape = SubResource("shape_killzone")
 
-; --- Checkpoint (Ground_Middle alueella) ---
-[node name="Checkpoint_1" type="Area3D" parent="World/Triggers"]
+[node name="Checkpoint_1" type="Area3D" parent="World/Triggers" unique_id=864934099]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 48, 0, 0)
 script = ExtResource("5_checkpoint")
-[node name="CollisionShape3D" type="CollisionShape3D" parent="World/Triggers/Checkpoint_1"]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="World/Triggers/Checkpoint_1" unique_id=1201886981]
 shape = SubResource("shape_checkpoint")
-[node name="Indicator" type="MeshInstance3D" parent="World/Triggers/Checkpoint_1"]
+
+[node name="Indicator" type="MeshInstance3D" parent="World/Triggers/Checkpoint_1" unique_id=749188488]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0)
 mesh = SubResource("mesh_checkpoint")
 
-; --- Level exit (loppuportti) ---
-[node name="LevelExit" type="Area3D" parent="World/Triggers"]
+[node name="LevelExit" type="Area3D" parent="World/Triggers" unique_id=921249195]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 109, 2, 0)
 script = ExtResource("6_levelexit")
-[node name="CollisionShape3D" type="CollisionShape3D" parent="World/Triggers/LevelExit"]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="World/Triggers/LevelExit" unique_id=2063666323]
 shape = SubResource("shape_exit")
-[node name="ExitMesh" type="MeshInstance3D" parent="World/Triggers/LevelExit"]
+
+[node name="ExitMesh" type="MeshInstance3D" parent="World/Triggers/LevelExit" unique_id=394092591]
 mesh = SubResource("mesh_exit")
 
-; ===== PELAAJA =====
-[node name="Player" parent="World" instance=ExtResource("2_player")]
+[node name="Player" parent="World" unique_id=1780069262 instance=ExtResource("2_player")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
 
-; ===== KAMERA =====
-[node name="Camera3D" type="Camera3D" parent="World"]
+[node name="Camera3D" type="Camera3D" parent="World" unique_id=596314587]
 transform = Transform3D(1, 0, 0, 0, 0.9848, 0.1736, 0, -0.1736, 0.9848, 0, 3, 12)
 script = ExtResource("1_camfollow")
 PlayerPath = NodePath("../Player")
 FollowSpeed = 4.0
 Offset = Vector3(2, 3, 12)
 
-; ===== HUD =====
-[node name="HUD" parent="World" instance=ExtResource("3_hud")]
+[node name="HUD" parent="World" unique_id=621474329 instance=ExtResource("3_hud")]

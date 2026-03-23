@@ -1,5 +1,5 @@
 [gd_scene format=3 uid="uid://cq8itp0wt5535"]
 
-[ext_resource type="PackedScene" path="res://assets/models/animations/idle.fbx" id="1_pcrxv"]
+[ext_resource type="PackedScene" uid="uid://cq0xduml6k3x4" path="res://assets/models/animations/idle.fbx" id="1_pcrxv"]
 
 [node name="gameover_character" unique_id=889978002 instance=ExtResource("1_pcrxv")]

@@ -2,9 +2,17 @@ using Godot;
 
 public partial class PlayerController : CharacterBody3D
 {
-	[Export] public float Speed = 5.0f;
+	/// <summary>Kävelynopeus (miekka+kilpi kävely). Juoksu normaalitilassa käyttää RunSpeed.</summary>
+	[Export] public float Speed = 4.0f;
+	[Export] public float RunSpeed = 8.5f;
 	[Export] public float JumpVelocity = 10.0f;
 	[Export] public float Gravity = 20.0f;
+	/// <summary>Little Nightmares -tyylinen syvyys (Z): vasen tatti Y / W-S. Rajat suhteessa tien leveyteen.</summary>
+	[Export] public bool DepthMovementEnabled = true;
+	[Export] public float DepthClampMin = -1.75f;
+	[Export] public float DepthClampMax = 1.75f;
+	/// <summary>Ohjain: GetAxis(move_back, move_forward). +1 → negatiivinen Z (kauemmas kamerasta).</summary>
+	[Export] public float DepthInputSign = -1f;
 	// Säädä tätä arvoa kunnes ponnistus täsmää animaatioon (sekunteina)
 	[Export] public float JumpWindupTime = 0.35f;
 
@@ -24,6 +32,9 @@ public partial class PlayerController : CharacterBody3D
 
 	public override void _Ready()
 	{
+		FloorSnapLength = 0.18f;
+		FloorMaxAngle = Mathf.DegToRad(50f);
+
 		_mesh = GetNode<MeshInstance3D>("MeshInstance3D");
 		_characterModel = GetNode<Node3D>("gameover_character");
 		_healthComponent = GetNode<HealthComponent>("HealthComponent");
@@ -134,11 +145,36 @@ public partial class PlayerController : CharacterBody3D
 			PlayAnim("mixamo_com_005");
 		}
 
-		// Liike — istumistilassa hahmo ei liiku (hallitsee dronea myöhemmin)
-		float direction = _weaponState == WeaponState.Sitting ? 0f : Input.GetAxis("move_left", "move_right");
-		velocity.X = direction * Speed;
+		// Liike — istumistilassa tai kilpi pohjassa ei liikuta
+		bool canMove = _weaponState != WeaponState.Sitting && !_isBlocking;
+		float dirX = canMove ? Input.GetAxis("move_left", "move_right") : 0f;
+		float dirZ = 0f;
+		if (canMove && DepthMovementEnabled)
+			dirZ = DepthInputSign * Input.GetAxis("move_back", "move_forward");
 
-		// Kääntyminen
+		Vector2 planarInput = new(dirX, dirZ);
+		float moveSpeed = Speed;
+		if (canMove && planarInput.LengthSquared() > 1e-6f && _weaponState == WeaponState.Normal)
+			moveSpeed = RunSpeed;
+
+		Vector3 wish = Vector3.Zero;
+		if (planarInput.LengthSquared() > 1e-6f)
+		{
+			planarInput = planarInput.Normalized();
+			wish = new Vector3(planarInput.X, 0f, planarInput.Y) * moveSpeed;
+		}
+
+		if (IsOnFloor() && !_isWindingUp)
+			wish = wish.Slide(GetFloorNormal());
+
+		velocity.X = wish.X;
+		velocity.Z = wish.Z;
+		if (IsOnFloor() && !_isWindingUp && velocity.Y < JumpVelocity * 0.25f)
+			velocity.Y = wish.Y;
+
+		float direction = dirX;
+
+		// Kääntyminen (sivuprofiili: vain vasen/oikea)
 		if (direction > 0) _lastDirection = 1.0f;
 		else if (direction < 0) _lastDirection = -1.0f;
 
@@ -155,15 +191,15 @@ public partial class PlayerController : CharacterBody3D
 			{
 				case WeaponState.SwordShield:
 					// Miekka+kilpi: kävely tai idle (miekka+kilpi kävelyllä on oma animaatio)
-					target = Mathf.Abs(direction) > 0.1f ? "mixamo_com_009" : "mixamo_com_007";
+					target = planarInput.LengthSquared() > 0.01f ? "mixamo_com_009" : "mixamo_com_007";
 					break;
 				case WeaponState.Sitting:
 					// Istuminen: aina istumisanimaatio
 					target = "mixamo_com_004";
 					break;
 				default:
-					// Normaali: juoksu tai idle
-					target = Mathf.Abs(direction) > 0.1f ? "mixamo_com_003" : "mixamo_com";
+					// Normaali: juoksu tai idle (myös syvyys Z)
+					target = planarInput.LengthSquared() > 0.01f ? "mixamo_com_003" : "mixamo_com";
 					break;
 			}
 			PlayAnim(target);
@@ -174,6 +210,13 @@ public partial class PlayerController : CharacterBody3D
 
 		Velocity = velocity;
 		MoveAndSlide();
+
+		if (DepthMovementEnabled)
+		{
+			Vector3 p = GlobalPosition;
+			p.Z = Mathf.Clamp(p.Z, DepthClampMin, DepthClampMax);
+			GlobalPosition = p;
+		}
 	}
 
 	private void LoadAnim(string path, string sourceName, string targetName)

@@ -1,0 +1,259 @@
+[gd_scene format=3 uid="uid://cpm04jw8p77ea"]
+
+[ext_resource type="Script" uid="uid://cdno0yakghq2r" path="res://scripts/CameraFollow.cs" id="1_camfollow"]
+[ext_resource type="PackedScene" uid="uid://vbg00ynsdulu" path="res://scenes/characters/player.tscn" id="2_player"]
+[ext_resource type="PackedScene" uid="uid://uh6pto3nrmqe" path="res://scenes/ui/hud.tscn" id="3_hud"]
+[ext_resource type="Script" uid="uid://cm6ish6f52c7m" path="res://scripts/levels/KillZone.cs" id="4_killzone"]
+[ext_resource type="Script" uid="uid://fyuld8j8elh7" path="res://scripts/levels/Checkpoint.cs" id="5_checkpoint"]
+[ext_resource type="Script" uid="uid://yrhp24buqcg3" path="res://scripts/levels/LevelExit.cs" id="6_levelexit"]
+
+[sub_resource type="Environment" id="env_puijo_hill"]
+background_mode = 1
+background_color = Color(0.52, 0.62, 0.72, 1)
+ambient_light_color = Color(0.55, 0.58, 0.62, 1)
+ambient_light_energy = 0.45
+fog_enabled = true
+fog_light_color = Color(0.65, 0.72, 0.78, 1)
+fog_density = 0.008
+
+[sub_resource type="StandardMaterial3D" id="mat_background"]
+shading_mode = 0
+albedo_color = Color(0.35, 0.48, 0.55, 1)
+
+[sub_resource type="BoxMesh" id="mesh_background"]
+material = SubResource("mat_background")
+size = Vector3(400, 75, 0.2)
+
+[sub_resource type="BoxShape3D" id="shape_ramp"]
+size = Vector3(138.925, 1.5, 12)
+
+[sub_resource type="StandardMaterial3D" id="mat_asphalt"]
+albedo_color = Color(0.18, 0.18, 0.2, 1)
+roughness = 0.92
+
+[sub_resource type="BoxMesh" id="mesh_ramp"]
+material = SubResource("mat_asphalt")
+size = Vector3(138.925, 1.5, 12)
+
+[sub_resource type="StandardMaterial3D" id="mat_lane_line"]
+shading_mode = 0
+albedo_color = Color(0.92, 0.82, 0.2, 1)
+
+[sub_resource type="BoxMesh" id="mesh_lane_dash"]
+material = SubResource("mat_lane_line")
+size = Vector3(2.4, 0.05, 0.35)
+
+[sub_resource type="StandardMaterial3D" id="mat_shoulder"]
+shading_mode = 0
+albedo_color = Color(0.28, 0.36, 0.22, 1)
+
+[sub_resource type="BoxMesh" id="mesh_shoulder_strip"]
+material = SubResource("mat_shoulder")
+size = Vector3(136, 0.06, 1.25)
+
+[sub_resource type="StandardMaterial3D" id="mat_earth"]
+albedo_color = Color(0.34, 0.26, 0.18, 1)
+
+[sub_resource type="BoxMesh" id="mesh_ramp_earth"]
+material = SubResource("mat_earth")
+size = Vector3(138.925, 24, 14)
+
+[sub_resource type="StandardMaterial3D" id="mat_grass_verge"]
+albedo_color = Color(0.22, 0.38, 0.2, 1)
+roughness = 0.98
+
+[sub_resource type="BoxMesh" id="mesh_verge_fill"]
+material = SubResource("mat_grass_verge")
+size = Vector3(140, 22, 3.5)
+
+[sub_resource type="BoxShape3D" id="shape_turnaround"]
+size = Vector3(42, 1.5, 16)
+
+[sub_resource type="BoxMesh" id="mesh_turnaround"]
+material = SubResource("mat_asphalt")
+size = Vector3(42, 1.5, 16)
+
+[sub_resource type="BoxMesh" id="mesh_turn_earth"]
+material = SubResource("mat_earth")
+size = Vector3(42, 22, 18)
+
+[sub_resource type="BoxShape3D" id="shape_killzone"]
+size = Vector3(520, 12, 36)
+
+[sub_resource type="BoxShape3D" id="shape_checkpoint"]
+size = Vector3(2, 3.5, 12)
+
+[sub_resource type="StandardMaterial3D" id="mat_checkpoint"]
+albedo_color = Color(0.9, 0.9, 0.92, 1)
+emission_enabled = true
+emission = Color(0.45, 0.65, 1, 1)
+emission_energy_multiplier = 0.28
+
+[sub_resource type="BoxMesh" id="mesh_checkpoint"]
+material = SubResource("mat_checkpoint")
+size = Vector3(0.35, 3.2, 0.35)
+
+[sub_resource type="BoxShape3D" id="shape_exit"]
+size = Vector3(3.5, 5.5, 12)
+
+[sub_resource type="StandardMaterial3D" id="mat_exit"]
+albedo_color = Color(0.92, 0.78, 0.12, 1)
+emission_enabled = true
+emission = Color(0.9, 0.65, 0.05, 1)
+emission_energy_multiplier = 0.45
+
+[sub_resource type="BoxMesh" id="mesh_exit"]
+material = SubResource("mat_exit")
+size = Vector3(3.5, 5.5, 0.25)
+
+[node name="Level_2_1" type="Node3D" unique_id=268453243]
+
+[node name="World" type="Node3D" parent="." unique_id=423069986]
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="World" unique_id=1698642129]
+environment = SubResource("env_puijo_hill")
+
+[node name="Sun" type="DirectionalLight3D" parent="World" unique_id=299177495]
+transform = Transform3D(0.906, -0.32, 0.27, 0, 0.64, 0.77, -0.42, -0.7, 0.58, 120, 38, -18)
+light_color = Color(1, 0.97, 0.9, 1)
+light_energy = 1.15
+shadow_enabled = true
+
+[node name="AmbientFill" type="DirectionalLight3D" parent="World" unique_id=146557229]
+transform = Transform3D(1, 0, 0, 0, 0, -1, 0, 1, 0, 0, 8, 6)
+light_color = Color(0.45, 0.52, 0.6, 1)
+light_energy = 0.25
+
+[node name="Background" type="MeshInstance3D" parent="World" unique_id=383376262]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 115, 34, -9)
+mesh = SubResource("mesh_background")
+
+[node name="Terrain" type="Node3D" parent="World" unique_id=792657481]
+
+[node name="Ramp_Main" type="StaticBody3D" parent="World/Terrain" unique_id=1264995414]
+transform = Transform3D(0.9213955, -0.3885147, 0, 0.3885147, 0.9213955, 0, 0, 0, 1, 64, 27, 0)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="World/Terrain/Ramp_Main" unique_id=688965225]
+shape = SubResource("shape_ramp")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="World/Terrain/Ramp_Main" unique_id=1189959726]
+mesh = SubResource("mesh_ramp")
+
+[node name="Dash_00" type="MeshInstance3D" parent="World/Terrain/Ramp_Main" unique_id=1563976469]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -58, 0.82, 0)
+mesh = SubResource("mesh_lane_dash")
+
+[node name="Dash_01" type="MeshInstance3D" parent="World/Terrain/Ramp_Main" unique_id=179838910]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -38, 0.82, 0)
+mesh = SubResource("mesh_lane_dash")
+
+[node name="Dash_02" type="MeshInstance3D" parent="World/Terrain/Ramp_Main" unique_id=1545031252]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -18, 0.82, 0)
+mesh = SubResource("mesh_lane_dash")
+
+[node name="Dash_03" type="MeshInstance3D" parent="World/Terrain/Ramp_Main" unique_id=1840537519]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 0.82, 0)
+mesh = SubResource("mesh_lane_dash")
+
+[node name="Dash_04" type="MeshInstance3D" parent="World/Terrain/Ramp_Main" unique_id=1655199501]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 22, 0.82, 0)
+mesh = SubResource("mesh_lane_dash")
+
+[node name="Dash_05" type="MeshInstance3D" parent="World/Terrain/Ramp_Main" unique_id=40422764]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 42, 0.82, 0)
+mesh = SubResource("mesh_lane_dash")
+
+[node name="Dash_06" type="MeshInstance3D" parent="World/Terrain/Ramp_Main" unique_id=1833902274]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 58, 0.82, 0)
+mesh = SubResource("mesh_lane_dash")
+
+[node name="Shoulder_L" type="MeshInstance3D" parent="World/Terrain/Ramp_Main" unique_id=1225260983]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.82, -5.15)
+mesh = SubResource("mesh_shoulder_strip")
+
+[node name="Shoulder_R" type="MeshInstance3D" parent="World/Terrain/Ramp_Main" unique_id=444530128]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.82, 5.15)
+mesh = SubResource("mesh_shoulder_strip")
+
+[node name="Earth_UnderRamp" type="MeshInstance3D" parent="World/Terrain/Ramp_Main" unique_id=1261012980]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -12.75, 0)
+mesh = SubResource("mesh_ramp_earth")
+
+[node name="Verge_L" type="MeshInstance3D" parent="World/Terrain/Ramp_Main" unique_id=499998186]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -11.85, -7.65)
+mesh = SubResource("mesh_verge_fill")
+
+[node name="Verge_R" type="MeshInstance3D" parent="World/Terrain/Ramp_Main" unique_id=1907376506]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -11.85, 7.65)
+mesh = SubResource("mesh_verge_fill")
+
+[node name="Turnaround_Apron" type="StaticBody3D" parent="World/Terrain" unique_id=1079540908]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 149, 55.05, 0)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="World/Terrain/Turnaround_Apron" unique_id=1927487249]
+shape = SubResource("shape_turnaround")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="World/Terrain/Turnaround_Apron" unique_id=1793361348]
+mesh = SubResource("mesh_turnaround")
+
+[node name="Earth_UnderApron" type="MeshInstance3D" parent="World/Terrain/Turnaround_Apron" unique_id=1876269316]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -11.75, 0)
+mesh = SubResource("mesh_turn_earth")
+
+[node name="PuijoTowerAnchor" type="Node3D" parent="World/Terrain" unique_id=787188931]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 156, 55.9, 0)
+
+[node name="Triggers" type="Node3D" parent="World" unique_id=1593003844]
+
+[node name="KillZone" type="Area3D" parent="World/Triggers" unique_id=1365809748]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 85, -32, 0)
+script = ExtResource("4_killzone")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="World/Triggers/KillZone" unique_id=1816980137]
+shape = SubResource("shape_killzone")
+
+[node name="Checkpoint_Lower" type="Area3D" parent="World/Triggers" unique_id=1365398284]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 48, 22.5, 0)
+script = ExtResource("5_checkpoint")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="World/Triggers/Checkpoint_Lower" unique_id=1762761978]
+shape = SubResource("shape_checkpoint")
+
+[node name="Indicator" type="MeshInstance3D" parent="World/Triggers/Checkpoint_Lower" unique_id=2126993415]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.75, 0)
+mesh = SubResource("mesh_checkpoint")
+
+[node name="Checkpoint_Upper" type="Area3D" parent="World/Triggers" unique_id=1607787317]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 95, 41.5, 0)
+script = ExtResource("5_checkpoint")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="World/Triggers/Checkpoint_Upper" unique_id=394930099]
+shape = SubResource("shape_checkpoint")
+
+[node name="Indicator" type="MeshInstance3D" parent="World/Triggers/Checkpoint_Upper" unique_id=957543021]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.75, 0)
+mesh = SubResource("mesh_checkpoint")
+
+[node name="LevelExit" type="Area3D" parent="World/Triggers" unique_id=1753306653]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 172, 56.6, 0)
+script = ExtResource("6_levelexit")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="World/Triggers/LevelExit" unique_id=931459777]
+shape = SubResource("shape_exit")
+
+[node name="ExitMesh" type="MeshInstance3D" parent="World/Triggers/LevelExit" unique_id=2082942997]
+mesh = SubResource("mesh_exit")
+
+[node name="Player" parent="World" unique_id=1591641244 instance=ExtResource("2_player")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 2.1, 0)
+DepthClampMin = -5.25
+DepthClampMax = 5.25
+
+[node name="Camera3D" type="Camera3D" parent="World" unique_id=126248754]
+transform = Transform3D(1, 0, 0, 0, 0.9848, 0.1736, 0, -0.1736, 0.9848, 0, 3, 12)
+script = ExtResource("1_camfollow")
+PlayerPath = NodePath("../Player")
+FollowSpeed = 4.0
+Offset = Vector3(2, 3.5, 12)
+
+[node name="HUD" parent="World" unique_id=1870840016 instance=ExtResource("3_hud")]

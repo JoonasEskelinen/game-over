@@ -4,7 +4,7 @@
 **Versio:** 0.2 — Päivitetty asiakaspalaverin jälkeen  
 **Päivämäärä:** 2025  
 **Tekijä:** Joonas Eskelinen  
-**Asiakas:** [Asiakkaan nimi]  
+**Asiakas:** Pelihuone GameOver  
 **GitHub:** https://github.com/JoonasEskelinen/game-over
 
 ---
@@ -45,7 +45,7 @@
 | Kyykky | □ (Neliö) |
 | Miekka (perusase) | L2 |
 | Kilpi (puolustus) | R2 |
-| Ota joystick käteen | ○ (Ympyrä) |
+| Ota joystick käteen | kolmio |
 | Erikoisaseen ohjaus | Joystick aktivoituna |
 
 **Taistelusysteemi:**
