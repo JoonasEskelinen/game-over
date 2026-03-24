@@ -6,7 +6,7 @@ public partial class PlayerController : CharacterBody3D
 	[Export] public float Speed = 4.0f;
 	[Export] public float RunSpeed = 8.5f;
 	[Export] public float JumpVelocity = 10.0f;
-	[Export] public float Gravity = 20.0f;
+	[Export] public float Gravity = 28.0f;
 	/// <summary>Little Nightmares -tyylinen syvyys (Z): vasen tatti Y / W-S. Rajat suhteessa tien leveyteen.</summary>
 	[Export] public bool DepthMovementEnabled = true;
 	[Export] public float DepthClampMin = -1.75f;
@@ -31,6 +31,7 @@ public partial class PlayerController : CharacterBody3D
 	private bool _isWindingUp = false;
 	private float _jumpTimer = 0f;
 	private float _facingYaw;
+	private int _attackDamage = 1;
 
 	public override void _Ready()
 	{
@@ -56,6 +57,7 @@ public partial class PlayerController : CharacterBody3D
 			LoadAnim("res://assets/models/animations/Sword And Shield Crouch Block Idle.fbx", "mixamo_com", "mixamo_com_006");
 			LoadAnim("res://assets/models/animations/Sword And Shield Idle.fbx",              "mixamo_com", "mixamo_com_007");
 			LoadAnim("res://assets/models/animations/Sword And Shield Run.fbx",               "mixamo_com", "mixamo_com_008");
+			LoadAnim("res://assets/models/animations/Sword And Shield SlashLyonti2.fbx",	  "mixamo_com", "mixamo_com_010");
 			LoadAnim("res://assets/models/animations/Sword And Shield Walk.fbx",              "mixamo_com", "mixamo_com_009");
 
 			_animationPlayer.AnimationFinished += OnAnimationFinished;
@@ -142,11 +144,20 @@ public partial class PlayerController : CharacterBody3D
 		if (_isBlocking)
 			PlayAnim("mixamo_com_006");
 
-		// Lyönti R2 — vain miekka+kilpi-tilassa
+		// Lyönti R2 — normaali isku
 		if (Input.IsActionJustPressed("attack") && _weaponState == WeaponState.SwordShield && !_isBlocking)
 		{
 			_isAttacking = true;
+			_attackDamage = 1;
 			PlayAnim("mixamo_com_005");
+		}
+
+		// Lyönti R1 — vahva isku
+		if (Input.IsActionJustPressed("attack_r1") && _weaponState == WeaponState.SwordShield && !_isBlocking)
+		{
+			_isAttacking = true;
+			_attackDamage = 3;
+			PlayAnim("mixamo_com_010");
 		}
 
 		// Liike — istumistilassa tai kilpi pohjassa ei liikuta
@@ -165,7 +176,24 @@ public partial class PlayerController : CharacterBody3D
 		if (planarInput.LengthSquared() > 1e-6f)
 		{
 			planarInput = planarInput.Normalized();
-			wish = new Vector3(planarInput.X, 0f, planarInput.Y) * moveSpeed;
+			var cam = GetViewport().GetCamera3D();
+			if (cam != null)
+			{
+				// Vasen sauva suhteessa kameran katselusuuntaan (XZ), jotta orbit-kameran kanssa eteen = ruudun "eteen".
+				Vector3 lookFlat = -cam.GlobalBasis.Z;
+				lookFlat.Y = 0f;
+				if (lookFlat.LengthSquared() < 1e-8f)
+					lookFlat = new Vector3(0f, 0f, -1f);
+				lookFlat = lookFlat.Normalized();
+				// Oikea XZ-suunta: Forward × Up (Y-up), EI Up × Forward — Up×Forward on vasemmalle (90° väärin sauvaan).
+				Vector3 camRight = lookFlat.Cross(Vector3.Up).Normalized();
+				// dirX = move_right → +camRight; dirZ = DepthInputSign*GetAxis → eteenpäin negatiivinen dirZ → -planarInput.Y on +lookFlat
+				wish = (camRight * planarInput.X + lookFlat * (-planarInput.Y)) * moveSpeed;
+			}
+			else
+			{
+				wish = new Vector3(planarInput.X, 0f, planarInput.Y) * moveSpeed;
+			}
 		}
 
 		if (IsOnFloor() && !_isWindingUp)
@@ -291,7 +319,9 @@ public partial class PlayerController : CharacterBody3D
 	{
 		if (animName == "mixamo_com_005")
 			_isAttacking = false;
-		if (animName == "mixamo_com_001")
+		if (animName == "mixamo_com_010")
+			_isAttacking = false;
+		if (animName == "mixamo_com_001")	
 			PlayAnim("mixamo_com");
 	}
 

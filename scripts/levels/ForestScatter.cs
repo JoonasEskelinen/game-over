@@ -15,10 +15,19 @@ public partial class ForestScatter : Node3D
 	[Export] public PackedScene CommonTree4 { get; set; }
 	[Export] public PackedScene CommonTree5 { get; set; }
 
-	[ExportGroup("Area (local space)")]
+	[ExportGroup("Area (world XZ, Forest on yleensä World-lapsi)")]
 	[Export] public int TotalTrees { get; set; } = 350;
 	[Export] public Vector2 XMinMax { get; set; } = new(-30f, 220f);
 	[Export] public Vector2 ZMinMax { get; set; } = new(-150f, -22f);
+
+	[ExportGroup("Poissulje laatikko (world XZ)")]
+	/// <summary>
+	/// Jos päällä: puu/proppi ei saa osua tähän suorakulmioon (uudelleenheito).
+	/// Käytä esim. apronin laatalle: estä generointi laatan päältä vaikka XMinMax olisi leveä.
+	/// </summary>
+	[Export] public bool ExcludeRectEnabled { get; set; }
+	[Export] public Vector2 ExcludeRectMinXZ { get; set; } = new(145f, -120f);
+	[Export] public Vector2 ExcludeRectMaxXZ { get; set; } = new(340f, 100f);
 
 	[ExportGroup("Height")]
 	[Export] public float BaseHeight { get; set; } = -2f;
@@ -37,6 +46,14 @@ public partial class ForestScatter : Node3D
 	[Export] public float ApronRoadTopWorldY { get; set; } = 55.8f;
 	[Export] public float BlendToApronStartX { get; set; } = 112f;
 	[Export] public float BlendToApronEndX { get; set; } = 132f;
+	[Export] public bool BlendSmoothstep { get; set; } = true;
+	/// <summary>
+	/// Rajoittaa rampin matemaattista pituutta (lx). Ilman tätä kaava jatkuu loputtomiin vaikka
+	/// fyysinen Ramp_Main-mesh päättyy → puut saavat apronin Y:n liian aikaisin ja näyttävät
+	/// leijuvan mäen lopussa. MaxRampAlongLx ≈ törmäyslaatikon puolipituus local X (level 2 ~93–94).
+	/// </summary>
+	[Export] public bool ClampRampAlongMaxLx { get; set; }
+	[Export] public float MaxRampAlongLx { get; set; } = 93.5f;
 
 	[ExportGroup("Variation")]
 	[Export] public Vector2 ScaleMinMax { get; set; } = new(0.8f, 1.35f);
@@ -77,41 +94,59 @@ public partial class ForestScatter : Node3D
 
 		if (variants.Count > 0)
 		{
-			for (var i = 0; i < TotalTrees; i++)
+			var placed = 0;
+			var tries = 0;
+			var maxTries = Mathf.Max(TotalTrees * 64, 64);
+			while (placed < TotalTrees && tries < maxTries)
 			{
+				tries++;
+				if (!TrySampleXZ(rng, out var x, out var z))
+					continue;
+
 				var prefab = variants[rng.RandiRange(0, variants.Count - 1)];
 				var tree = prefab.Instantiate<Node3D>();
 				AddChild(tree);
 
-				var x = rng.RandfRange(XMinMax.X, XMinMax.Y);
-				var z = rng.RandfRange(ZMinMax.X, ZMinMax.Y);
 				var y = SampleGroundY(x) + BaseHeight + rng.RandfRange(-HeightJitter, HeightJitter);
 				tree.Position = new Vector3(x, y, z);
 
 				tree.Rotation = new Vector3(0f, rng.RandfRange(0f, Mathf.Tau), 0f);
 				var s = rng.RandfRange(ScaleMinMax.X, ScaleMinMax.Y);
 				tree.Scale = new Vector3(s, s, s);
+				placed++;
 			}
+
+			if (placed < TotalTrees)
+				GD.PushWarning($"{Name}: ForestScatter — sijoitettiin vain {placed}/{TotalTrees} puuta (ExcludeRect tai alue liian tiukka).");
 		}
 
 		if (propVariants.Count == 0 || TotalGroundProps <= 0)
 			return;
 
-		for (var i = 0; i < TotalGroundProps; i++)
+		var propsPlaced = 0;
+		var propTries = 0;
+		var maxPropTries = Mathf.Max(TotalGroundProps * 64, 64);
+		while (propsPlaced < TotalGroundProps && propTries < maxPropTries)
 		{
+			propTries++;
+			if (!TrySamplePropsXZ(rng, out var x, out var z))
+				continue;
+
 			var prefab = propVariants[rng.RandiRange(0, propVariants.Count - 1)];
 			var prop = prefab.Instantiate<Node3D>();
 			AddChild(prop);
 
-			var x = rng.RandfRange(XMinMax.X, XMinMax.Y);
-			var z = rng.RandfRange(PropsZMinMax.X, PropsZMinMax.Y);
 			var y = SampleGroundY(x) + BaseHeight + rng.RandfRange(-PropsHeightJitter, PropsHeightJitter);
 			prop.Position = new Vector3(x, y, z);
 
 			prop.Rotation = new Vector3(0f, rng.RandfRange(0f, Mathf.Tau), 0f);
 			var s = rng.RandfRange(PropsScaleMinMax.X, PropsScaleMinMax.Y);
 			prop.Scale = new Vector3(s, s, s);
+			propsPlaced++;
 		}
+
+		if (propsPlaced < TotalGroundProps)
+			GD.PushWarning($"{Name}: ForestScatter — sijoitettiin vain {propsPlaced}/{TotalGroundProps} proppia (ExcludeRect tai alue liian tiukka).");
 	}
 
 	/// <summary>
@@ -127,13 +162,61 @@ public partial class ForestScatter : Node3D
 		var o = RampOrigin;
 		// W = O + lx*Ax + RoadTopLocalY*Ay (+ lz*Az); Az=(0,0,1) → lx ratkaistaan W.x:stä
 		var lx = (worldX - o.X - RoadTopLocalY * ay.X) / ax.X;
+		if (ClampRampAlongMaxLx)
+			lx = Mathf.Min(lx, MaxRampAlongLx);
 		var rampY = o.Y + lx * ax.Y + RoadTopLocalY * ay.Y;
 
 		if (worldX <= BlendToApronStartX)
 			return rampY;
 		if (worldX >= BlendToApronEndX)
 			return ApronRoadTopWorldY;
-		var t = (worldX - BlendToApronStartX) / (BlendToApronEndX - BlendToApronStartX);
+		var span = BlendToApronEndX - BlendToApronStartX;
+		if (span <= 0.0001f)
+			return ApronRoadTopWorldY;
+		var t = (worldX - BlendToApronStartX) / span;
+		t = Mathf.Clamp(t, 0f, 1f);
+		if (BlendSmoothstep)
+			t = t * t * (3f - 2f * t);
 		return Mathf.Lerp(rampY, ApronRoadTopWorldY, t);
+	}
+
+	private bool IsInsideExcludeRect(float x, float z)
+	{
+		if (!ExcludeRectEnabled)
+			return false;
+		return x >= ExcludeRectMinXZ.X && x <= ExcludeRectMaxXZ.X
+			&& z >= ExcludeRectMinXZ.Y && z <= ExcludeRectMaxXZ.Y;
+	}
+
+	private bool TrySampleXZ(RandomNumberGenerator rng, out float x, out float z)
+	{
+		const int maxAttempts = 48;
+		for (var a = 0; a < maxAttempts; a++)
+		{
+			x = rng.RandfRange(XMinMax.X, XMinMax.Y);
+			z = rng.RandfRange(ZMinMax.X, ZMinMax.Y);
+			if (!IsInsideExcludeRect(x, z))
+				return true;
+		}
+
+		x = 0f;
+		z = 0f;
+		return false;
+	}
+
+	private bool TrySamplePropsXZ(RandomNumberGenerator rng, out float x, out float z)
+	{
+		const int maxAttempts = 48;
+		for (var a = 0; a < maxAttempts; a++)
+		{
+			x = rng.RandfRange(XMinMax.X, XMinMax.Y);
+			z = rng.RandfRange(PropsZMinMax.X, PropsZMinMax.Y);
+			if (!IsInsideExcludeRect(x, z))
+				return true;
+		}
+
+		x = 0f;
+		z = 0f;
+		return false;
 	}
 }

@@ -1,5 +1,6 @@
 [gd_scene format=3 uid="uid://cpm04jw8p77ea"]
 
+[ext_resource type="PackedScene" uid="uid://c1s456avvxa3m" path="res://assets/models/puijontorni.glb" id="1_bg4p3"]
 [ext_resource type="Script" uid="uid://cdno0yakghq2r" path="res://scripts/CameraFollow.cs" id="1_camfollow"]
 [ext_resource type="PackedScene" uid="uid://vbg00ynsdulu" path="res://scenes/characters/player.tscn" id="2_player"]
 [ext_resource type="PackedScene" uid="uid://uh6pto3nrmqe" path="res://scenes/ui/hud.tscn" id="3_hud"]
@@ -33,9 +34,11 @@ ambient_light_color = Color(0.32, 0.48, 0.34, 1)
 ambient_light_energy = 0.52
 fog_enabled = true
 fog_mode = 1
-fog_light_color = Color(0.32, 0.5, 0.38, 1)
-fog_density = 0.024
-fog_sky_affect = 0.88
+fog_light_color = Color(0.34, 0.52, 0.4, 1)
+fog_density = 0.92
+fog_depth_curve = 0.88
+fog_depth_begin = 72.0
+fog_depth_end = 305.0
 
 [sub_resource type="StandardMaterial3D" id="mat_background"]
 shading_mode = 0
@@ -46,10 +49,7 @@ material = SubResource("mat_background")
 size = Vector3(520, 110, 0.25)
 
 [sub_resource type="BoxShape3D" id="shape_ramp"]
-size = Vector3(178, 1.5, 12)
-
-[sub_resource type="BoxShape3D" id="shape_ramp_extension"]
-size = Vector3(20, 1.5, 12)
+size = Vector3(183.11707, 1.5, 12)
 
 [sub_resource type="StandardMaterial3D" id="mat_asphalt"]
 albedo_color = Color(0.18, 0.18, 0.2, 1)
@@ -59,9 +59,8 @@ roughness = 0.92
 material = SubResource("mat_asphalt")
 size = Vector3(178, 1.5, 12)
 
-[sub_resource type="BoxMesh" id="mesh_ramp_extension"]
-material = SubResource("mat_asphalt")
-size = Vector3(20, 1.5, 12)
+[sub_resource type="BoxShape3D" id="shape_ramp_side_rail"]
+size = Vector3(178, 3.5, 0.45)
 
 [sub_resource type="StandardMaterial3D" id="mat_grass_verge"]
 albedo_color = Color(0.18, 0.4, 0.22, 1)
@@ -69,69 +68,14 @@ roughness = 0.98
 
 [sub_resource type="BoxMesh" id="mesh_forest_floor"]
 material = SubResource("mat_grass_verge")
-size = Vector3(248, 0.35, 56)
-
-[sub_resource type="StandardMaterial3D" id="mat_lane_line"]
-shading_mode = 0
-albedo_color = Color(0.92, 0.82, 0.2, 1)
-
-[sub_resource type="BoxMesh" id="mesh_lane_dash"]
-material = SubResource("mat_lane_line")
-size = Vector3(2.4, 0.05, 0.35)
-
-[sub_resource type="StandardMaterial3D" id="mat_shoulder"]
-shading_mode = 0
-albedo_color = Color(0.22, 0.38, 0.24, 1)
-
-[sub_resource type="BoxMesh" id="mesh_shoulder_strip"]
-material = SubResource("mat_shoulder")
-size = Vector3(174, 0.06, 1.25)
-
-[sub_resource type="StandardMaterial3D" id="mat_earth"]
-albedo_color = Color(0.2, 0.36, 0.22, 1)
-
-[sub_resource type="BoxMesh" id="mesh_ramp_earth"]
-material = SubResource("mat_earth")
-size = Vector3(178, 24, 14)
-
-[sub_resource type="BoxMesh" id="mesh_verge_fill"]
-material = SubResource("mat_grass_verge")
-size = Vector3(180, 22, 3.5)
-
-[sub_resource type="BoxMesh" id="mesh_earth_blend_start"]
-material = SubResource("mat_earth")
-size = Vector3(48, 18, 16)
-
-[sub_resource type="BoxMesh" id="mesh_earth_blend_end"]
-material = SubResource("mat_earth")
-size = Vector3(44, 20, 16)
-
-[sub_resource type="BoxMesh" id="mesh_verge_taper_start"]
-material = SubResource("mat_grass_verge")
-size = Vector3(28, 14, 3.2)
-
-[sub_resource type="BoxMesh" id="mesh_verge_taper_end"]
-material = SubResource("mat_grass_verge")
-size = Vector3(26, 14, 3.2)
+size = Vector3(0, 0.35, 56)
 
 [sub_resource type="BoxShape3D" id="shape_turnaround"]
-size = Vector3(100, 0.55, 100)
+size = Vector3(176, 0.75, 198)
 
 [sub_resource type="BoxMesh" id="mesh_turnaround"]
 material = SubResource("mat_asphalt")
 size = Vector3(102, 1.5, 102)
-
-[sub_resource type="BoxMesh" id="mesh_turn_earth"]
-material = SubResource("mat_earth")
-size = Vector3(102, 22, 102)
-
-[sub_resource type="BoxMesh" id="mesh_ring_asphalt"]
-material = SubResource("mat_asphalt")
-size = Vector3(96, 1.2, 11)
-
-[sub_resource type="BoxMesh" id="mesh_ring_asphalt_side"]
-material = SubResource("mat_asphalt")
-size = Vector3(11, 1.2, 68)
 
 [sub_resource type="StandardMaterial3D" id="mat_parking_white"]
 shading_mode = 0
@@ -145,31 +89,26 @@ size = Vector3(0.14, 0.03, 22)
 material = SubResource("mat_parking_white")
 size = Vector3(26, 0.03, 0.14)
 
-[sub_resource type="StandardMaterial3D" id="mat_roundabout_yellow"]
-shading_mode = 0
-albedo_color = Color(0.88, 0.75, 0.12, 1)
-
-[sub_resource type="BoxMesh" id="mesh_roundabout_dash"]
-material = SubResource("mat_roundabout_yellow")
-size = Vector3(2.8, 0.04, 0.45)
-
-[sub_resource type="BoxShape3D" id="shape_plaza_curb_ns"]
-size = Vector3(104, 3.2, 0.75)
-
-[sub_resource type="BoxShape3D" id="shape_plaza_curb_ew"]
-size = Vector3(0.75, 3.2, 104)
-
 [sub_resource type="BoxShape3D" id="shape_bounds_floor"]
-size = Vector3(380, 6, 150)
+size = Vector3(171.565, 6, 172.91605)
 
 [sub_resource type="BoxShape3D" id="shape_bounds_wall_ns"]
-size = Vector3(360, 70, 1.8)
+size = Vector3(166.05893, 77.8916, 1.8)
 
 [sub_resource type="BoxShape3D" id="shape_bounds_wall_start"]
 size = Vector3(22, 70, 36)
 
-[sub_resource type="BoxShape3D" id="shape_bounds_wall_ew"]
-size = Vector3(2.2, 70, 140)
+[sub_resource type="BoxShape3D" id="shape_apron_wall_ns"]
+size = Vector3(178, 46, 2.8)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_oxxpa"]
+size = Vector3(2.8, 46, 76.5509)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_y5tu5"]
+size = Vector3(2.8, 46, 78.77042)
+
+[sub_resource type="BoxShape3D" id="shape_apron_wall_ew"]
+size = Vector3(2.8, 46, 174.69641)
 
 [sub_resource type="BoxShape3D" id="shape_checkpoint"]
 size = Vector3(4, 4, 14)
@@ -205,13 +144,13 @@ size = Vector3(3.5, 5.5, 0.25)
 environment = SubResource("env_puijo_hill")
 
 [node name="Sun" type="DirectionalLight3D" parent="World" unique_id=299177495]
-transform = Transform3D(0.906, -0.32, 0.27, 0, 0.64, 0.77, -0.42, -0.7, 0.58, 120, 38, -18)
+transform = Transform3D(0.9072547, -0.3233862, 0.26890573, 0, 0.6393663, 0.7689023, -0.42058164, -0.69759023, 0.5800681, 129.60405, 95.005714, -117.448456)
 light_color = Color(0.92, 1, 0.88, 1)
 light_energy = 1.12
 shadow_enabled = true
 
 [node name="AmbientFill" type="DirectionalLight3D" parent="World" unique_id=146557229]
-transform = Transform3D(1, 0, 0, 0, 0, -1, 0, 1, 0, 0, 8, 6)
+transform = Transform3D(1, 0, 0, 0, 0, -1, 0, 1, 0, 36.568604, 41.788464, -53.60501)
 light_color = Color(0.35, 0.48, 0.4, 1)
 light_energy = 0.28
 
@@ -226,226 +165,111 @@ mesh = SubResource("mesh_background")
 transform = Transform3D(0.9213955, -0.3885147, 0, 0.3885147, 0.9213955, 0, 0, 0, 1, 64, 27, 0)
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="World/Terrain/Ramp_Main" unique_id=688965225]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.558548, -1.9073486e-06, 0)
 shape = SubResource("shape_ramp")
 
-[node name="CollisionShape_RampExtension" type="CollisionShape3D" parent="World/Terrain/Ramp_Main" unique_id=688965226]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 93.5, 0.03, 0)
-shape = SubResource("shape_ramp_extension")
-
 [node name="MeshInstance3D" type="MeshInstance3D" parent="World/Terrain/Ramp_Main" unique_id=1189959726]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.4218674, -0.14408302, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.5289917, -0.18925095, -0.021541595)
 mesh = SubResource("mesh_ramp")
 
-[node name="Mesh_RampExtension" type="MeshInstance3D" parent="World/Terrain/Ramp_Main" unique_id=1189959727]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 93.5, 0.03, 0)
-mesh = SubResource("mesh_ramp_extension")
+[node name="SideRail_NegZ" type="CollisionShape3D" parent="World/Terrain/Ramp_Main" unique_id=688965226]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.56, 1.2, -6.22)
+shape = SubResource("shape_ramp_side_rail")
+
+[node name="SideRail_PosZ" type="CollisionShape3D" parent="World/Terrain/Ramp_Main" unique_id=688965227]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.56, 1.2, 6.22)
+shape = SubResource("shape_ramp_side_rail")
 
 [node name="ForestFloorFill" type="MeshInstance3D" parent="World/Terrain/Ramp_Main" unique_id=1189959728]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 96, -0.52, -20.5)
 mesh = SubResource("mesh_forest_floor")
 
-[node name="Dash_00" type="MeshInstance3D" parent="World/Terrain/Ramp_Main" unique_id=1563976469]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -86, 0.82, 0)
-mesh = SubResource("mesh_lane_dash")
-
-[node name="Dash_01" type="MeshInstance3D" parent="World/Terrain/Ramp_Main" unique_id=179838910]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -64, 0.82, 0)
-mesh = SubResource("mesh_lane_dash")
-
-[node name="Dash_02" type="MeshInstance3D" parent="World/Terrain/Ramp_Main" unique_id=1545031252]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -42, 0.82, 0)
-mesh = SubResource("mesh_lane_dash")
-
-[node name="Dash_03" type="MeshInstance3D" parent="World/Terrain/Ramp_Main" unique_id=1840537519]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -20, 0.82, 0)
-mesh = SubResource("mesh_lane_dash")
-
-[node name="Dash_04" type="MeshInstance3D" parent="World/Terrain/Ramp_Main" unique_id=1655199501]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 0.82, 0)
-mesh = SubResource("mesh_lane_dash")
-
-[node name="Dash_05" type="MeshInstance3D" parent="World/Terrain/Ramp_Main" unique_id=40422764]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 24, 0.82, 0)
-mesh = SubResource("mesh_lane_dash")
-
-[node name="Dash_06" type="MeshInstance3D" parent="World/Terrain/Ramp_Main" unique_id=1833902274]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 46, 0.82, 0)
-mesh = SubResource("mesh_lane_dash")
-
-[node name="Dash_07" type="MeshInstance3D" parent="World/Terrain/Ramp_Main" unique_id=1833902275]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 68, 0.82, 0)
-mesh = SubResource("mesh_lane_dash")
-
-[node name="Dash_08" type="MeshInstance3D" parent="World/Terrain/Ramp_Main" unique_id=1833902276]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 86, 0.82, 0)
-mesh = SubResource("mesh_lane_dash")
-
-[node name="Shoulder_L" type="MeshInstance3D" parent="World/Terrain/Ramp_Main" unique_id=1225260983]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.82, -5.15)
-mesh = SubResource("mesh_shoulder_strip")
-
-[node name="Shoulder_R" type="MeshInstance3D" parent="World/Terrain/Ramp_Main" unique_id=444530128]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.82, 5.15)
-mesh = SubResource("mesh_shoulder_strip")
-
-[node name="Earth_UnderRamp" type="MeshInstance3D" parent="World/Terrain/Ramp_Main" unique_id=1261012980]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -12.75, 0)
-mesh = SubResource("mesh_ramp_earth")
-
-[node name="Verge_L" type="MeshInstance3D" parent="World/Terrain/Ramp_Main" unique_id=499998186]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -11.85, -7.65)
-mesh = SubResource("mesh_verge_fill")
-
-[node name="Verge_R" type="MeshInstance3D" parent="World/Terrain/Ramp_Main" unique_id=1907376506]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -11.85, 7.65)
-mesh = SubResource("mesh_verge_fill")
-
-[node name="Earth_BlendStart" type="MeshInstance3D" parent="World/Terrain/Ramp_Main" unique_id=1261012981]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -112, -12.2, 0)
-mesh = SubResource("mesh_earth_blend_start")
-
-[node name="Earth_BlendEnd" type="MeshInstance3D" parent="World/Terrain/Ramp_Main" unique_id=1261012982]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 108, -12.4, 0)
-mesh = SubResource("mesh_earth_blend_end")
-
-[node name="Verge_TaperStart_L" type="MeshInstance3D" parent="World/Terrain/Ramp_Main" unique_id=499998187]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -100, -9.2, -7.65)
-mesh = SubResource("mesh_verge_taper_start")
-
-[node name="Verge_TaperEnd_L" type="MeshInstance3D" parent="World/Terrain/Ramp_Main" unique_id=499998188]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 98, -9.2, -7.65)
-mesh = SubResource("mesh_verge_taper_end")
-
 [node name="Turnaround_Apron" type="StaticBody3D" parent="World/Terrain" unique_id=1079540908]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 205, 64.92604, 0)
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="World/Terrain/Turnaround_Apron" unique_id=1927487249]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 33.21785, -1.85, -6.1026154)
 shape = SubResource("shape_turnaround")
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="World/Terrain/Turnaround_Apron" unique_id=1793361348]
-transform = Transform3D(1, 0, 0, 0, 0.9999881, -0.0048869024, 0, 0.0048869024, 0.9999881, 0, 0, 0)
+transform = Transform3D(1.7, 0, 0, 0, 1.6999798, -0.0083077345, 0, 0.0083077345, 1.6999798, 31.868973, -1.9197388, 0.06946564)
 mesh = SubResource("mesh_turnaround")
 
-[node name="Earth_UnderApron" type="MeshInstance3D" parent="World/Terrain/Turnaround_Apron" unique_id=1876269316]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 31.330826, -1.184967, 0)
-mesh = SubResource("mesh_turn_earth")
-
-[node name="RingRoad_N" type="MeshInstance3D" parent="World/Terrain/Turnaround_Apron" unique_id=1793361349]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.78, -45.5)
-mesh = SubResource("mesh_ring_asphalt")
-
-[node name="RingRoad_S" type="MeshInstance3D" parent="World/Terrain/Turnaround_Apron" unique_id=1793361350]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.78, 45.5)
-mesh = SubResource("mesh_ring_asphalt")
-
-[node name="RingRoad_W" type="MeshInstance3D" parent="World/Terrain/Turnaround_Apron" unique_id=1793361351]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -45.5, 0.78, 0)
-mesh = SubResource("mesh_ring_asphalt_side")
-
-[node name="RingRoad_E" type="MeshInstance3D" parent="World/Terrain/Turnaround_Apron" unique_id=1793361352]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 45.5, 0.78, 0)
-mesh = SubResource("mesh_ring_asphalt_side")
-
 [node name="ParkingLine_V0" type="MeshInstance3D" parent="World/Terrain/Turnaround_Apron" unique_id=1793361353]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -10.5, 0.77, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -10.5, -0.87322235, 0)
 mesh = SubResource("mesh_parking_line")
 
 [node name="ParkingLine_V1" type="MeshInstance3D" parent="World/Terrain/Turnaround_Apron" unique_id=1793361354]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.5, 0.77, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.5, -0.86286163, 0)
 mesh = SubResource("mesh_parking_line")
 
 [node name="ParkingLine_V2" type="MeshInstance3D" parent="World/Terrain/Turnaround_Apron" unique_id=1793361355]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.5, 0.77, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.5, -0.7984085, 0)
 mesh = SubResource("mesh_parking_line")
 
 [node name="ParkingLine_V3" type="MeshInstance3D" parent="World/Terrain/Turnaround_Apron" unique_id=1793361356]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10.5, 0.77, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10.5, -0.86688995, 0)
 mesh = SubResource("mesh_parking_line")
 
 [node name="ParkingLine_H0" type="MeshInstance3D" parent="World/Terrain/Turnaround_Apron" unique_id=1793361357]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.77, -8)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.811882, -8)
 mesh = SubResource("mesh_parking_line_h")
 
 [node name="ParkingLine_H1" type="MeshInstance3D" parent="World/Terrain/Turnaround_Apron" unique_id=1793361358]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.77, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.91308594, 0)
 mesh = SubResource("mesh_parking_line_h")
 
 [node name="ParkingLine_H2" type="MeshInstance3D" parent="World/Terrain/Turnaround_Apron" unique_id=1793361359]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.77, 8)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.97584534, 8)
 mesh = SubResource("mesh_parking_line_h")
 
-[node name="RoundaboutDash_0" type="MeshInstance3D" parent="World/Terrain/Turnaround_Apron" unique_id=1793361360]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.79, -47.2)
-mesh = SubResource("mesh_roundabout_dash")
-
-[node name="RoundaboutDash_1" type="MeshInstance3D" parent="World/Terrain/Turnaround_Apron" unique_id=1793361361]
-transform = Transform3D(0.70711, 0, 0.70711, 0, 1, 0, -0.70711, 0, 0.70711, 33.4, 0.79, -33.4)
-mesh = SubResource("mesh_roundabout_dash")
-
-[node name="RoundaboutDash_2" type="MeshInstance3D" parent="World/Terrain/Turnaround_Apron" unique_id=1793361362]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 47.2, 0.79, 0)
-mesh = SubResource("mesh_roundabout_dash")
-
-[node name="RoundaboutDash_3" type="MeshInstance3D" parent="World/Terrain/Turnaround_Apron" unique_id=1793361363]
-transform = Transform3D(-0.70711, 0, 0.70711, 0, 1, 0, -0.70711, 0, -0.70711, 33.4, 0.79, 33.4)
-mesh = SubResource("mesh_roundabout_dash")
-
-[node name="RoundaboutDash_4" type="MeshInstance3D" parent="World/Terrain/Turnaround_Apron" unique_id=1793361364]
-transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 0, 0.79, 47.2)
-mesh = SubResource("mesh_roundabout_dash")
-
-[node name="RoundaboutDash_5" type="MeshInstance3D" parent="World/Terrain/Turnaround_Apron" unique_id=1793361365]
-transform = Transform3D(-0.70711, 0, -0.70711, 0, 1, 0, 0.70711, 0, -0.70711, -33.4, 0.79, 33.4)
-mesh = SubResource("mesh_roundabout_dash")
-
-[node name="RoundaboutDash_6" type="MeshInstance3D" parent="World/Terrain/Turnaround_Apron" unique_id=1793361366]
-transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, -47.2, 0.79, 0)
-mesh = SubResource("mesh_roundabout_dash")
-
-[node name="RoundaboutDash_7" type="MeshInstance3D" parent="World/Terrain/Turnaround_Apron" unique_id=1793361367]
-transform = Transform3D(0.70711, 0, -0.70711, 0, 1, 0, 0.70711, 0, 0.70711, -33.4, 0.79, -33.4)
-mesh = SubResource("mesh_roundabout_dash")
-
-[node name="PlazaCurbs" type="StaticBody3D" parent="World/Terrain" unique_id=1079540909]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 205, 57.05, 0)
-
-[node name="Curb_North" type="CollisionShape3D" parent="World/Terrain/PlazaCurbs" unique_id=1927487250]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.55, -51.35)
-shape = SubResource("shape_plaza_curb_ns")
-
-[node name="Curb_South" type="CollisionShape3D" parent="World/Terrain/PlazaCurbs" unique_id=1927487251]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.55, 51.35)
-shape = SubResource("shape_plaza_curb_ns")
-
-[node name="Curb_East" type="CollisionShape3D" parent="World/Terrain/PlazaCurbs" unique_id=1927487253]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 51.35, 1.55, 0)
-shape = SubResource("shape_plaza_curb_ew")
+[node name="ParkingLine_H3" type="MeshInstance3D" parent="World/Terrain/Turnaround_Apron" unique_id=1607811445]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10.145569, -0.9355469, 8)
+mesh = SubResource("mesh_parking_line_h")
 
 [node name="PuijoTowerAnchor" type="Node3D" parent="World/Terrain" unique_id=787188931]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 212, 58.2, 0)
+transform = Transform3D(0.7, 0, 0, 0, 0.7, 0, 0, 0, 0.7, 303.01364, 68.638374, -43.686558)
+
+[node name="puijontorni" parent="World/Terrain/PuijoTowerAnchor" unique_id=786557260 instance=ExtResource("1_bg4p3")]
+transform = Transform3D(200, 0, 0, 0, 200, 0, 0, 0, 200, 0, 95.27566, -27.271515)
 
 [node name="PlayBounds" type="StaticBody3D" parent="World/Terrain" unique_id=2000000001]
 
 [node name="SafetyFloor" type="CollisionShape3D" parent="World/Terrain/PlayBounds" unique_id=2000000010]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 108, -9, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 236.94438, 59.283493, -0.7770691)
 shape = SubResource("shape_bounds_floor")
 
 [node name="Wall_PosZ" type="CollisionShape3D" parent="World/Terrain/PlayBounds" unique_id=2000000011]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 108, 38, 7.65)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 67.97775, 34.122074, 7.5960183)
 shape = SubResource("shape_bounds_wall_ns")
 
 [node name="Wall_NegZ" type="CollisionShape3D" parent="World/Terrain/PlayBounds" unique_id=2000000012]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 108, 38, -7.65)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 69.04186, 38, -7.65)
 shape = SubResource("shape_bounds_wall_ns")
 
 [node name="Wall_Start" type="CollisionShape3D" parent="World/Terrain/PlayBounds" unique_id=2000000013]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -27, 38, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -22.77093, -2.9804153, 0)
 shape = SubResource("shape_bounds_wall_start")
 
-[node name="Wall_End" type="CollisionShape3D" parent="World/Terrain/PlayBounds" unique_id=2000000014]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 302, 38, 0)
-shape = SubResource("shape_bounds_wall_ew")
+[node name="Wall_Apron_North" type="CollisionShape3D" parent="World/Terrain/PlayBounds" unique_id=631709643]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 238.2, 83.5, 88.74035)
+shape = SubResource("shape_apron_wall_ns")
+
+[node name="Wall_Apron_South" type="CollisionShape3D" parent="World/Terrain/PlayBounds" unique_id=750215870]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 238.2, 83.5, -88.14474)
+shape = SubResource("shape_apron_wall_ns")
+
+[node name="Wall_Apron_West" type="CollisionShape3D" parent="World/Terrain/PlayBounds" unique_id=750215871]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 149.4, 83.5, 48.86393)
+shape = SubResource("BoxShape3D_oxxpa")
+
+[node name="Wall_Apron_West2" type="CollisionShape3D" parent="World/Terrain/PlayBounds" unique_id=1331407807]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 149.4, 83.5, -46.099594)
+shape = SubResource("BoxShape3D_y5tu5")
+
+[node name="Wall_Apron_East" type="CollisionShape3D" parent="World/Terrain/PlayBounds" unique_id=750215872]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 326.8, 83.5, 0.86258507)
+shape = SubResource("shape_apron_wall_ew")
 
 [node name="Triggers" type="Node3D" parent="World" unique_id=1593003844]
 
@@ -471,16 +295,16 @@ shape = SubResource("shape_exit")
 mesh = SubResource("mesh_exit")
 
 [node name="Player" parent="World" unique_id=1591641244 instance=ExtResource("2_player")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 1.86, 0)
-DepthClampMin = -5.25
-DepthClampMax = 5.25
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 3.22, 0)
+DepthClampMin = -115.0
+DepthClampMax = 115.0
 
 [node name="Camera3D" type="Camera3D" parent="World" unique_id=126248754]
-transform = Transform3D(1, 0, 0, 0, 0.9848, 0.1736, 0, -0.1736, 0.9848, 0, 3, 12)
+transform = Transform3D(1, 0, 0, 0, 0.9848158, 0.17360279, 0, -0.17360279, 0.9848158, 0, 3, 12)
+far = 380.0
 script = ExtResource("1_camfollow")
 PlayerPath = NodePath("../Player")
-FollowSpeed = 4.0
-Offset = Vector3(2, 3.5, 12)
+FollowSpeed = 12.0
 
 [node name="HUD" parent="World" unique_id=1870840016 instance=ExtResource("3_hud")]
 
@@ -494,13 +318,17 @@ CommonTree5 = ExtResource("7_1xt21")
 TotalTrees = 780
 XMinMax = Vector2(-40, 278)
 ZMinMax = Vector2(-36, -5.35)
-BaseHeight = -0.22
+ExcludeRectEnabled = true
+ExcludeRectMinXZ = Vector2(142, -45)
+ExcludeRectMaxXZ = Vector2(338, 12)
+BaseHeight = -0.38
 HeightAlongX = 0.34
-HeightJitter = 0.85
+HeightJitter = 0.32
 UseRampRoadSurfaceY = true
-ApronRoadTopWorldY = 57.85
-BlendToApronStartX = 132
-BlendToApronEndX = 168
+ApronRoadTopWorldY = 63.15
+BlendToApronStartX = 158.0
+BlendToApronEndX = 198.0
+ClampRampAlongMaxLx = true
 ScaleMinMax = Vector2(0.72, 1.35)
 RandomSeed = 20250324
 TotalGroundProps = 200
@@ -510,4 +338,4 @@ GroundProp3 = ExtResource("15_rock3")
 GroundProp4 = ExtResource("16_bush")
 PropsZMinMax = Vector2(-14, -5.1)
 PropsScaleMinMax = Vector2(0.4, 1.05)
-PropsHeightJitter = 0.4
+PropsHeightJitter = 0.22

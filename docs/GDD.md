@@ -1,7 +1,7 @@
 # 📋 Game Design Document (GDD)
 
 **Projekti:** Game Over  
-**Versio:** 0.2 — Päivitetty asiakaspalaverin jälkeen  
+**Versio:** 0.2 — Päivitetty asiakaspalaverin jälkeen  / 0.3 päivitetty uusien ideoiden myötä
 **Päivämäärä:** 2025  
 **Tekijä:** Joonas Eskelinen  
 **Asiakas:** Pelihuone GameOver  
@@ -42,17 +42,16 @@
 |---|---|
 | Liiku | Vasen tatti |
 | Hyppy | ✕ (Cross) — yksinkertainen + ketjuhyppy |
-| Kyykky | □ (Neliö) |
-| Miekka (perusase) | L2 |
-| Kilpi (puolustus) | R2 |
-| Ota joystick käteen | kolmio |
+| Miekka (perusase) | R2 |
+| Kilpi (puolustus) | L2 |
+| aktivoi eri tilat (normaali/miekka+kilpi/joystick erikoisaseille) | kolmio |
 | Erikoisaseen ohjaus | Joystick aktivoituna |
 
 **Taistelusysteemi:**
 - **Perusase:** Miekka + kilpi — lähitaistelu ja puolustus
 - **Erikoisasejärjestelmä:** Painamalla ○ hahmo ottaa käteen "joystickin", jolla ohjataan erikoisaseita (esim. drone). Erikoisaseen painikkeet aktivoituvat joystickin kanssa.
 
-**Co-op erikoisase:**
+**Co-op erikoisase (ehkä myöhemmin):**
 - Toinen pelaaja puolustaa kilpivihollisista erikoisaseen aktivoinnin aikana
 - Yksinpelissä: kilpi nousee automaattisesti tietyksi ajaksi erikoisaseen käytön aikana (tarkennetaan)
 
@@ -86,8 +85,8 @@ Jokaisen maailman loppuvihollisen (boss) voittamisen jälkeen pelaaja saa uuden 
 ### 2.5 Tasomekanikat
 
 - Tarkistuspisteet (checkpoints) — lippu/maalilinja
-- Liikkuvat alustat
-- Vaara-alueet: piikki, syvyys + lisää myöhemmin
+- Vaara-alueet: viholliset
+- Loppuvastus joka kentässä
 - [Lisää selventyy kehityksen myötä]
 
 ---
@@ -103,7 +102,7 @@ Maailma 1: Metsä
   └── Taso 1-3: Bonus / salainen taso
   └── Taso 1-BOSS: Pomovihollinen → palkinto: 1. erikoisase (Drone)
 
-Maailma 2: Luola
+Maailma 4: Metsä
   └── [Rakenne selventyy]
 
 Maailma 3: Futuristinen pelimaailma
@@ -119,10 +118,10 @@ Maailma 4: [Myöhemmin]
 
 | Maailma | Teema | Väripaletti | Erikoisuus |
 |---|---|---|---|
-| 1 | Metsä | Vihreä, kulta | Parallax puustot, luonnonvalo |
-| 2 | Luola | Tumma, sininen | Kimaltelevat kristallit, pistemäinen valo |
+| 2 | Metsä | Vihreä, kulta | Parallax puustot, luonnonvalo |
 | 3 | Futuristinen pelimaailma | Neon, tumma | Sci-fi elementit, hologrammit |
-| 4 | [Myöhemmin] | | |
+| 4 | Luola | Tumma, sininen | Kimaltelevat kristallit, pistemäinen valo |
+| 5 | [Myöhemmin] | | |
 
 ---
 
@@ -203,10 +202,9 @@ Maailma 4: [Myöhemmin]
 - [ ] Hahmon tarkempi ulkonäkö ja taustatarina?
 - [ ] Juoni / narratiivi — onko tarinaa vai pelkkiä tasoja?
 - [x] Boss-vihollisia → **Kyllä, yksi per maailma**
-- [x] Co-op → **Kyllä, paikallinen 2 pelaajaa**
+- [x] Co-op → **Ehkä myöhemmin**
 - [ ] Maailmojen lopullinen määrä?
 - [ ] Keräilyt ja power-upit — mitä haluaa peliin?
-- [ ] Steam-saavutukset?
 - [x] DualSense haptinen palaute → **Ehkä, tutkitaan**
 - [ ] Erikoisaseiden tarkemmat ideat (boss 2, boss 3...)?
 - [ ] Kenttävalikon minimaailman visuaalinen idea tarkemmin?

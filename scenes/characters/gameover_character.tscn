@@ -1,5 +1,57 @@
 [gd_scene format=3 uid="uid://cq8itp0wt5535"]
 
 [ext_resource type="PackedScene" uid="uid://cq0xduml6k3x4" path="res://assets/models/animations/idle.fbx" id="1_pcrxv"]
+[ext_resource type="PackedScene" uid="uid://8jguhyu4ucxu" path="res://assets/models/animations/Sword And Shield SlashLyonti2.fbx" id="2_imb8q"]
 
 [node name="gameover_character" unique_id=889978002 instance=ExtResource("1_pcrxv")]
+
+[node name="Skeleton3D" parent="." index="0" unique_id=2008290206]
+bones/0/position = Vector3(-0.00024351806, 0.45621023, 0.0004992187)
+bones/0/rotation = Quaternion(-0.01170621, 0.009112193, -0.0011766976, 0.9998894)
+bones/1/rotation = Quaternion(0.0014098771, -0.05141827, -0.008148163, 0.998643)
+bones/2/rotation = Quaternion(0.008682597, -0.014332428, -0.0024537595, 0.9998566)
+bones/3/rotation = Quaternion(0.008698772, -0.0143449865, -0.0022994524, 0.99985665)
+bones/4/rotation = Quaternion(0.054386444, 0.003982088, 0.008463845, 0.9984762)
+bones/5/rotation = Quaternion(-0.10890122, 0.09020799, 0.00041150083, 0.98995095)
+bones/7/rotation = Quaternion(-0.5312223, -0.46613353, 0.624253, -0.33291247)
+bones/8/rotation = Quaternion(0.3697803, 0.2179373, 0.15866224, 0.8891526)
+bones/9/rotation = Quaternion(0.01795234, -0.0016325072, 0.18873866, 0.98186195)
+bones/10/rotation = Quaternion(-0.03515159, 0.07301919, 0.077952676, 0.99365795)
+bones/11/rotation = Quaternion(0.09400037, -0.021975543, 0.25501144, 0.9621072)
+bones/12/rotation = Quaternion(0.0685175, -0.15052673, -0.1997639, 0.96578544)
+bones/13/rotation = Quaternion(-0.13046888, -0.058851175, -0.0893728, 0.98566073)
+bones/15/rotation = Quaternion(0.036976676, -0.000110551366, -0.032409094, 0.9987905)
+bones/16/rotation = Quaternion(0.17531887, 9.888847e-05, -0.019419545, 0.9843202)
+bones/17/rotation = Quaternion(0.19260433, -0.00014086443, -0.020660702, 0.9810591)
+bones/19/rotation = Quaternion(0.027675912, -0.0017855542, -0.039496254, 0.9988348)
+bones/20/rotation = Quaternion(0.31426665, 0.00038362195, -0.037171308, 0.9486068)
+bones/21/rotation = Quaternion(0.3144027, -0.00029923607, -0.034749918, 0.94865346)
+bones/23/rotation = Quaternion(0.12469221, -0.017498778, -0.07580371, 0.98914087)
+bones/24/rotation = Quaternion(0.2984124, 0.00061288243, -0.050156128, 0.9531181)
+bones/25/rotation = Quaternion(0.29841045, 0.0006527524, -0.042328727, 0.95349836)
+bones/27/rotation = Quaternion(0.63548076, -0.3687883, 0.537444, 0.4139002)
+bones/28/rotation = Quaternion(0.39194623, 0.008750136, 0.07162768, 0.91715384)
+bones/29/rotation = Quaternion(0.036864202, 0.0016378383, -0.21596327, 0.97570395)
+bones/30/rotation = Quaternion(0.07981732, -0.12125466, -0.092121415, 0.9851092)
+bones/31/rotation = Quaternion(0.10707156, 0.108368434, -0.2615164, 0.95310086)
+bones/32/rotation = Quaternion(0.01677057, 0.15340608, 0.18205674, 0.9711029)
+bones/33/rotation = Quaternion(-0.14625189, 0.058797438, 0.15814397, 0.97475326)
+bones/35/rotation = Quaternion(0.017685963, 0.0005998803, 0.02560141, 0.99951565)
+bones/36/rotation = Quaternion(0.17593645, -3.1970325e-05, 0.013239392, 0.9843125)
+bones/37/rotation = Quaternion(0.1932812, 6.138551e-05, 0.014461391, 0.98103684)
+bones/39/rotation = Quaternion(0.009368123, -0.0005499563, 0.024498573, 0.99965584)
+bones/40/rotation = Quaternion(0.3580796, 6.034528e-05, 0.027034385, 0.9332996)
+bones/41/rotation = Quaternion(0.35807905, -0.00011244923, 0.026975358, 0.93330157)
+bones/43/rotation = Quaternion(0.111194424, -0.0004418351, 0.03210854, 0.9932798)
+bones/44/rotation = Quaternion(0.35820073, 3.109337e-05, 0.02479045, 0.9333154)
+bones/45/rotation = Quaternion(0.3582013, 1.3528626e-06, 0.025488554, 0.9332965)
+bones/47/rotation = Quaternion(0.12281479, 0.014773413, 0.98936105, -0.076570354)
+bones/48/rotation = Quaternion(-0.09079535, 0.016552353, -0.011761616, 0.99566257)
+bones/49/rotation = Quaternion(0.49967042, 0.05745805, 0.006433862, 0.8642839)
+bones/50/rotation = Quaternion(0.32932225, -0.08980865, 0.028749553, 0.9394971)
+bones/52/rotation = Quaternion(-0.08556466, 0.05304576, 0.9941377, 0.039435077)
+bones/53/rotation = Quaternion(-0.14985284, 0.011680412, -0.02335915, 0.9883634)
+bones/54/rotation = Quaternion(0.51148, 0.038516417, -0.06582354, 0.8559043)
+bones/55/rotation = Quaternion(0.3249647, 0.084994264, -0.027305976, 0.9415033)
+
+[node name="Sword And Shield SlashLyonti2" parent="AnimationPlayer" parent_id_path=PackedInt32Array(878486279) index="0" unique_id=1390661736 instance=ExtResource("2_imb8q")]
