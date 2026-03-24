@@ -1,0 +1,17 @@
+---
+description: Raspberry Pi 5 8GB min-spec / deployment target — performance and portability
+alwaysApply: true
+---
+
+# Raspberry Pi 5 (8 GB) ‑tavoite
+
+Peli pyritään pitämään **ajettavana Raspberry Pi 5:llä (8 GB)** osana min-spec / kotikonsoli‑tavoitetta. Oleta aina **heikko integroitu GPU** ja **ei työpöytäluokan** CPU:ta.
+
+## Kehityksessä pidä mielessä
+
+- **Instanssit / draw callit:** tuhannet erilliset 3D‑nodet (metsä, propsit) ovat riski. Suosi **vähemmän instansseja**, **MultiMesh** tai LOD, tai **laatupresetti** (esim. `PiLow` / `Desktop`) joka laskee `TotalTrees` / `TotalGroundProps` ja varjoja.
+- **Varjot ja valaistus:** kevennä Pi‑buildissä (vähemmän varjoja, yksinkertaisemmat materiaalit, matalampi resoluutio / render scale).
+- **.NET / Godot:** tuotanto‑export vaatii **linux-arm64** ‑yhteensopivan Godot‑ ja .NET‑ketjun; testaa build oikealla laitteella tai vastaavalla ARM‑ympäristöllä ennen julkaisua.
+- **Uudet ominaisuudet:** lisää raskaita efektejä vain **optioina** tai presetin takana; älä oleta että “toimii PC:llä” riittää.
+
+Kun lisäät tasolle paljon meshejä, shader‑efektejä tai fysiikkaa, **mainitse diffissä Pi‑vaikutus** tai lisää säätö Inspectorin kautta.

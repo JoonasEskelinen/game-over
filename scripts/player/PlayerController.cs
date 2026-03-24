@@ -13,6 +13,8 @@ public partial class PlayerController : CharacterBody3D
 	[Export] public float DepthClampMax = 1.75f;
 	/// <summary>Ohjain: GetAxis(move_back, move_forward). +1 → negatiivinen Z (kauemmas kamerasta).</summary>
 	[Export] public float DepthInputSign = -1f;
+	/// <summary>0 = välitön kääntyminen. Isompi arvo = pehmeämpi pyörähdys (XZ-liikesuunta).</summary>
+	[Export] public float FacingSmoothing { get; set; } = 16f;
 	// Säädä tätä arvoa kunnes ponnistus täsmää animaatioon (sekunteina)
 	[Export] public float JumpWindupTime = 0.35f;
 
@@ -26,9 +28,9 @@ public partial class PlayerController : CharacterBody3D
 	private HealthComponent _healthComponent;
 	private bool _isAttacking = false;
 	private bool _isBlocking = false;
-	private float _lastDirection = 1.0f;
 	private bool _isWindingUp = false;
 	private float _jumpTimer = 0f;
+	private float _facingYaw;
 
 	public override void _Ready()
 	{
@@ -40,6 +42,8 @@ public partial class PlayerController : CharacterBody3D
 		_healthComponent = GetNode<HealthComponent>("HealthComponent");
 		_healthComponent.HealthChanged += OnHealthChanged;
 		_healthComponent.PlayerDied += OnPlayerDied;
+
+		_facingYaw = _characterModel.Rotation.Y;
 
 		_animationPlayer = _characterModel.FindChild("AnimationPlayer", true, false) as AnimationPlayer;
 		if (_animationPlayer != null)
@@ -172,14 +176,20 @@ public partial class PlayerController : CharacterBody3D
 		if (IsOnFloor() && !_isWindingUp && velocity.Y < JumpVelocity * 0.25f)
 			velocity.Y = wish.Y;
 
-		float direction = dirX;
-
-		// Kääntyminen (sivuprofiili: vain vasen/oikea)
-		if (direction > 0) _lastDirection = 1.0f;
-		else if (direction < 0) _lastDirection = -1.0f;
-
-		float yaw = _lastDirection > 0 ? Mathf.DegToRad(90) : Mathf.DegToRad(-90);
-		_characterModel.Rotation = new Vector3(0, yaw, 0);
+		// Kääntyminen: täysi 360° liikkeen suuntaan XZ-tasossa (esim. kameraan päin = +Z / -Z riippuen inputista).
+		Vector3 wishHorizontal = new(wish.X, 0f, wish.Z);
+		if (wishHorizontal.LengthSquared() > 1e-5f)
+		{
+			var dir = wishHorizontal.Normalized();
+			// Mixamo / lapsi-malli: etenemissuunta vastakkaisena kuin Godot LookingAt(-Z).
+			var targetYaw = Basis.LookingAt(-dir, Vector3.Up).GetEuler(EulerOrder.Yxz).Y;
+			float dt = (float)delta;
+			if (FacingSmoothing <= 0.01f)
+				_facingYaw = targetYaw;
+			else
+				_facingYaw = Mathf.LerpAngle(_facingYaw, targetYaw, 1f - Mathf.Exp(-FacingSmoothing * dt));
+			_characterModel.Rotation = new Vector3(0f, _facingYaw, 0f);
+		}
 
 		// Liike-animaatiot
 		// Ei päällekirjoiteta hyppy- tai hyökkäysanimaatioita
