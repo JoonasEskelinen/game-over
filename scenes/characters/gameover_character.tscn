@@ -2,6 +2,8 @@
 
 [ext_resource type="PackedScene" uid="uid://cq0xduml6k3x4" path="res://assets/models/animations/idle.fbx" id="1_pcrxv"]
 [ext_resource type="PackedScene" uid="uid://8jguhyu4ucxu" path="res://assets/models/animations/Sword And Shield SlashLyonti2.fbx" id="2_imb8q"]
+[ext_resource type="PackedScene" uid="uid://dm6pb2ck175rv" path="res://assets/models/miekka.glb" id="2_k1lq6"]
+[ext_resource type="PackedScene" uid="uid://bpyqp2ctgr8r6" path="res://assets/models/kilpi.glb" id="3_ik4wp"]
 
 [node name="gameover_character" unique_id=889978002 instance=ExtResource("1_pcrxv")]
 
@@ -53,5 +55,21 @@ bones/52/rotation = Quaternion(-0.08556466, 0.05304576, 0.9941377, 0.039435077)
 bones/53/rotation = Quaternion(-0.14985284, 0.011680412, -0.02335915, 0.9883634)
 bones/54/rotation = Quaternion(0.51148, 0.038516417, -0.06582354, 0.8559043)
 bones/55/rotation = Quaternion(0.3249647, 0.084994264, -0.027305976, 0.9415033)
+
+[node name="SwordAttachment" type="BoneAttachment3D" parent="Skeleton3D" index="1" unique_id=854360156]
+transform = Transform3D(0.31794167, -0.13203329, 0.9388718, 0.37533304, -0.8918286, -0.2525214, 0.8706538, 0.43267658, -0.23399301, -0.15339826, 0.48810053, -0.006162271)
+bone_name = "mixamorig_RightHand"
+bone_idx = 30
+
+[node name="miekka" parent="Skeleton3D/SwordAttachment" index="0" unique_id=1127663956 instance=ExtResource("2_k1lq6")]
+transform = Transform3D(0.7000003, -1.4901161e-07, -5.9604645e-08, -2.9802322e-08, 0.70000017, 2.2351742e-08, 2.9802322e-08, 2.2351742e-08, 0.7, -0.028982759, 0.3396346, 0.03664933)
+
+[node name="ShieldAttachment" type="BoneAttachment3D" parent="Skeleton3D" index="2" unique_id=1372423152]
+transform = Transform3D(0.67816746, 0.10229483, -0.72775304, -0.28212032, -0.8781543, -0.38633335, -0.6785993, 0.46731263, -0.56667614, 0.1395002, 0.5124088, 0.005710313)
+bone_name = "mixamorig_LeftHand"
+bone_idx = 10
+
+[node name="kilpi" parent="Skeleton3D/ShieldAttachment" index="0" unique_id=584658845 instance=ExtResource("3_ik4wp")]
+transform = Transform3D(-0.11208005, -0.29263484, -0.5116669, 0.4443394, -0.38416794, 0.12238303, -0.38729927, -0.3560617, 0.2884779, 0.19627582, 0.29111594, 0.09594439)
 
 [node name="Sword And Shield SlashLyonti2" parent="AnimationPlayer" parent_id_path=PackedInt32Array(878486279) index="0" unique_id=1390661736 instance=ExtResource("2_imb8q")]

@@ -1,5 +1,5 @@
 using Godot;
-
+ 
 public partial class PlayerController : CharacterBody3D
 {
 	/// <summary>Kävelynopeus (miekka+kilpi kävely). Juoksu normaalitilassa käyttää RunSpeed.</summary>
@@ -17,11 +17,11 @@ public partial class PlayerController : CharacterBody3D
 	[Export] public float FacingSmoothing { get; set; } = 16f;
 	// Säädä tätä arvoa kunnes ponnistus täsmää animaatioon (sekunteina)
 	[Export] public float JumpWindupTime = 0.35f;
-
+ 
 	// Ase-tila: Normal = ei asetta, SwordShield = miekka+kilpi, Sitting = istuminen/drone
 	private enum WeaponState { Normal, SwordShield, Sitting }
 	private WeaponState _weaponState = WeaponState.Normal;
-
+ 
 	private MeshInstance3D _mesh;
 	private Node3D _characterModel;
 	private AnimationPlayer _animationPlayer;
@@ -32,20 +32,24 @@ public partial class PlayerController : CharacterBody3D
 	private float _jumpTimer = 0f;
 	private float _facingYaw;
 	private int _attackDamage = 1;
-
+ 
+	// Miekka ja kilpi — haetaan _Ready():ssä
+	private Node3D _sword;
+	private Node3D _shield;
+ 
 	public override void _Ready()
 	{
 		FloorSnapLength = 0.18f;
 		FloorMaxAngle = Mathf.DegToRad(50f);
-
+ 
 		_mesh = GetNode<MeshInstance3D>("MeshInstance3D");
 		_characterModel = GetNode<Node3D>("gameover_character");
 		_healthComponent = GetNode<HealthComponent>("HealthComponent");
 		_healthComponent.HealthChanged += OnHealthChanged;
 		_healthComponent.PlayerDied += OnPlayerDied;
-
+ 
 		_facingYaw = _characterModel.Rotation.Y;
-
+ 
 		_animationPlayer = _characterModel.FindChild("AnimationPlayer", true, false) as AnimationPlayer;
 		if (_animationPlayer != null)
 		{
@@ -59,11 +63,20 @@ public partial class PlayerController : CharacterBody3D
 			LoadAnim("res://assets/models/animations/Sword And Shield Run.fbx",               "mixamo_com", "mixamo_com_008");
 			LoadAnim("res://assets/models/animations/Sword And Shield SlashLyonti2.fbx",	  "mixamo_com", "mixamo_com_010");
 			LoadAnim("res://assets/models/animations/Sword And Shield Walk.fbx",              "mixamo_com", "mixamo_com_009");
-
+ 
 			_animationPlayer.AnimationFinished += OnAnimationFinished;
 			PlayAnim("mixamo_com");
 		}
-
+ 
+		// Hae miekka ja kilpi — polku: gameover_character/Skeleton3D/SwordAttachment ja ShieldAttachment
+		// Jos GetNode heittää virheen, tarkista scene-puusta että nimet täsmäävät
+		_sword = GetNodeOrNull<Node3D>("gameover_character/Skeleton3D/SwordAttachment");
+		_shield = GetNodeOrNull<Node3D>("gameover_character/Skeleton3D/ShieldAttachment");
+ 
+		// Piilotetaan oletuksena — näkyvät vasta SwordShield-tilassa
+		if (_sword != null) _sword.Visible = false;
+		if (_shield != null) _shield.Visible = false;
+ 
 		bool firstMeshFound = false;
 		foreach (Node armature in _characterModel.GetChildren())
 		{
@@ -90,17 +103,17 @@ public partial class PlayerController : CharacterBody3D
 			}
 		}
 	}
-
+ 
 	public override void _PhysicsProcess(double delta)
 	{
 		Vector3 velocity = Velocity;
-
+ 
 		if (!IsOnFloor())
 			velocity.Y -= Gravity * (float)delta;
-
+ 
 		// Hyppy — vain normaalitilassa tai miekka+kilpi-tilassa
 		bool canJump = _weaponState != WeaponState.Sitting;
-
+ 
 		// Laske viiveajastin — laukaisee hypyn ponnistuksen jälkeen
 		if (_isWindingUp)
 		{
@@ -111,14 +124,14 @@ public partial class PlayerController : CharacterBody3D
 				velocity.Y = JumpVelocity;
 			}
 		}
-
+ 
 		if (Input.IsActionJustPressed("jump") && IsOnFloor() && !_isAttacking && !_isBlocking && canJump && !_isWindingUp)
 		{
 			PlayAnim("mixamo_com_001");
 			_isWindingUp = true;
 			_jumpTimer = JumpWindupTime;
 		}
-
+ 
 		// Kolmio: kierrätä ase-tilaa Normal → SwordShield → Sitting → Normal
 		if (Input.IsActionJustPressed("toggle_weapon"))
 		{
@@ -128,22 +141,28 @@ public partial class PlayerController : CharacterBody3D
 			switch (_weaponState)
 			{
 				case WeaponState.Normal:
+					if (_sword != null) _sword.Visible = false;
+					if (_shield != null) _shield.Visible = false;
 					PlayAnim("mixamo_com");
 					break;
 				case WeaponState.SwordShield:
+					if (_sword != null) _sword.Visible = true;
+					if (_shield != null) _shield.Visible = true;
 					PlayAnim("mixamo_com_007");
 					break;
 				case WeaponState.Sitting:
+					if (_sword != null) _sword.Visible = false;
+					if (_shield != null) _shield.Visible = false;
 					PlayAnim("mixamo_com_004");
 					break;
 			}
 		}
-
+ 
 		// Suojaus L2 — vain miekka+kilpi-tilassa
 		_isBlocking = Input.IsActionPressed("block") && _weaponState == WeaponState.SwordShield;
 		if (_isBlocking)
 			PlayAnim("mixamo_com_006");
-
+ 
 		// Lyönti R2 — normaali isku
 		if (Input.IsActionJustPressed("attack") && _weaponState == WeaponState.SwordShield && !_isBlocking)
 		{
@@ -151,7 +170,7 @@ public partial class PlayerController : CharacterBody3D
 			_attackDamage = 1;
 			PlayAnim("mixamo_com_005");
 		}
-
+ 
 		// Lyönti R1 — vahva isku
 		if (Input.IsActionJustPressed("attack_r1") && _weaponState == WeaponState.SwordShield && !_isBlocking)
 		{
@@ -159,19 +178,19 @@ public partial class PlayerController : CharacterBody3D
 			_attackDamage = 3;
 			PlayAnim("mixamo_com_010");
 		}
-
+ 
 		// Liike — istumistilassa tai kilpi pohjassa ei liikuta
 		bool canMove = _weaponState != WeaponState.Sitting && !_isBlocking;
 		float dirX = canMove ? Input.GetAxis("move_left", "move_right") : 0f;
 		float dirZ = 0f;
 		if (canMove && DepthMovementEnabled)
 			dirZ = DepthInputSign * Input.GetAxis("move_back", "move_forward");
-
+ 
 		Vector2 planarInput = new(dirX, dirZ);
 		float moveSpeed = Speed;
 		if (canMove && planarInput.LengthSquared() > 1e-6f && _weaponState == WeaponState.Normal)
 			moveSpeed = RunSpeed;
-
+ 
 		Vector3 wish = Vector3.Zero;
 		if (planarInput.LengthSquared() > 1e-6f)
 		{
@@ -195,21 +214,20 @@ public partial class PlayerController : CharacterBody3D
 				wish = new Vector3(planarInput.X, 0f, planarInput.Y) * moveSpeed;
 			}
 		}
-
+ 
 		if (IsOnFloor() && !_isWindingUp)
 			wish = wish.Slide(GetFloorNormal());
-
+ 
 		velocity.X = wish.X;
 		velocity.Z = wish.Z;
 		if (IsOnFloor() && !_isWindingUp && velocity.Y < JumpVelocity * 0.25f)
 			velocity.Y = wish.Y;
-
-		// Kääntyminen: täysi 360° liikkeen suuntaan XZ-tasossa (esim. kameraan päin = +Z / -Z riippuen inputista).
+ 
+		// Kääntyminen: täysi 360° liikkeen suuntaan XZ-tasossa
 		Vector3 wishHorizontal = new(wish.X, 0f, wish.Z);
 		if (wishHorizontal.LengthSquared() > 1e-5f)
 		{
 			var dir = wishHorizontal.Normalized();
-			// Mixamo / lapsi-malli: etenemissuunta vastakkaisena kuin Godot LookingAt(-Z).
 			var targetYaw = Basis.LookingAt(-dir, Vector3.Up).GetEuler(EulerOrder.Yxz).Y;
 			float dt = (float)delta;
 			if (FacingSmoothing <= 0.01f)
@@ -218,9 +236,8 @@ public partial class PlayerController : CharacterBody3D
 				_facingYaw = Mathf.LerpAngle(_facingYaw, targetYaw, 1f - Mathf.Exp(-FacingSmoothing * dt));
 			_characterModel.Rotation = new Vector3(0f, _facingYaw, 0f);
 		}
-
-		// Liike-animaatiot
-		// Ei päällekirjoiteta hyppy- tai hyökkäysanimaatioita
+ 
+		// Liike-animaatiot — ei päällekirjoiteta hyppy- tai hyökkäysanimaatioita
 		bool jumpPlaying = _animationPlayer?.CurrentAnimation == "mixamo_com_001" || _isWindingUp;
 		if (IsOnFloor() && !_isAttacking && !_isBlocking && !jumpPlaying)
 		{
@@ -228,27 +245,24 @@ public partial class PlayerController : CharacterBody3D
 			switch (_weaponState)
 			{
 				case WeaponState.SwordShield:
-					// Miekka+kilpi: kävely tai idle (miekka+kilpi kävelyllä on oma animaatio)
 					target = planarInput.LengthSquared() > 0.01f ? "mixamo_com_009" : "mixamo_com_007";
 					break;
 				case WeaponState.Sitting:
-					// Istuminen: aina istumisanimaatio
 					target = "mixamo_com_004";
 					break;
 				default:
-					// Normaali: juoksu tai idle (myös syvyys Z)
 					target = planarInput.LengthSquared() > 0.01f ? "mixamo_com_003" : "mixamo_com";
 					break;
 			}
 			PlayAnim(target);
 		}
-
+ 
 		if (Input.IsActionJustPressed("test_damage"))
 			_healthComponent.TakeDamage(1);
-
+ 
 		Velocity = velocity;
 		MoveAndSlide();
-
+ 
 		if (DepthMovementEnabled)
 		{
 			Vector3 p = GlobalPosition;
@@ -256,7 +270,7 @@ public partial class PlayerController : CharacterBody3D
 			GlobalPosition = p;
 		}
 	}
-
+ 
 	private void LoadAnim(string path, string sourceName, string targetName)
 	{
 		var scene = GD.Load<PackedScene>(path);
@@ -273,7 +287,7 @@ public partial class PlayerController : CharacterBody3D
 			inst.QueueFree();
 			return;
 		}
-
+ 
 		Animation anim = null;
 		foreach (var name in new[] { sourceName, sourceName.Replace("_", ".") })
 		{
@@ -283,7 +297,7 @@ public partial class PlayerController : CharacterBody3D
 				break;
 			}
 		}
-
+ 
 		if (anim == null)
 		{
 			GD.PrintErr($"Animaatiota '{sourceName}' ei löydy: {path}");
@@ -291,7 +305,7 @@ public partial class PlayerController : CharacterBody3D
 			inst.QueueFree();
 			return;
 		}
-
+ 
 		AnimationLibrary lib;
 		if (_animationPlayer.HasAnimationLibrary(""))
 			lib = _animationPlayer.GetAnimationLibrary("");
@@ -300,31 +314,31 @@ public partial class PlayerController : CharacterBody3D
 			lib = new AnimationLibrary();
 			_animationPlayer.AddAnimationLibrary("", lib);
 		}
-
+ 
 		if (lib.HasAnimation(targetName))
 			lib.RemoveAnimation(targetName);
 		lib.AddAnimation(targetName, anim);
 		GD.Print($"Ladattu animaatio: {targetName}");
 		inst.QueueFree();
 	}
-
+ 
 	private void PlayAnim(string name)
 	{
 		if (_animationPlayer == null) return;
 		if (_animationPlayer.CurrentAnimation == name) return;
 		_animationPlayer.Play(name);
 	}
-
+ 
 	private void OnAnimationFinished(StringName animName)
 	{
 		if (animName == "mixamo_com_005")
 			_isAttacking = false;
 		if (animName == "mixamo_com_010")
 			_isAttacking = false;
-		if (animName == "mixamo_com_001")	
+		if (animName == "mixamo_com_001")
 			PlayAnim("mixamo_com");
 	}
-
+ 
 	// Respawn — kutsutaan KillZone:sta tai Game Over -tilanteesta
 	public void Respawn(Vector3 position)
 	{
@@ -335,14 +349,16 @@ public partial class PlayerController : CharacterBody3D
 		_isWindingUp = false;
 		_jumpTimer = 0f;
 		_weaponState = WeaponState.Normal;
+		if (_sword != null) _sword.Visible = false;
+		if (_shield != null) _shield.Visible = false;
 		PlayAnim("mixamo_com");
 	}
-
+ 
 	private void OnHealthChanged(int currentHealth, int maxHealth)
 	{
 		GD.Print($"UI päivitys: {currentHealth}/{maxHealth}");
 	}
-
+ 
 	private void OnPlayerDied()
 	{
 		GD.Print("Game Over!");
