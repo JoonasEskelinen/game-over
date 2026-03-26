@@ -16,6 +16,7 @@
 [ext_resource type="PackedScene" uid="uid://b7kc7visyk6cy" path="res://assets/models/nature/FBX/Rock_Medium_2.fbx" id="14_rock2"]
 [ext_resource type="PackedScene" uid="uid://pfapp1145fq6" path="res://assets/models/nature/FBX/Rock_Medium_3.fbx" id="15_rock3"]
 [ext_resource type="PackedScene" uid="uid://i2ox13jpxgen" path="res://assets/models/nature/FBX/Bush_Common.fbx" id="16_bush"]
+[ext_resource type="Script" uid="uid://dq7meshfix001" path="res://scripts/util/MeshTangentFixOnReady.cs" id="17_meshfix"]
 
 [sub_resource type="ProceduralSkyMaterial" id="proc_sky_mat"]
 sky_top_color = Color(0.32, 0.55, 0.92, 1)
@@ -232,6 +233,7 @@ transform = Transform3D(0.7, 0, 0, 0, 0.7, 0, 0, 0, 0.7, 303.01364, 68.638374, -
 
 [node name="puijontorni" parent="World/Terrain/PuijoTowerAnchor" unique_id=786557260 instance=ExtResource("1_bg4p3")]
 transform = Transform3D(200, 0, 0, 0, 200, 0, 0, 0, 200, 0, 95.27566, -27.271515)
+script = ExtResource("17_meshfix")
 
 [node name="PlayBounds" type="StaticBody3D" parent="World/Terrain" unique_id=2000000001]
 

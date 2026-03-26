@@ -9,19 +9,16 @@ public partial class CameraFollow : Camera3D
 	[Export] public float FollowSpeed = 14f;
 	/// <summary>Alkuperäinen etäisyys/suunta ennen ensimmäistä sauvaa (lasketaan yaw/pitch/distance).</summary>
 	[Export] public Vector3 Offset = new(2f, 3.5f, 12f);
-
 	[ExportGroup("Orbit")]
 	[Export] public float PivotHeight = 1.35f;
 	[Export] public float LookSensitivity = 2.35f;
 	[Export] public float MinPitchDeg = -58f;
 	[Export] public float MaxPitchDeg = 78f;
-
 	[ExportGroup("Maahan rajoitus")]
 	[Export] public bool ClampCameraAboveGround = true;
 	[Export] public float MinHeightAboveGround = 0.45f;
 	[Export] public float GroundRaycastUp = 12f;
 	[Export] public float GroundRaycastDown = 320f;
-
 	[ExportGroup("Hiiri (PC)")]
 	[Export] public bool MouseLookEnabled = true;
 	[Export] public float MouseSensitivity = 0.0045f;
@@ -39,7 +36,6 @@ public partial class CameraFollow : Camera3D
 		_player = GetNodeOrNull<Node3D>(PlayerPath);
 		_minPitchRad = Mathf.DegToRad(MinPitchDeg);
 		_maxPitchRad = Mathf.DegToRad(MaxPitchDeg);
-
 		var o = Offset;
 		if (o.LengthSquared() < 0.01f)
 			o = new Vector3(0f, 2f, 10f);
@@ -57,7 +53,6 @@ public partial class CameraFollow : Camera3D
 			return;
 		if (@event is not InputEventMouseMotion mm)
 			return;
-
 		_yaw -= mm.Relative.X * MouseSensitivity;
 		_pitch -= mm.Relative.Y * MouseSensitivity;
 		_pitch = Mathf.Clamp(_pitch, _minPitchRad, _maxPitchRad);
@@ -76,9 +71,9 @@ public partial class CameraFollow : Camera3D
 		_pitch = Mathf.Clamp(_pitch, _minPitchRad, _maxPitchRad);
 
 		var pivot = _player.GlobalPosition + new Vector3(0f, PivotHeight, 0f);
-
 		if (ClampCameraAboveGround)
 			ApplyGroundPitchClamp(pivot);
+
 		float cp = Mathf.Cos(_pitch);
 		var dir = new Vector3(Mathf.Sin(_yaw) * cp, Mathf.Sin(_pitch), Mathf.Cos(_yaw) * cp);
 		if (dir.LengthSquared() < 1e-6f)
@@ -87,6 +82,24 @@ public partial class CameraFollow : Camera3D
 			dir = dir.Normalized();
 
 		Vector3 targetPos = pivot + dir * _distance;
+
+		// --- Seinäläpäisyn esto (wall clipping fix) ---
+		var spaceState = GetWorld3D()?.DirectSpaceState;
+		if (spaceState != null)
+		{
+			var wallQuery = PhysicsRayQueryParameters3D.Create(pivot, targetPos);
+			wallQuery.CollideWithAreas = false;
+			if (_player is CollisionObject3D playerCol)
+				wallQuery.Exclude = new Godot.Collections.Array<Rid> { playerCol.GetRid() };
+			var wallHit = spaceState.IntersectRay(wallQuery);
+			if (wallHit.Count > 0 && wallHit.ContainsKey("position"))
+			{
+				// Pysäytä kamera hieman ennen seinää
+				targetPos = (Vector3)wallHit["position"] + dir * -0.2f;
+			}
+		}
+		// ----------------------------------------------
+
 		float t = Mathf.Clamp(FollowSpeed * dt, 0f, 1f);
 		GlobalPosition = GlobalPosition.Lerp(targetPos, t);
 		LookAt(pivot, Vector3.Up);
@@ -100,18 +113,15 @@ public partial class CameraFollow : Camera3D
 		var space = GetWorld3D()?.DirectSpaceState;
 		if (space == null)
 			return;
-
 		var from = pivot + Vector3.Up * GroundRaycastUp;
 		var to = pivot + Vector3.Down * GroundRaycastDown;
 		var query = PhysicsRayQueryParameters3D.Create(from, to);
 		query.CollideWithAreas = false;
 		if (_player is CollisionObject3D co)
 			query.Exclude = new Godot.Collections.Array<Rid> { co.GetRid() };
-
 		var hit = space.IntersectRay(query);
 		if (hit.Count == 0 || !hit.ContainsKey("position"))
 			return;
-
 		var groundY = ((Vector3)hit["position"]).Y;
 		float minCamY = groundY + MinHeightAboveGround;
 		float k = (minCamY - pivot.Y) / Mathf.Max(_distance, 0.1f);

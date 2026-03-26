@@ -1,3 +1,4 @@
+using System;
 using Godot;
  
 public partial class PlayerController : CharacterBody3D
@@ -36,7 +37,19 @@ public partial class PlayerController : CharacterBody3D
 	// Miekka ja kilpi — haetaan _Ready():ssä
 	private Node3D _sword;
 	private Node3D _shield;
- 
+
+	public bool IsMeleeAttackActive() => _isAttacking;
+	public int GetMeleeAttackDamage() => _attackDamage;
+	public bool IsSwordWeaponMode() => _weaponState == WeaponState.SwordShield;
+
+	/// <summary>Miekan BoneAttachment maailmassa; muuten torsoarvio (vihollisosumat).</summary>
+	public Vector3 GetMeleeHitProbeGlobalPosition()
+	{
+		if (_weaponState == WeaponState.SwordShield && _sword != null)
+			return _sword.GlobalPosition;
+		return GlobalPosition + Vector3.Up * 0.95f;
+	}
+
 	public override void _Ready()
 	{
 		FloorSnapLength = 0.18f;
@@ -76,7 +89,17 @@ public partial class PlayerController : CharacterBody3D
 		// Piilotetaan oletuksena — näkyvät vasta SwordShield-tilassa
 		if (_sword != null) _sword.Visible = false;
 		if (_shield != null) _shield.Visible = false;
- 
+
+		try
+		{
+			MeshTangentFix.ApplyToSubtree(_sword);
+			MeshTangentFix.ApplyToSubtree(_shield);
+		}
+		catch (Exception ex)
+		{
+			GD.PrintErr("MeshTangentFix: " + ex.Message);
+		}
+
 		bool firstMeshFound = false;
 		foreach (Node armature in _characterModel.GetChildren())
 		{

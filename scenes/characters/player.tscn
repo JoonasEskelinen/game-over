@@ -5,6 +5,7 @@
 [ext_resource type="PackedScene" uid="uid://cq8itp0wt5535" path="res://scenes/characters/gameover_character.tscn" id="3_76oj4"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_wocps"]
+height = 1.1098633
 
 [sub_resource type="CapsuleMesh" id="CapsuleMesh_rp718"]
 
@@ -12,9 +13,11 @@
 script = ExtResource("1_rp718")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1116881556]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.0046720505, 0.38989258, 0)
 shape = SubResource("CapsuleShape3D_wocps")
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=1367723426]
+transform = Transform3D(0.7919807, 0, 0.6105461, 0, 1, 0, -0.6105461, 0, 0.7919807, 0, 0, 0)
 visible = false
 mesh = SubResource("CapsuleMesh_rp718")
 
@@ -22,4 +25,4 @@ mesh = SubResource("CapsuleMesh_rp718")
 script = ExtResource("2_yewv4")
 
 [node name="gameover_character" parent="." unique_id=889978002 instance=ExtResource("3_76oj4")]
-transform = Transform3D(-1.3113416e-07, 0, 3, 0, 3, 0, -3, 0, -1.3113416e-07, 0, -0.12, 0)
+transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, 0, -0.068243794, -0.029940426)
