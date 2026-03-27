@@ -67,10 +67,11 @@ public partial class EnemyBasic : CharacterBody3D
 		TryContactDamageFromProximity(player);
 
 		Vector3 enemyHitCenter = GlobalPosition + new Vector3(0f, HitCenterYOffset, 0f);
-		float dist = enemyHitCenter.DistanceTo(player.GetMeleeHitProbeGlobalPosition());
+		float dist = player.GetMeleeHitDistanceToPoint(enemyHitCenter);
 		if (_meleeCd <= 0f
 			&& player.IsSwordWeaponMode()
 			&& player.IsMeleeAttackActive()
+			&& player.IsPointInMeleeHitFacingArc(enemyHitCenter)
 			&& dist < SwordHitRange)
 		{
 			TakeDamage(Mathf.Max(1, player.GetMeleeAttackDamage()));

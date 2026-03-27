@@ -5,10 +5,9 @@ using Godot;
 // Myöhemmin tähän lisätään muut UI-elementit kuten tason nimi ja erikoisaseet.
 public partial class HUDController : CanvasLayer
 {
-	// Viittaus HealthBar-nodeen — päivitetään kun pelaaja ottaa vahinkoa
 	private ProgressBar _healthBar;
+	private ProgressBar _heavyAttackBar;
 
-	// Viittaus pelaajaan — tarvitaan HealthComponentin signaalien kuunteluun
 	private PlayerController _player;
 
 	// _Ready ajetaan kun HUD ladataan sceneen
@@ -16,6 +15,7 @@ public partial class HUDController : CanvasLayer
 	{
 		// Haetaan HealthBar-node HUD:in lapsista nimellä
 		_healthBar = GetNode<ProgressBar>("HealthBar");
+		_heavyAttackBar = GetNodeOrNull<ProgressBar>("HeavyAttackCooldownBar");
 
 		// Haetaan pelaaja scenetreestä — polku muuttuu myöhemmin jos rakenne muuttuu
 		// GetTree().Root hakee scenen juuresta, sitten etsitään Player-node
@@ -37,6 +37,19 @@ public partial class HUDController : CanvasLayer
 
 		// Alustetaan healthbar oikeaan arvoon heti pelin alussa
 		UpdateHealthBar(healthComponent.GetCurrentHealth(), healthComponent.MaxHealth);
+	}
+
+	public override void _Process(double delta)
+	{
+		if (_player == null || _heavyAttackBar == null) return;
+		if (!_player.ShouldShowHeavyCooldownBar())
+		{
+			_heavyAttackBar.Visible = false;
+			return;
+		}
+
+		_heavyAttackBar.Visible = true;
+		_heavyAttackBar.Value = _player.GetHeavyAttackCooldownFill01() * 100.0;
 	}
 
 	// UpdateHealthBar päivittää healthbarin visuaalisen tilan

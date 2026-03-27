@@ -14,6 +14,9 @@
 [ext_resource type="PackedScene" uid="uid://bi1x2p7ct32b7" path="res://assets/models/arcade/GLB format/cash-register.glb" id="12_7h2jl"]
 [ext_resource type="PackedScene" uid="uid://bg3up26qikmdo" path="res://assets/models/arcade/GLB format/dance-machine.glb" id="13_mqh5v"]
 [ext_resource type="PackedScene" uid="uid://dbmh11fi06fn0" path="res://assets/models/arcade/GLB format/floor.glb" id="14_7o3do"]
+[ext_resource type="Script" uid="uid://cpwh1i4damxbs" path="res://scenes/levels/EnemySpawner.cs" id="15_wtwp4"]
+[ext_resource type="PackedScene" uid="uid://cppxj34ufkxc7" path="res://scenes/enemies/EnemyLevel1.tscn" id="16_iwr0g"]
+[ext_resource type="PackedScene" uid="uid://uh6pto3nrmqe" path="res://scenes/ui/hud.tscn" id="17_bahl2"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_7u6i3"]
 
@@ -88,7 +91,9 @@ environment = SubResource("Environment_6iamk")
 [node name="Sun" type="DirectionalLight3D" parent="." unique_id=700270488]
 transform = Transform3D(0.7071068, 0.5, -0.5, 0, 0.7071068, 0.7071068, 0.7071068, -0.5, 0.5, 0, 2.461134, 0)
 light_color = Color(0.26666668, 0.26666668, 0.6666667, 1)
-light_energy = 7.272
+light_energy = 10.453
+light_indirect_energy = 0.907
+light_volumetric_fog_energy = 1.094
 shadow_enabled = true
 sky_mode = 1
 
@@ -175,6 +180,7 @@ shape = SubResource("BoxShape3D_s8va5")
 
 [node name="Player" parent="." unique_id=1514760592 instance=ExtResource("1_ksju7")]
 transform = Transform3D(1.1, 0, 0, 0, 1.1, 0, 0, 0, 1.1, 0, 0.004, 2.16)
+RunSpeed = 6.0
 DepthClampMin = -14.0
 DepthClampMax = 14.0
 
@@ -238,3 +244,9 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -8.535037, 0.05000019, -4.524
 
 [node name="floor5" parent="." unique_id=1758365075 instance=ExtResource("14_7o3do")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7.529998, 0.05000019, -4.5660887)
+
+[node name="EnemySpawner" type="Node3D" parent="." unique_id=899631862]
+script = ExtResource("15_wtwp4")
+EnemyScene = ExtResource("16_iwr0g")
+
+[node name="HUD" parent="." unique_id=499664610 instance=ExtResource("17_bahl2")]

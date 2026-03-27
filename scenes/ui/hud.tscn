@@ -11,3 +11,19 @@ offset_top = 20.0
 offset_right = 220.0
 offset_bottom = 50.0
 value = 100.0
+
+[node name="HeavyAttackCooldownBar" type="ProgressBar" parent="."]
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -130.0
+offset_right = 130.0
+offset_top = 10.0
+offset_bottom = 26.0
+grow_horizontal = 2
+theme_override_colors/background_color = Color(0.08, 0.09, 0.16, 0.85)
+theme_override_colors/fill_color = Color(0.25, 0.75, 1, 0.95)
+max_value = 100.0
+value = 100.0
+show_percentage = false
+visible = false

@@ -1,82 +1,117 @@
 using Godot;
 
-// HealthComponent on erillinen komponentti joka hallinnoi pelaajan elinvoimaa.
-// Pitämällä health-logiikka erillään PlayerControllerista koodi pysyy siistinä
-// ja samaa komponenttia voi myöhemmin käyttää myös vihollisilla.
 public partial class HealthComponent : Node
 {
-	// MaxHealth määrittää pelaajan maksimielinvoiman.
-	// [Export] tarkoittaa että arvo näkyy ja on muutettavissa Godot-editorissa
-	// ilman että tarvitsee koskea koodiin.
 	[Export] public int MaxHealth = 3;
+	[Export] public int MaxLives = 3;
 
-	// CurrentHealth on pelaajan tämänhetkinen elinvoima.
-	// Se alustetaan MaxHealthin arvoon pelin alussa.
 	private int _currentHealth;
+	private int _currentLives;
 
-	// Signal on Godotin viestijärjestelmä — kun pelaaja ottaa vahinkoa tai kuolee,
-	// tämä komponentti lähettää signaalin jota muut nodet (esim. UI) voivat kuunnella.
-	// Näin HealthComponent ei tarvitse tietää mitään UI:sta — ne ovat erillisiä.
 	[Signal] public delegate void HealthChangedEventHandler(int currentHealth, int maxHealth);
+	[Signal] public delegate void LivesChangedEventHandler(int currentLives, int maxLives);
 	[Signal] public delegate void PlayerDiedEventHandler();
+	[Signal] public delegate void GameOverEventHandler();
 
-	// _Ready ajetaan kun node ladataan sceneen.
-	// Tässä alustetaan elinvoima maksimiin pelin alussa.
 	public override void _Ready()
 	{
+		// Ladataan tallenne jos se on olemassa
+		_currentLives = LoadLives();
 		_currentHealth = MaxHealth;
+
+		EmitSignal(SignalName.HealthChanged, _currentHealth, MaxHealth);
+		EmitSignal(SignalName.LivesChanged, _currentLives, MaxLives);
 	}
 
-	// TakeDamage vähennetään pelaajan elinvoimaa.
-	// amount = kuinka paljon vahinkoa otetaan
 	public void TakeDamage(int amount)
 	{
-		// Vähennetään elinvoimaa
 		_currentHealth -= amount;
-
-		// Varmistetaan että elinvoima ei mene negatiiviseksi
 		_currentHealth = Mathf.Max(_currentHealth, 0);
 
-		// Lähetetään signaali UI:lle että elinvoima muuttui
 		EmitSignal(SignalName.HealthChanged, _currentHealth, MaxHealth);
+		GD.Print($"Vahinkoa: {amount} — HP: {_currentHealth}/{MaxHealth} — Elämät: {_currentLives}");
 
-		GD.Print($"Pelaaja otti {amount} vahinkoa! Elinvoima: {_currentHealth}/{MaxHealth}");
-
-		// Jos elinvoima on 0, pelaaja kuolee
 		if (_currentHealth <= 0)
-		{
 			Die();
+	}
+
+	public void Heal(int amount)
+	{
+		_currentHealth = Mathf.Min(_currentHealth + amount, MaxHealth);
+		EmitSignal(SignalName.HealthChanged, _currentHealth, MaxHealth);
+	}
+
+	public int GetCurrentHealth() => _currentHealth;
+	public int GetCurrentLives() => _currentLives;
+
+	private void Die()
+	{
+		_currentLives--;
+		EmitSignal(SignalName.LivesChanged, _currentLives, MaxLives);
+		GD.Print($"Pelaaja kuoli! Elämät jäljellä: {_currentLives}");
+
+		if (_currentLives <= 0)
+		{
+			// Ei elämää jäljellä — Game Over
+			// Nollataan elämät tallennuksessa
+			SaveLives(MaxLives);
+			GD.Print("GAME OVER!");
+			EmitSignal(SignalName.GameOver);
+		}
+		else
+		{
+			// Elämää jäljellä — respawn
+			_currentHealth = MaxHealth;
+			EmitSignal(SignalName.HealthChanged, _currentHealth, MaxHealth);
+			EmitSignal(SignalName.PlayerDied);
 		}
 	}
 
-	// Heal palauttaa pelaajan elinvoimaa.
-	// amount = kuinka paljon elinvoimaa palautetaan
-	public void Heal(int amount)
+	/// <summary>
+	/// Kutsutaan kun kenttä on läpäisty — tallentaa elämät
+	/// </summary>
+	public void OnLevelCompleted()
 	{
-		// Lisätään elinvoimaa mutta ei ylitetä maksimia
-		_currentHealth = Mathf.Min(_currentHealth + amount, MaxHealth);
+		SaveLives(_currentLives);
+		GD.Print($"Kenttä läpäisty! Tallennettu elämät: {_currentLives}");
+	}
 
-		// Lähetetään signaali UI:lle että elinvoima muuttui
+	/// <summary>
+	/// Palauttaa elämät täyteen (esim. uuden pelin alkaessa)
+	/// </summary>
+	public void ResetLives()
+	{
+		_currentLives = MaxLives;
+		_currentHealth = MaxHealth;
+		SaveLives(MaxLives);
 		EmitSignal(SignalName.HealthChanged, _currentHealth, MaxHealth);
-
-		GD.Print($"Pelaaja parani {amount}! Elinvoima: {_currentHealth}/{MaxHealth}");
+		EmitSignal(SignalName.LivesChanged, _currentLives, MaxLives);
 	}
 
-	// GetCurrentHealth palauttaa nykyisen elinvoiman.
-	// Tätä käytetään kun jokin muu node haluaa tietää pelaajan elinvoiman.
-	public int GetCurrentHealth()
+	// --- Tallennus ---
+
+	private const string SavePath = "user://savegame.cfg";
+	private const string SaveSection = "player";
+	private const string SaveKey = "lives";
+
+	private void SaveLives(int lives)
 	{
-		return _currentHealth;
+		var config = new ConfigFile();
+		config.SetValue(SaveSection, SaveKey, lives);
+		config.Save(SavePath);
+		GD.Print($"Tallennettu elämät: {lives}");
 	}
 
-	// Die käsittelee pelaajan kuoleman.
-	// Tällä hetkellä lähetetään vain signaali — myöhemmin tähän lisätään
-	// kuolemisanimaatio, respawn-logiikka ja game over -näyttö.
-	private void Die()
+	private int LoadLives()
 	{
-		GD.Print("Pelaaja kuoli!");
-
-		// Lähetetään signaali muille nodeille että pelaaja kuoli
-		EmitSignal(SignalName.PlayerDied);
+		var config = new ConfigFile();
+		if (config.Load(SavePath) == Error.Ok)
+		{
+			int saved = (int)config.GetValue(SaveSection, SaveKey, MaxLives);
+			GD.Print($"Ladattu tallennus — elämät: {saved}");
+			return saved;
+		}
+		// Ei tallennetta — aloitetaan täysillä elämillä
+		return MaxLives;
 	}
 }
