@@ -1,0 +1,25 @@
+[remap]
+
+importer="wavefront_obj"
+importer_version=1
+type="Mesh"
+uid="uid://bcwc2ey6k6xih"
+path="res://.godot/imported/air-hockey.obj-90d9de6e9059107619e870018a44cf00.mesh"
+
+[deps]
+
+files=["res://.godot/imported/air-hockey.obj-90d9de6e9059107619e870018a44cf00.mesh"]
+
+source_file="res://assets/models/arcade/OBJ format/air-hockey.obj"
+dest_files=["res://.godot/imported/air-hockey.obj-90d9de6e9059107619e870018a44cf00.mesh", "res://.godot/imported/air-hockey.obj-90d9de6e9059107619e870018a44cf00.mesh"]
+
+[params]
+
+generate_tangents=true
+generate_lods=true
+generate_shadow_mesh=true
+generate_lightmap_uv2=false
+generate_lightmap_uv2_texel_size=0.2
+scale_mesh=Vector3(1, 1, 1)
+offset_mesh=Vector3(0, 0, 0)
+force_disable_mesh_compression=false

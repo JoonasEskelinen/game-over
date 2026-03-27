@@ -73,3 +73,4 @@ bone_idx = 10
 transform = Transform3D(-0.11208005, -0.29263484, -0.5116669, 0.4443394, -0.38416794, 0.12238303, -0.38729927, -0.3560617, 0.2884779, 0.19627582, 0.29111594, 0.09594439)
 
 [node name="Sword And Shield SlashLyonti2" parent="AnimationPlayer" parent_id_path=PackedInt32Array(878486279) index="0" unique_id=1390661736 instance=ExtResource("2_imb8q")]
+visible = false

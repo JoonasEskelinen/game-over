@@ -1,6 +1,6 @@
-[gd_scene format=3 uid="uid://c8enemybasic001"]
+[gd_scene format=3 uid="uid://cppxj34ufkxc7"]
 
-[ext_resource type="Script" path="res://scripts/enemies/EnemyBasic.cs" id="1_enemy"]
+[ext_resource type="Script" uid="uid://0usjbiqa051k" path="res://scripts/enemies/EnemyBasic.cs" id="1_iqmo1"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_en"]
 radius = 0.38
@@ -11,19 +11,19 @@ albedo_color = Color(0.55, 0.12, 0.1, 1)
 roughness = 0.88
 
 [sub_resource type="CapsuleMesh" id="CapsuleMesh_en"]
+material = SubResource("mat_placeholder")
 radius = 0.38
 height = 1.75
-material = SubResource("mat_placeholder")
 
-[node name="EnemyBasic" type="CharacterBody3D"]
+[node name="EnemyBasic" type="CharacterBody3D" unique_id=201369442]
 collision_layer = 2
 collision_mask = 3
-script = ExtResource("1_enemy")
+script = ExtResource("1_iqmo1")
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1311952832]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.875, 0)
 shape = SubResource("CapsuleShape3D_en")
 
-[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
+[node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=1982778572]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.875, 0)
 mesh = SubResource("CapsuleMesh_en")

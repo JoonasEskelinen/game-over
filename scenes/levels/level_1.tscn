@@ -1,8 +1,19 @@
 [gd_scene format=3 uid="uid://cgyddrt75cngk"]
 
 [ext_resource type="PackedScene" uid="uid://vbg00ynsdulu" path="res://scenes/characters/player.tscn" id="1_ksju7"]
-[ext_resource type="PackedScene" uid="uid://dwguurr5s4jnt" path="res://assets/models/nature/glTF/Bush_Common.gltf" id="1_nsrm0"]
+[ext_resource type="Texture2D" uid="uid://bgi2djvntqe4f" path="res://assets/models/arcade/GLB format/Textures/colormap.png" id="1_mm8aj"]
 [ext_resource type="Script" uid="uid://cdno0yakghq2r" path="res://scripts/CameraFollow.cs" id="2_6iamk"]
+[ext_resource type="PackedScene" uid="uid://1xf78ky3rplh" path="res://assets/models/arcade/GLB format/gambling-machine.glb" id="2_wtwp4"]
+[ext_resource type="PackedScene" uid="uid://baxolnjckwfpa" path="res://assets/models/arcade/GLB format/pinball.glb" id="3_iwr0g"]
+[ext_resource type="PackedScene" uid="uid://c2fw452v2jiuy" path="res://assets/models/arcade/GLB format/prize-wheel.glb" id="4_bahl2"]
+[ext_resource type="PackedScene" uid="uid://vkw28m56o8t0" path="res://assets/models/arcade/GLB format/ticket-machine.glb" id="5_np2pn"]
+[ext_resource type="PackedScene" uid="uid://bvk3veg02sla" path="res://assets/models/arcade/GLB format/wall.glb" id="6_v6ha0"]
+[ext_resource type="PackedScene" uid="uid://xskgs3c5lg12" path="res://assets/models/arcade/GLB format/air-hockey.glb" id="9_gmpev"]
+[ext_resource type="PackedScene" uid="uid://c01tows0bq8g8" path="res://assets/models/arcade/GLB format/arcade-machine.glb" id="10_mkypq"]
+[ext_resource type="PackedScene" uid="uid://d4e6qxm7ainkh" path="res://assets/models/arcade/GLB format/basketball-game.glb" id="11_ndtll"]
+[ext_resource type="PackedScene" uid="uid://bi1x2p7ct32b7" path="res://assets/models/arcade/GLB format/cash-register.glb" id="12_7h2jl"]
+[ext_resource type="PackedScene" uid="uid://bg3up26qikmdo" path="res://assets/models/arcade/GLB format/dance-machine.glb" id="13_mqh5v"]
+[ext_resource type="PackedScene" uid="uid://dbmh11fi06fn0" path="res://assets/models/arcade/GLB format/floor.glb" id="14_7o3do"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_7u6i3"]
 
@@ -10,14 +21,29 @@
 sky_material = SubResource("ProceduralSkyMaterial_7u6i3")
 
 [sub_resource type="Environment" id="Environment_6iamk"]
-background_mode = 2
+background_mode = 1
 sky = SubResource("Sky_ksju7")
-ambient_light_source = 3
+ambient_light_source = 2
+ambient_light_color = Color(0.101960786, 0.101960786, 0.22745098, 1)
+ambient_light_energy = 0.8
 fog_enabled = true
-fog_light_color = Color(0.45376462, 0.57431424, 0.6017322, 1)
+fog_light_color = Color(0, 0, 0, 1)
+fog_light_energy = 0.3
 fog_density = 0.05
 
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_o7j4k"]
+albedo_texture = ExtResource("1_mm8aj")
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_6iamk"]
+albedo_color = Color(0.101960786, 0.101960786, 0.18039216, 1)
+metallic = 0.8
+roughness = 0.2
+emission_enabled = true
+emission = Color(0, 0.2, 0.4, 1)
+emission_energy_multiplier = 0.3
+
 [sub_resource type="PlaneMesh" id="PlaneMesh_6iamk"]
+material = SubResource("StandardMaterial3D_6iamk")
 size = Vector2(30, 30)
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_nsrm0"]
@@ -25,6 +51,13 @@ size = Vector3(30, 0.1, 30)
 
 [sub_resource type="BoxMesh" id="BoxMesh_x42e6"]
 size = Vector3(30, 4, 1)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_nsrm0"]
+albedo_color = Color(0.101960786, 0.101960786, 0.18039216, 1)
+metallic = 0.5
+roughness = 0.3
+emission = Color(1, 0, 1, 1)
+emission_energy_multiplier = 0.3
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_6761a"]
 size = Vector3(30, 4, 1)
@@ -54,19 +87,50 @@ environment = SubResource("Environment_6iamk")
 
 [node name="Sun" type="DirectionalLight3D" parent="." unique_id=700270488]
 transform = Transform3D(0.7071068, 0.5, -0.5, 0, 0.7071068, 0.7071068, 0.7071068, -0.5, 0.5, 0, 2.461134, 0)
+light_color = Color(0.26666668, 0.26666668, 0.6666667, 1)
+light_energy = 7.272
 shadow_enabled = true
+sky_mode = 1
 
 [node name="Floor" type="StaticBody3D" parent="." unique_id=818305641]
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="Floor" unique_id=289122995]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.02056241, -0.074846, -0.056413233)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.020649195, -0.07251778, -0.4127571)
+material_override = SubResource("StandardMaterial3D_o7j4k")
 mesh = SubResource("PlaneMesh_6iamk")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Floor" unique_id=785900582]
 shape = SubResource("BoxShape3D_nsrm0")
 
-[node name="Bush_Common2" parent="Floor" unique_id=450180492 instance=ExtResource("1_nsrm0")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.017932177, -0.31712538, 0.36982924)
+[node name="gambling-machine2" parent="Floor" unique_id=1097199532 instance=ExtResource("2_wtwp4")]
+transform = Transform3D(1.5, 0, 0, 0, 1.5, 0, 0, 0, 1.5, -9.136473, -0.022335202, -1.5636635)
+
+[node name="gambling-machine3" parent="Floor" unique_id=309646985 instance=ExtResource("2_wtwp4")]
+transform = Transform3D(1.5, 0, 0, 0, 1.5, 0, 0, 0, 1.5, -7.3587313, -0.05239111, -1.636693)
+
+[node name="gambling-machine4" parent="Floor" unique_id=804911595 instance=ExtResource("2_wtwp4")]
+transform = Transform3D(1.5, 0, 0, 0, 1.5, 0, 0, 0, 1.5, -10.6519575, -0.026687175, -1.5631306)
+
+[node name="pinball2" parent="Floor" unique_id=1566738860 instance=ExtResource("3_iwr0g")]
+transform = Transform3D(-2.4993565, 0, -0.05671811, 0, 2.5, 0, 0.05671811, 0, -2.4993565, 9.330131, 0.05000019, 13.519054)
+
+[node name="pinball3" parent="Floor" unique_id=389439800 instance=ExtResource("3_iwr0g")]
+transform = Transform3D(-2.4993565, 0, -0.05671811, 0, 2.5, 0, 0.05671811, 0, -2.4993565, 5.586643, 0.05142212, 13.477146)
+
+[node name="pinball4" parent="Floor" unique_id=1583446803 instance=ExtResource("3_iwr0g")]
+transform = Transform3D(-2.4993565, 0, -0.05671811, 0, 2.5, 0, 0.05671811, 0, -2.4993565, 1.8417411, 0.05000019, 13.5574)
+
+[node name="prize-wheel2" parent="Floor" unique_id=1555938896 instance=ExtResource("4_bahl2")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.4728622, 0.05000019, 0.45307732)
+
+[node name="ticket-machine2" parent="Floor" unique_id=1139679256 instance=ExtResource("5_np2pn")]
+transform = Transform3D(2, 0, 0, 0, 2, 0, 0, 0, 2, -8.691927, 0.04028687, -5.103322)
+
+[node name="wall2" parent="Floor" unique_id=2081416588 instance=ExtResource("6_v6ha0")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.7973862, 0.05000013, 5.9375954)
+
+[node name="wall3" parent="Floor" unique_id=1401809605 instance=ExtResource("6_v6ha0")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4.142742, 0.0011034012, 6.0338316)
 
 [node name="Wall_N" type="StaticBody3D" parent="." unique_id=26633546]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, -15)
@@ -74,6 +138,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, -15)
 [node name="MeshInstance3D" type="MeshInstance3D" parent="Wall_N" unique_id=821299276]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.032266438, 0, 0)
 mesh = SubResource("BoxMesh_x42e6")
+surface_material_override/0 = SubResource("StandardMaterial3D_nsrm0")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Wall_N" unique_id=519725793]
 shape = SubResource("BoxShape3D_6761a")
@@ -83,6 +148,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 15)
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="Wall_S" unique_id=1981204106]
 mesh = SubResource("BoxMesh_6iamk")
+surface_material_override/0 = SubResource("StandardMaterial3D_nsrm0")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Wall_S" unique_id=298486838]
 shape = SubResource("BoxShape3D_x42e6")
@@ -92,6 +158,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 15, 2, 0)
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="Wall_E" unique_id=682551642]
 mesh = SubResource("BoxMesh_6761a")
+surface_material_override/0 = SubResource("StandardMaterial3D_nsrm0")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Wall_E" unique_id=1851771260]
 shape = SubResource("BoxShape3D_sk5k4")
@@ -101,12 +168,13 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -15, 2, 0)
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="Wall_W" unique_id=1402117325]
 mesh = SubResource("BoxMesh_oc4kc")
+surface_material_override/0 = SubResource("StandardMaterial3D_nsrm0")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Wall_W" unique_id=1967145568]
 shape = SubResource("BoxShape3D_s8va5")
 
 [node name="Player" parent="." unique_id=1514760592 instance=ExtResource("1_ksju7")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 2.015662)
+transform = Transform3D(1.1, 0, 0, 0, 1.1, 0, 0, 0, 1.1, 0, 0.004, 2.16)
 DepthClampMin = -14.0
 DepthClampMax = 14.0
 
@@ -119,3 +187,54 @@ FollowSpeed = 12.0
 Offset = Vector3(2, 2, 4)
 MinPitchDeg = -45.0
 MaxPitchDeg = 45.0
+
+[node name="Neon_pink" type="OmniLight3D" parent="." unique_id=1217758410]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, -14)
+light_color = Color(1, 0, 1, 1)
+light_energy = 5.0
+omni_range = 15.04
+
+[node name="Neon_Blue" type="OmniLight3D" parent="." unique_id=1319435971]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 14)
+light_color = Color(0, 1, 1, 1)
+light_energy = 5.0
+omni_range = 14.609
+
+[node name="Neon_Purple" type="OmniLight3D" parent="." unique_id=224359026]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14, 2.5, 0)
+light_color = Color(0.53333336, 0, 1, 1)
+light_energy = 5.0
+omni_range = 15.169
+
+[node name="Neon_Green" type="OmniLight3D" parent="." unique_id=922847629]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -14, 2.5, 0)
+light_color = Color(0, 1, 0.53333336, 1)
+light_energy = 5.0
+omni_range = 15.169
+
+[node name="air-hockey2" parent="." unique_id=242405273 instance=ExtResource("9_gmpev")]
+transform = Transform3D(2, 0, 0, 0, 2, 0, 0, 0, 2, 1.4441814, -0.06565568, -5.6864243)
+
+[node name="arcade-machine2" parent="." unique_id=822115950 instance=ExtResource("10_mkypq")]
+transform = Transform3D(2, 0, 0, 0, 2, 0, 0, 0, 2, -0.5397968, 0.02799493, -13.879285)
+
+[node name="basketball-game2" parent="." unique_id=292658738 instance=ExtResource("11_ndtll")]
+transform = Transform3D(3, 0, 0, 0, 3, 0, 0, 0, 3, 7.284423, 0.049999952, -13.141411)
+
+[node name="cash-register2" parent="." unique_id=1331345879 instance=ExtResource("12_7h2jl")]
+transform = Transform3D(2, 0, 0, 0, 2, 0, 0, 0, 2, -4.062439, -0.069790065, -5.2910895)
+
+[node name="dance-machine2" parent="." unique_id=1831863263 instance=ExtResource("13_mqh5v")]
+transform = Transform3D(-2.4993565, 0, -0.05671827, 0, 2.5, 0, 0.05671827, 0, -2.4993565, -4.2619376, 0.12601167, 13.116182)
+
+[node name="floor2" parent="." unique_id=808562053 instance=ExtResource("14_7o3do")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7.5339622, 0.050000668, -5.5294065)
+
+[node name="floor3" parent="." unique_id=1875538432 instance=ExtResource("14_7o3do")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -8.510528, 0.05000019, -5.535019)
+
+[node name="floor4" parent="." unique_id=941216791 instance=ExtResource("14_7o3do")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -8.535037, 0.05000019, -4.5249567)
+
+[node name="floor5" parent="." unique_id=1758365075 instance=ExtResource("14_7o3do")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7.529998, 0.05000019, -4.5660887)
