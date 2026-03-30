@@ -101,6 +101,15 @@ public partial class PlayerController : CharacterBody3D
 	/// <summary>Nykyisen hyökkäyksen vahinko. R2 = 1, R1 = 3.</summary>
 	private int _attackDamage = 1;
 
+	/// <summary>
+	/// Miekkalyönnin clip (mixamo_com_005 / _010), asetetaan iskun alussa.
+	/// CurrentAnimation + CurrentAnimationLength voivat blendin ensi frameilla viitata väärään animaatioon → R2-osumaikkuna menee ohi.
+	/// </summary>
+	private StringName _meleeStrikeClip;
+
+	/// <summary>Fysiikkakello R2-osumaa varten (AnimationPlayer-position voi jäädä jälkeen blendissä).</summary>
+	private float _meleeSwingElapsed;
+
 	/// <summary>R2: liipasin uudelleen "sallittu" kun akseli on päästetty tarpeeksi alas (latch).</summary>
 	private bool _lightTriggerArmed = true;
 
@@ -142,6 +151,16 @@ public partial class PlayerController : CharacterBody3D
 	[Export] public Vector3 SwordHitTipLocalOffset = new Vector3(0f, 0f, -0.62f);
 
 	/// <summary>
+	/// Pidentää iskusegmenttiä terän kärjestä eteenpäin (metriä). Säädä kantamaa ilman että muutat offset-vektoria.
+	/// </summary>
+	[Export] public float SwordHitReachExtraMeters = 0.5f;
+
+	/// <summary>
+	/// R2 (mixamo_com_005): kuinka paljon aikaisemmin osumaikkuna avautuu (vähennetään ikkunan alusta sekunteina).
+	/// </summary>
+	[Export] public float LightMeleeStrikeWindowAdvanceSeconds = 0.07f;
+
+	/// <summary>
 	/// Maksimikulma (astetta) hahmon etusuunnasta: osuma rekisteröityy vain tämän kartion sisällä.
 	/// </summary>
 	[Export] public float SwordHitFacingHalfAngleDeg = 100f;
@@ -166,7 +185,11 @@ public partial class PlayerController : CharacterBody3D
 		if (!_isAttacking || _animationPlayer == null) return 0f;
 		// Älä rajoita animaation nimellä — ensimmäisellä framella / blendissä nimi voi vaihdella
 		// ja osumaikkuna (EnemyLevel1 SwordHitActivationTime) jäisi koskaan täyttymättä.
-		return (float)_animationPlayer.CurrentAnimationPosition;
+		float pos = (float)_animationPlayer.CurrentAnimationPosition;
+		// R2: blendissä pos voi pysyä nollassa — käytä myös fysiikkakelloa (kasvaa _PhysicsProcessissa).
+		if (_meleeStrikeClip == "mixamo_com_005")
+			return Mathf.Max(pos, _meleeSwingElapsed);
+		return pos;
 	}
 
 	/// <summary>
@@ -175,12 +198,24 @@ public partial class PlayerController : CharacterBody3D
 	public float GetMeleeStrikeWindowStart()
 	{
 		if (!_isAttacking || _animationPlayer == null) return 0.35f;
-		float len = (float)_animationPlayer.CurrentAnimationLength;
+
+		float len;
+		StringName clip = _meleeStrikeClip;
+		if (clip != default && _animationPlayer.GetAnimationLibrary("") is { } lib && lib.HasAnimation(clip))
+			len = (float)lib.GetAnimation(clip).Length;
+		else
+		{
+			len = (float)_animationPlayer.CurrentAnimationLength;
+			clip = _animationPlayer.CurrentAnimation;
+		}
+
 		if (len <= 0.02f) return 0.04f;
-		var cur = _animationPlayer.CurrentAnimation;
-		if (cur == "mixamo_com_005")
-			return Mathf.Clamp(len * 0.09f, 0.02f, 0.16f);
-		if (cur == "mixamo_com_010")
+		if (clip == "mixamo_com_005")
+		{
+			float start = Mathf.Clamp(len * 0.048f, 0.01f, 0.14f);
+			return Mathf.Max(0f, start - LightMeleeStrikeWindowAdvanceSeconds);
+		}
+		if (clip == "mixamo_com_010")
 			return Mathf.Clamp(len * 0.2f, 0.06f, 0.4f);
 		return Mathf.Clamp(len * 0.16f, 0.04f, 0.3f);
 	}
@@ -190,10 +225,22 @@ public partial class PlayerController : CharacterBody3D
 	/// </summary>
 	public void GetMeleeHitSegment(out Vector3 segmentStart, out Vector3 segmentEnd)
 	{
+		// GlobalTransform / GlobalPosition ilman scene-puuta → Godot varoitus NativeCalls + identiteetti-transformi
+		if (!IsInsideTree())
+		{
+			segmentStart = segmentEnd = new Vector3(0f, -1e6f, 0f);
+			return;
+		}
+
 		if (IsSwordWeaponMode() && _sword != null && GodotObject.IsInstanceValid(_sword) && _sword.IsInsideTree())
 		{
 			segmentStart = _sword.GlobalPosition;
-			segmentEnd = segmentStart + _sword.GlobalTransform.Basis * SwordHitTipLocalOffset;
+			Vector3 tipWorld = _sword.GlobalTransform.Basis * SwordHitTipLocalOffset;
+			float tipLen = tipWorld.Length();
+			if (tipLen > 1e-5f && SwordHitReachExtraMeters > 0f)
+				segmentEnd = segmentStart + tipWorld + (tipWorld / tipLen) * SwordHitReachExtraMeters;
+			else
+				segmentEnd = segmentStart + tipWorld;
 			return;
 		}
 
@@ -216,7 +263,8 @@ public partial class PlayerController : CharacterBody3D
 	/// </summary>
 	public bool IsPointInMeleeHitFacingArc(Vector3 worldPoint)
 	{
-		if (_characterModel == null) return true;
+		if (_characterModel == null || !_characterModel.IsInsideTree() || !IsInsideTree())
+			return true;
 		var to = worldPoint - GlobalPosition;
 		to.Y = 0f;
 		if (to.LengthSquared() < 1e-8f) return true;
@@ -436,6 +484,7 @@ public partial class PlayerController : CharacterBody3D
 		{
 			_isSitting = !_isSitting;
 			_isAttacking = false;
+			_meleeStrikeClip = default;
 			_isBlocking  = false;
 
 			if (_isSitting)
@@ -458,6 +507,7 @@ public partial class PlayerController : CharacterBody3D
 		{
 			_weaponMode = _weaponMode == WeaponMode.Normal ? WeaponMode.SwordShield : WeaponMode.Normal;
 			_isAttacking = false;
+			_meleeStrikeClip = default;
 			_isBlocking  = false;
 
 			if (!_isSitting)
@@ -480,6 +530,8 @@ public partial class PlayerController : CharacterBody3D
 		// ── Puolustus L2 ──
 		// Blokkaus toimii vain SwordShield-tilassa
 		_isBlocking = Input.IsActionPressed("block") && IsSwordWeaponMode();
+		if (_isBlocking && Input.IsActionJustPressed("block"))
+			Vibrate(0.2f, 0.1f, 0.1f);
 		if (_isBlocking)
 			PlayAnim("mixamo_com_006");
 
@@ -497,7 +549,9 @@ public partial class PlayerController : CharacterBody3D
 		{
 			_isAttacking = true;
 			_attackDamage = 1;
+			_meleeStrikeClip = "mixamo_com_005";
 			PlayAnim("mixamo_com_005");
+			Vibrate(0.3f, 0.5f, 0.15f);
 			_lightTriggerArmed = false;
 			_lightAttackDebounce = LightAttackDebounceSeconds;
 		}
@@ -510,7 +564,9 @@ public partial class PlayerController : CharacterBody3D
 		{
 			_isAttacking = true;
 			_attackDamage = 3;
+			_meleeStrikeClip = "mixamo_com_010";
 			PlayAnim("mixamo_com_010");
+			Vibrate(0.6f, 1.0f, 0.25f);
 			_heavyCooldownBarUnlocked = true;
 			_heavyAttackCooldown = HeavyAttackCooldownSeconds;
 		}
@@ -619,6 +675,11 @@ public partial class PlayerController : CharacterBody3D
 		}
 
 		_lightAnalogPreviousFrame = lightAnalog;
+
+		if (_isAttacking)
+			_meleeSwingElapsed += dt;
+		else
+			_meleeSwingElapsed = 0f;
 	}
 
 	// ─────────────────────────────────────────────
@@ -708,11 +769,17 @@ public partial class PlayerController : CharacterBody3D
 	{
 		// Normaali lyönti loppui
 		if (animName == "mixamo_com_005")
+		{
 			_isAttacking = false;
+			_meleeStrikeClip = default;
+		}
 
 		// Vahva lyönti loppui
 		if (animName == "mixamo_com_010")
+		{
 			_isAttacking = false;
+			_meleeStrikeClip = default;
+		}
 
 		// Hyppyanimaatio loppui — palataan idle:en
 		if (animName == "mixamo_com_001")
@@ -726,6 +793,7 @@ public partial class PlayerController : CharacterBody3D
 	private void OnHealthChanged(int currentHealth, int maxHealth)
 	{
 		GD.Print($"HP: {currentHealth}/{maxHealth}");
+		Vibrate(0.8f, 0.8f, 0.3f);
 		// TODO: päivitä HUD tässä
 	}
 
@@ -746,9 +814,7 @@ public partial class PlayerController : CharacterBody3D
 	private void OnGameOver()
 	{
 		GD.Print("GAME OVER!");
-		// TODO: lataa Game Over -scene tähän
-		// Esimerkki: GetTree().ChangeSceneToFile("res://scenes/ui/game_over.tscn");
-		GetTree().ReloadCurrentScene(); // Väliaikainen — lataa kentän alusta
+		GetTree().ChangeSceneToFile("res://scenes/ui/game_over.tscn");
 	}
 
 	// ─────────────────────────────────────────────
@@ -764,6 +830,8 @@ public partial class PlayerController : CharacterBody3D
 		GlobalPosition = position;
 		Velocity       = Vector3.Zero;
 		_isAttacking   = false;
+		_meleeStrikeClip = default;
+		_meleeSwingElapsed = 0f;
 		_isBlocking    = false;
 		_isWindingUp   = false;
 		_jumpTimer     = 0f;
@@ -778,5 +846,17 @@ public partial class PlayerController : CharacterBody3D
 		if (_shield != null) _shield.Visible = false;
 
 		PlayAnim("mixamo_com");
+	}
+
+	/// <summary>
+	/// Täristää ohjainta.
+	/// device    = ohjaimen numero (0 = ensimmäinen ohjain)
+	/// weak      = heikko moottori (0.0 - 1.0)
+	/// strong    = vahva moottori (0.0 - 1.0)
+	/// duration  = kesto sekunteina
+	/// </summary>
+	private void Vibrate(float weak, float strong, float duration)
+	{
+		Input.StartJoyVibration(0, weak, strong, duration);
 	}
 }

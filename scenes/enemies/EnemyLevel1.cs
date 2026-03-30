@@ -10,7 +10,7 @@ public partial class EnemyLevel1 : CharacterBody3D
 	[Export] public string AttackAnimPath = "res://assets/models/level1_susi/susiWithoutskin/ZombieNeckBite.fbx";
 
 	/// <summary>Miekan iskulinjan sallittu etäisyys vihollisen osumakeskiöstä (metriä).</summary>
-	[Export] public float SwordHitRange = 1.65f;
+	[Export] public float SwordHitRange = 2.35f;
 
 	[Export] public float HitCenterYOffset = 0.85f;
 

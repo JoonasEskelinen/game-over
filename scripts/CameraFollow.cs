@@ -60,7 +60,7 @@ public partial class CameraFollow : Camera3D
 
 	public override void _PhysicsProcess(double delta)
 	{
-		if (_player == null)
+		if (_player == null || !_player.IsInsideTree())
 			return;
 
 		float dt = (float)delta;

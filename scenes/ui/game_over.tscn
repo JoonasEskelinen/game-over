@@ -1,0 +1,57 @@
+[gd_scene format=3 uid="uid://d1lwl0yd7ikli"]
+
+[ext_resource type="Script" uid="uid://bw77tqdnurqth" path="res://scenes/ui/GameOver.cs" id="1_60xr3"]
+
+[sub_resource type="LabelSettings" id="LabelSettings_fu4wh"]
+font_size = 72
+font_color = Color(1, 0.19, 0.19, 1)
+
+[sub_resource type="LabelSettings" id="LabelSettings_x6o8e"]
+font_size = 28
+
+[node name="GameOver" type="Control" unique_id=852999063]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_60xr3")
+
+[node name="Overlay" type="ColorRect" parent="." unique_id=1052221011]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="CenterContainer" type="CenterContainer" parent="." unique_id=781263707]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="CenterContainer" unique_id=93215535]
+layout_mode = 2
+alignment = 1
+
+[node name="GameOverLabel" type="Label" parent="CenterContainer/VBoxContainer" unique_id=194100273]
+layout_mode = 2
+text = "GAME OVER"
+label_settings = SubResource("LabelSettings_fu4wh")
+
+[node name="SubtitleLabel" type="Label" parent="CenterContainer/VBoxContainer" unique_id=468729635]
+layout_mode = 2
+text = "Kaikki elämät käytetty"
+label_settings = SubResource("LabelSettings_x6o8e")
+
+[node name="RetryButton" type="Button" parent="CenterContainer/VBoxContainer" unique_id=798226842]
+layout_mode = 2
+text = "Retry"
+
+[node name="MainMenuButton" type="Button" parent="CenterContainer/VBoxContainer" unique_id=1956606536]
+layout_mode = 2
+text = "Main Menu"
