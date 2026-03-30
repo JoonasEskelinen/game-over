@@ -32,12 +32,15 @@ public partial class EnemyBasic : CharacterBody3D
 
 	public override void _PhysicsProcess(double delta)
 	{
+		if (!IsInsideTree())
+			return;
+
 		float dt = (float)delta;
 		if (_meleeCd > 0f) _meleeCd -= dt;
 		if (_contactCd > 0f) _contactCd -= dt;
 
 		var player = GetTree().GetFirstNodeInGroup("player") as PlayerController;
-		if (player == null)
+		if (player == null || !GodotObject.IsInstanceValid(player) || !player.IsInsideTree())
 			return;
 
 		var v = Velocity;

@@ -13,7 +13,7 @@ height = 1.0491943
 script = ExtResource("1_rp718")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1116881556]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.002, 0.41881144, -0.047)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.002, 0.485, -0.047)
 shape = SubResource("CapsuleShape3D_wocps")
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=1367723426]
@@ -25,4 +25,4 @@ mesh = SubResource("CapsuleMesh_rp718")
 script = ExtResource("2_yewv4")
 
 [node name="gameover_character" parent="." unique_id=889978002 instance=ExtResource("3_76oj4")]
-transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, 0, -0.068243794, -0.029940426)
+transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, 0, -0.105, -0.029940426)

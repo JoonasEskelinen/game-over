@@ -9,10 +9,14 @@ public partial class EnemyLevel1 : CharacterBody3D
 	[Export] public int Health = 3;
 	[Export] public string AttackAnimPath = "res://assets/models/level1_susi/susiWithoutskin/ZombieNeckBite.fbx";
 
-	/// <summary>Miekan iskulinjan sallittu etäisyys vihollisen osumakeskiöstä (metriä).</summary>
-	[Export] public float SwordHitRange = 2.35f;
+	/// <summary>Miekan iskulinjan sallittu etäisyys vihollisen osumapisteisiin (metriä).</summary>
+	[Export] public float SwordHitRange = 2.65f;
 
-	[Export] public float HitCenterYOffset = 0.85f;
+	/// <summary>Pääosuma-akselin korkeus GlobalPositionista (nelijalkainen: rintakehä).</summary>
+	[Export] public float HitCenterYOffset = 0.68f;
+
+	/// <summary>Lisäotantakorkeudet (metriä) — yksi piste helposti “ohittaa” terän; tyhjä = vain HitCenterYOffset.</summary>
+	[Export] public float[] SwordHitProbeHeights = { 0.38f, 0.68f, 0.95f };
 
 	/// <summary>Lisäviive sekunteina GetMeleeStrikeWindowStart()-ajan päälle (säätö).</summary>
 	[Export] public float SwordHitActivationTime = 0f;
@@ -24,7 +28,12 @@ public partial class EnemyLevel1 : CharacterBody3D
 	/// <summary>
 	/// Sekuntia purema-animaation alusta ennen ensimmäistä vahinkoa (puree "osuu" eikä heti kun anim käynnistyy).
 	/// </summary>
-	[Export] public float BiteDamageWindupSeconds = 0.42f;
+	[Export] public float BiteDamageWindupSeconds = 0.58f;
+
+	/// <summary>
+	/// Puremavaurio vain kun hyökkäysanimaatio on edennyt vähintään näin paljon (0–1). Estää vahingon animaation alkuosassa.
+	/// </summary>
+	[Export] public float BiteDamageMinAttackPhase = 0.5f;
 
 	private Node3D _player;
 	private PlayerController _playerController;
@@ -38,6 +47,9 @@ public partial class EnemyLevel1 : CharacterBody3D
 
 	public override void _Ready()
 	{
+		FloorSnapLength = 0.18f;
+		FloorMaxAngle = Mathf.DegToRad(50f);
+
 		_player = GetTree().GetFirstNodeInGroup("player") as Node3D;
 		_playerController = _player as PlayerController;
 		_animationPlayer = FindChild("AnimationPlayer", true, false) as AnimationPlayer;
@@ -59,7 +71,8 @@ public partial class EnemyLevel1 : CharacterBody3D
 
 	public override void _PhysicsProcess(double delta)
 	{
-		if (_isDead || _player == null) return;
+		if (_isDead || !IsInsideTree()) return;
+		if (_player == null || !GodotObject.IsInstanceValid(_player) || !_player.IsInsideTree()) return;
 
 		float dt = (float)delta;
 		Vector3 velocity = Velocity;
@@ -73,7 +86,8 @@ public partial class EnemyLevel1 : CharacterBody3D
 
 		if (inMeleeRange && !_wasInMeleeRange)
 		{
-			float windup = Mathf.Clamp(BiteDamageWindupSeconds, 0.15f, Mathf.Max(0.2f, _biteInterval * 0.75f));
+			float maxWindup = Mathf.Max(0.55f, _biteInterval * 0.92f);
+			float windup = Mathf.Clamp(BiteDamageWindupSeconds, 0.2f, maxWindup);
 			_biteTimer = windup;
 		}
 
@@ -100,7 +114,7 @@ public partial class EnemyLevel1 : CharacterBody3D
 				_animationPlayer.Play("attack");
 
 			_biteTimer -= dt;
-			if (_biteTimer <= 0f)
+			if (_biteTimer <= 0f && CanApplyBiteDamageByAnimPhase())
 			{
 				TryApplyBiteDamage();
 				_biteTimer = _biteInterval;
@@ -114,13 +128,24 @@ public partial class EnemyLevel1 : CharacterBody3D
 			float hitFrom = _playerController.GetMeleeStrikeWindowStart() + SwordHitActivationTime;
 			if (animTime >= hitFrom && !_hasBeenHitThisSwing)
 			{
-				Vector3 hitCenter = GlobalPosition + Vector3.Up * HitCenterYOffset;
-				float bladeDist = _playerController.GetMeleeHitDistanceToPoint(hitCenter);
-				if (_playerController.IsPointInMeleeHitFacingArc(hitCenter)
-					&& bladeDist < SwordHitRange)
+				Vector3 bodyBase = GlobalPosition;
+				Vector3 arcRef = bodyBase + Vector3.Up * HitCenterYOffset;
+				if (_playerController.IsPointInMeleeHitFacingArc(arcRef))
 				{
-					TakeDamage(_playerController.GetMeleeAttackDamage());
-					_hasBeenHitThisSwing = true;
+					var probes = SwordHitProbeHeights;
+					if (probes == null || probes.Length == 0)
+						probes = new[] { HitCenterYOffset };
+
+					for (int i = 0; i < probes.Length; i++)
+					{
+						Vector3 p = bodyBase + Vector3.Up * probes[i];
+						if (_playerController.GetMeleeHitDistanceToPoint(p) < SwordHitRange)
+						{
+							TakeDamage(_playerController.GetMeleeAttackDamage());
+							_hasBeenHitThisSwing = true;
+							break;
+						}
+					}
 				}
 			}
 		}
@@ -134,9 +159,22 @@ public partial class EnemyLevel1 : CharacterBody3D
 		MoveAndSlide();
 	}
 
+	private bool CanApplyBiteDamageByAnimPhase()
+	{
+		if (_animationPlayer == null || BiteDamageMinAttackPhase <= 0.01f)
+			return true;
+		if (_animationPlayer.CurrentAnimation != "attack")
+			return false;
+		double len = _animationPlayer.CurrentAnimationLength;
+		if (len <= 0.02)
+			return true;
+		float phase = (float)(_animationPlayer.CurrentAnimationPosition / len);
+		return phase >= BiteDamageMinAttackPhase;
+	}
+
 	private void TurnTowardsPlayer()
 	{
-		if (_player == null) return;
+		if (_player == null || !_player.IsInsideTree() || !IsInsideTree()) return;
 		var lookTarget = _player.GlobalPosition with { Y = GlobalPosition.Y };
 		if (GlobalPosition.DistanceTo(lookTarget) > 0.01f)
 		{
@@ -147,9 +185,9 @@ public partial class EnemyLevel1 : CharacterBody3D
 
 	private void TryApplyBiteDamage()
 	{
-		if (_playerController == null) return;
+		if (_playerController == null || _player == null || !_player.IsInsideTree()) return;
 
-		if (_playerController.IsBlocking())
+		if (_playerController.IsBlockingEffectiveAgainst(GlobalPosition))
 		{
 			GD.Print("Isku torjuttu kilpella!");
 			return;
@@ -191,7 +229,7 @@ public partial class EnemyLevel1 : CharacterBody3D
 		Node3D visual = GetNodeOrNull<Node3D>("Run") ?? (Node3D)this;
 
 		Vector3 away = new Vector3(1f, 0f, 0f);
-		if (_player != null)
+		if (_player != null && GodotObject.IsInstanceValid(_player) && _player.IsInsideTree())
 		{
 			away = GlobalPosition - _player.GlobalPosition;
 			away.Y = 0f;
@@ -202,7 +240,9 @@ public partial class EnemyLevel1 : CharacterBody3D
 		float rollY = (float)GD.RandRange(-38.0, 38.0);
 		float rollZ = (float)GD.RandRange(-28.0, 28.0);
 		Vector3 tilt = visual.RotationDegrees + new Vector3(86f, rollY, rollZ);
-		Vector3 slide = visual.GlobalPosition + new Vector3(away.X * 0.28f, -0.22f, away.Z * 0.28f);
+		Vector3 slide = visual.IsInsideTree()
+			? visual.GlobalPosition + new Vector3(away.X * 0.28f, -0.22f, away.Z * 0.28f)
+			: visual.Position + new Vector3(away.X * 0.28f, -0.22f, away.Z * 0.28f);
 
 		var tween = CreateTween();
 		tween.TweenProperty(visual, "rotation_degrees", tilt, DeathTiltDuration)

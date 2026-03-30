@@ -18,14 +18,14 @@ public partial class MainMenu : Control
 	private void OnNewGamePressed()
 	{
 		// Nollataan elämät ja aloitetaan alusta
-		GetTree().ChangeSceneToFile("res://scenes/levels/World1/level_1.tscn");
+		GetTree().ChangeSceneToFile("res://scenes/levels/level_1.tscn");
 	}
 
 	private void OnLoadGamePressed()
 	{
 		// Ladataan tallennus — jatkaa siitä mihin jäi
 		// TODO: tallenna myös viimeisin kenttä jotta voidaan ladata oikea kenttä
-		GetTree().ChangeSceneToFile("res://scenes/levels/World1/level_1.tscn");
+		GetTree().ChangeSceneToFile("res://scenes/levels/level_1.tscn");
 	}
 
 	private void OnInstructionsPressed()

@@ -60,6 +60,8 @@ public partial class CameraFollow : Camera3D
 
 	public override void _PhysicsProcess(double delta)
 	{
+		if (!IsInsideTree())
+			return;
 		if (_player == null || !_player.IsInsideTree())
 			return;
 
@@ -84,7 +86,8 @@ public partial class CameraFollow : Camera3D
 		Vector3 targetPos = pivot + dir * _distance;
 
 		// --- Seinäläpäisyn esto (wall clipping fix) ---
-		var spaceState = GetWorld3D()?.DirectSpaceState;
+		var world = GetWorld3D();
+		var spaceState = world?.DirectSpaceState;
 		if (spaceState != null)
 		{
 			var wallQuery = PhysicsRayQueryParameters3D.Create(pivot, targetPos);
@@ -110,6 +113,8 @@ public partial class CameraFollow : Camera3D
 	/// </summary>
 	private void ApplyGroundPitchClamp(Vector3 pivot)
 	{
+		if (!IsInsideTree())
+			return;
 		var space = GetWorld3D()?.DirectSpaceState;
 		if (space == null)
 			return;

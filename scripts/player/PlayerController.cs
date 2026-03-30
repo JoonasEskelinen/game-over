@@ -55,6 +55,12 @@ public partial class PlayerController : CharacterBody3D
 	/// </summary>
 	[Export] public float JumpWindupTime = 0.35f;
 
+	/// <summary>
+	/// Siirtää gameover_character-mallia paikallisesti Y-suunnassa (metriä). Negatiivinen = jalat lähemmäs maata.
+	/// Kapseli (CollisionShape3D) ja FBX:n origo eivät usein täsmää; säädä tästä ennen kuin muokkaat sceneä uudestaan.
+	/// </summary>
+	[Export] public float CharacterVisualGroundOffsetY = 0f;
+
 	// ─────────────────────────────────────────────
 	// ASE-TILA
 	// ─────────────────────────────────────────────
@@ -110,6 +116,8 @@ public partial class PlayerController : CharacterBody3D
 	/// <summary>Fysiikkakello R2-osumaa varten (AnimationPlayer-position voi jäädä jälkeen blendissä).</summary>
 	private float _meleeSwingElapsed;
 
+	private RigidBody3D _grabbedBody;
+
 	/// <summary>R2: liipasin uudelleen "sallittu" kun akseli on päästetty tarpeeksi alas (latch).</summary>
 	private bool _lightTriggerArmed = true;
 
@@ -144,6 +152,17 @@ public partial class PlayerController : CharacterBody3D
 
 	/// <summary>Palauttaa true jos pelaaja blokkaa kilvillä juuri nyt.</summary>
 	public bool IsBlocking() => _isBlocking;
+
+	/// <summary>
+	/// True vain jos kilpi on ylhäällä ja uhka on edessä (kapea kartio). Käytä purema-/iskutarkistuksissa.
+	/// </summary>
+	public bool IsBlockingEffectiveAgainst(Vector3 threatWorldPosition)
+	{
+		if (!IsBlocking()) return false;
+		if (_characterModel == null || !_characterModel.IsInsideTree() || !IsInsideTree())
+			return false;
+		return IsWithinFacingArcXZ(threatWorldPosition, ShieldBlockThreatHalfAngleDeg);
+	}
 	
 	/// <summary>
 	/// Terän suunta paikallisissa koordinaateissa (Mixamo-miekka: usein -Z on terän suunta).
@@ -164,6 +183,22 @@ public partial class PlayerController : CharacterBody3D
 	/// Maksimikulma (astetta) hahmon etusuunnasta: osuma rekisteröityy vain tämän kartion sisällä.
 	/// </summary>
 	[Export] public float SwordHitFacingHalfAngleDeg = 100f;
+
+	/// <summary>
+	/// Kilpi torjuu vain uhat tämän puolikulman sisällä (asteita). Kapeampi kuin miekan kaari.
+	/// </summary>
+	[Export] public float ShieldBlockThreatHalfAngleDeg = 52f;
+
+	/// <summary>Ryhmä <c>grabbable</c> RigidBody3D — neliö + pitää pohjassa (level_1 air-hockey).</summary>
+	[Export] public float GrabInteractRange = 2.5f;
+
+	[Export] public float GrabFacingMinDot = 0.35f;
+
+	[Export] public float GrabHoldDistance = 1.15f;
+
+	[Export] public float GrabPullGain = 7f;
+
+	[Export] public float GrabMaxHorizontalSpeed = 3.8f;
 
 	/// <summary>R2: latch-polku: analogi ≥ tämä laukaisee (kun aseistettu).</summary>
 	[Export] public float AttackTriggerPressThreshold = 0.4f;
@@ -260,20 +295,27 @@ public partial class PlayerController : CharacterBody3D
 
 	/// <summary>
 	/// Onko piste pelaajan etupuolella miekkaosumaa varten (XZ-taso).
+	/// Etu = <c>Basis.Z</c> (sama suunta kuin liikkeen suunta <c>LookingAt(-dir)</c> + mesh-kompensointi).
 	/// </summary>
 	public bool IsPointInMeleeHitFacingArc(Vector3 worldPoint)
 	{
 		if (_characterModel == null || !_characterModel.IsInsideTree() || !IsInsideTree())
 			return true;
+		return IsWithinFacingArcXZ(worldPoint, SwordHitFacingHalfAngleDeg);
+	}
+
+	/// <summary>XZ-kartio: onko <paramref name="worldPoint"/> hahmon edessä (Basis.Z) annetulla puolikulmalla.</summary>
+	private bool IsWithinFacingArcXZ(Vector3 worldPoint, float halfAngleDeg)
+	{
 		var to = worldPoint - GlobalPosition;
 		to.Y = 0f;
 		if (to.LengthSquared() < 1e-8f) return true;
 		to = to.Normalized();
-		var forward = -_characterModel.GlobalTransform.Basis.Z;
+		var forward = _characterModel.GlobalTransform.Basis.Z;
 		forward.Y = 0f;
 		if (forward.LengthSquared() < 1e-8f) return true;
 		forward = forward.Normalized();
-		float cosLimit = Mathf.Cos(Mathf.DegToRad(SwordHitFacingHalfAngleDeg));
+		float cosLimit = Mathf.Cos(Mathf.DegToRad(halfAngleDeg));
 		return to.Dot(forward) >= cosLimit;
 	}
 
@@ -352,6 +394,8 @@ public partial class PlayerController : CharacterBody3D
 		// Haetaan tarvittavat nodet scene-puusta
 		_mesh = GetNode<MeshInstance3D>("MeshInstance3D");
 		_characterModel = GetNode<Node3D>("gameover_character");
+		if (!Mathf.IsZeroApprox(CharacterVisualGroundOffsetY))
+			_characterModel.Position += new Vector3(0f, CharacterVisualGroundOffsetY, 0f);
 		_healthComponent = GetNode<HealthComponent>("HealthComponent");
 
 		// Kytketään HealthComponentin signaalit tähän skriptiin
@@ -371,6 +415,7 @@ public partial class PlayerController : CharacterBody3D
 			// Toinen = animaation nimi FBX:ssä (Mixamo käyttää "mixamo_com")
 			// Kolmas = nimi jonka alla animaatio tallennetaan pelissä
 			LoadAnim("res://assets/models/animations/Jumping.fbx",                            "mixamo_com", "mixamo_com_001");
+			LoadAnim("res://assets/models/animations/Push Start.fbx",                         "mixamo_com", "mixamo_com_011", loop: true);
 			LoadAnim("res://assets/models/animations/Orc Walk.fbx",                           "mixamo_com", "mixamo_com_002");
 			LoadAnim("res://assets/models/animations/Running.fbx",                            "mixamo_com", "mixamo_com_003");
 			LoadAnim("res://assets/models/animations/sitting.fbx",                            "mixamo_com", "mixamo_com_004");
@@ -439,6 +484,9 @@ public partial class PlayerController : CharacterBody3D
 
 	public override void _PhysicsProcess(double delta)
 	{
+		if (!IsInsideTree())
+			return;
+
 		float dt = (float)delta;
 		Vector3 velocity = Velocity;
 
@@ -485,6 +533,7 @@ public partial class PlayerController : CharacterBody3D
 			_isSitting = !_isSitting;
 			_isAttacking = false;
 			_meleeStrikeClip = default;
+			_grabbedBody = null;
 			_isBlocking  = false;
 
 			if (_isSitting)
@@ -508,6 +557,7 @@ public partial class PlayerController : CharacterBody3D
 			_weaponMode = _weaponMode == WeaponMode.Normal ? WeaponMode.SwordShield : WeaponMode.Normal;
 			_isAttacking = false;
 			_meleeStrikeClip = default;
+			_grabbedBody = null;
 			_isBlocking  = false;
 
 			if (!_isSitting)
@@ -570,6 +620,18 @@ public partial class PlayerController : CharacterBody3D
 			_heavyCooldownBarUnlocked = true;
 			_heavyAttackCooldown = HeavyAttackCooldownSeconds;
 		}
+
+		// ── Tarttuminen (neliö / grab) — RigidBody3D ryhmässä "grabbable" ──
+		if (Input.IsActionJustPressed("grab"))
+		{
+			TryBeginGrab();
+			if (_grabbedBody != null)
+				PlayAnim("mixamo_com_011");
+		}
+		if (!Input.IsActionPressed("grab"))
+			_grabbedBody = null;
+		else if (_grabbedBody != null)
+			ApplyGrabPull();
 
 		// ── Liikkuminen ──
 		// Istumistilassa tai blokatessa ei voi liikkua
@@ -645,7 +707,8 @@ public partial class PlayerController : CharacterBody3D
 		// Vaihdetaan animaatiota tilanteen mukaan
 		// Ei päällekirjoiteta hyppy- tai hyökkäysanimaatioita
 		bool jumpPlaying = _animationPlayer?.CurrentAnimation == "mixamo_com_001" || _isWindingUp;
-		if (IsOnFloor() && !_isAttacking && !_isBlocking && !jumpPlaying)
+		bool grabPlaying = _grabbedBody != null && Input.IsActionPressed("grab");
+		if (IsOnFloor() && !_isAttacking && !_isBlocking && !jumpPlaying && !grabPlaying)
 		{
 			string target;
 			if (_isSitting)
@@ -692,7 +755,7 @@ public partial class PlayerController : CharacterBody3D
 	/// sourceName = animaation nimi FBX:ssä
 	/// targetName = nimi jonka alla tallennetaan pelissä
 	/// </summary>
-	private void LoadAnim(string path, string sourceName, string targetName)
+	private void LoadAnim(string path, string sourceName, string targetName, bool loop = false)
 	{
 		var scene = GD.Load<PackedScene>(path);
 		if (scene == null)
@@ -741,6 +804,8 @@ public partial class PlayerController : CharacterBody3D
 
 		if (lib.HasAnimation(targetName))
 			lib.RemoveAnimation(targetName);
+		if (loop)
+			anim.LoopMode = Animation.LoopModeEnum.Linear;
 		lib.AddAnimation(targetName, anim);
 		GD.Print($"Ladattu animaatio: {targetName}");
 		inst.QueueFree();
@@ -784,6 +849,10 @@ public partial class PlayerController : CharacterBody3D
 		// Hyppyanimaatio loppui — palataan idle:en
 		if (animName == "mixamo_com_001")
 			PlayAnim("mixamo_com");
+
+		// Tartunta (loop pois päältä / vapautus keskellä)
+		if (animName == "mixamo_com_011" && (_grabbedBody == null || !GodotObject.IsInstanceValid(_grabbedBody)))
+			PlayAnim(_weaponMode == WeaponMode.SwordShield && !_isSitting ? "mixamo_com_007" : "mixamo_com");
 	}
 
 	/// <summary>
@@ -832,6 +901,7 @@ public partial class PlayerController : CharacterBody3D
 		_isAttacking   = false;
 		_meleeStrikeClip = default;
 		_meleeSwingElapsed = 0f;
+		_grabbedBody   = null;
 		_isBlocking    = false;
 		_isWindingUp   = false;
 		_jumpTimer     = 0f;
@@ -858,5 +928,77 @@ public partial class PlayerController : CharacterBody3D
 	private void Vibrate(float weak, float strong, float duration)
 	{
 		Input.StartJoyVibration(0, weak, strong, duration);
+	}
+
+	private void TryBeginGrab()
+	{
+		if (_characterModel == null || !IsInsideTree())
+			return;
+		if (_isSitting || _isAttacking || _isBlocking)
+			return;
+
+		var forward = _characterModel.GlobalTransform.Basis.Z;
+		forward.Y = 0f;
+		if (forward.LengthSquared() < 1e-6f)
+			return;
+		forward = forward.Normalized();
+
+		RigidBody3D best = null;
+		float bestScore = -1f;
+		foreach (var n in GetTree().GetNodesInGroup("grabbable"))
+		{
+			if (n is not RigidBody3D rb || !GodotObject.IsInstanceValid(rb) || !rb.IsInsideTree())
+				continue;
+			var to = rb.GlobalPosition - GlobalPosition;
+			to.Y = 0f;
+			float d = to.Length();
+			if (d > GrabInteractRange || d < 0.06f)
+				continue;
+			to /= d;
+			float facing = forward.Dot(to);
+			if (facing < GrabFacingMinDot)
+				continue;
+			float score = facing / (d + 0.12f);
+			if (score > bestScore)
+			{
+				bestScore = score;
+				best = rb;
+			}
+		}
+
+		_grabbedBody = best;
+	}
+
+	private void ApplyGrabPull()
+	{
+		if (_grabbedBody == null || !GodotObject.IsInstanceValid(_grabbedBody) || !_grabbedBody.IsInsideTree())
+		{
+			_grabbedBody = null;
+			return;
+		}
+
+		if (_characterModel == null)
+		{
+			_grabbedBody = null;
+			return;
+		}
+
+		var toRb = _grabbedBody.GlobalPosition - GlobalPosition;
+		toRb.Y = 0f;
+		if (toRb.Length() > GrabInteractRange * 1.35f)
+		{
+			_grabbedBody = null;
+			return;
+		}
+
+		var hold = GlobalPosition + _characterModel.GlobalTransform.Basis.Z * GrabHoldDistance + Vector3.Up * 0.22f;
+		hold.Y = _grabbedBody.GlobalPosition.Y;
+		var delta = hold - _grabbedBody.GlobalPosition;
+		delta.Y = 0f;
+		var vh = delta * GrabPullGain;
+		if (vh.Length() > GrabMaxHorizontalSpeed)
+			vh = vh.Normalized() * GrabMaxHorizontalSpeed;
+		var lv = _grabbedBody.LinearVelocity;
+		_grabbedBody.LinearVelocity = new Vector3(vh.X, lv.Y, vh.Z);
 	}
 }

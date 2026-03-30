@@ -18,6 +18,7 @@
 [ext_resource type="Script" uid="uid://cpwh1i4damxbs" path="res://scenes/levels/EnemySpawner.cs" id="15_wtwp4"]
 [ext_resource type="PackedScene" uid="uid://cppxj34ufkxc7" path="res://scenes/enemies/EnemyLevel1.tscn" id="16_iwr0g"]
 [ext_resource type="PackedScene" uid="uid://uh6pto3nrmqe" path="res://scenes/ui/hud.tscn" id="17_bahl2"]
+[ext_resource type="Script" uid="uid://dgobhgwrxatv" path="res://scripts/levels/Level1ArcadePhysicsSetup.cs" id="18_arcphys"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_7u6i3"]
 
@@ -85,6 +86,7 @@ size = Vector3(1, 4, 30)
 size = Vector3(1, 4, 30)
 
 [node name="Level 1" type="Node3D" unique_id=507213679]
+script = ExtResource("18_arcphys")
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=956509912]
 environment = SubResource("Environment_6iamk")
