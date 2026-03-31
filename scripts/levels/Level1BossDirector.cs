@@ -27,6 +27,15 @@ public partial class Level1BossDirector : Node
 
 	[Export] public bool SnapStandYToFloorRaycast = true;
 
+	/// <summary>Laskee bossin hieman alemmas snapatun lattiatason suhteen (älä käytä >~0.5 ilman clampia).</summary>
+	[Export] public float BossStandExtraLowerY = 0.28f;
+
+	/// <summary>Lisätään säteen osuman Y:hin (pieni positiivinen = jalkojen juuri lattian päällä).</summary>
+	[Export] public float BossFloorRayHitYOffset = 0.08f;
+
+	/// <summary>Et saa upottaa snapattua seisontaa enempää kuin tämä metreinä (estää putoamisen kentän alle).</summary>
+	[Export] public float BossStandMaxSinkBelowRayM = 0.55f;
+
 	[Export] public float CinematicBlendIn = 1.05f;
 	[Export] public float CinematicHold = 0.45f;
 	[Export] public float CinematicBlendOut = 1.35f;
@@ -73,14 +82,27 @@ public partial class Level1BossDirector : Node
 			stand.Z = Mathf.Clamp(stand.Z, -h, h);
 		}
 
+		bool floorSnapped = false;
 		if (SnapStandYToFloorRaycast && IsInsideTree())
-			stand = SnapStandYToFloor(stand);
+		{
+			stand = SnapStandYToFloor(stand, out floorSnapped);
+		}
+
+		stand.Y -= Mathf.Max(0f, BossStandExtraLowerY);
+		if (floorSnapped && BossStandMaxSinkBelowRayM > 0f)
+		{
+			float floorRef = stand.Y + BossStandExtraLowerY;
+			float minAllowedY = floorRef - BossStandMaxSinkBelowRayM;
+			if (stand.Y < minAllowedY)
+				stand.Y = minAllowedY;
+		}
 
 		return stand;
 	}
 
-	private Vector3 SnapStandYToFloor(Vector3 stand)
+	private Vector3 SnapStandYToFloor(Vector3 stand, out bool hitFloor)
 	{
+		hitFloor = false;
 		var w3d = (GetParent() as Node3D)?.GetWorld3D() ?? GetViewport()?.GetWorld3D();
 		var space = w3d?.DirectSpaceState;
 		if (space == null)
@@ -94,7 +116,8 @@ public partial class Level1BossDirector : Node
 		if (hit.Count > 0 && hit.ContainsKey("position"))
 		{
 			float y = ((Vector3)hit["position"]).Y;
-			stand.Y = y + 0.06f;
+			stand.Y = y + BossFloorRayHitYOffset;
+			hitFloor = true;
 		}
 
 		return stand;
@@ -112,11 +135,20 @@ public partial class Level1BossDirector : Node
 		Vector3 stand = ComputeBossStandWorld();
 		boss.Configure(stand);
 
-		GetParent()?.AddChild(boss);
+		Node parent = GetParent();
+		if (parent == null)
+		{
+			GD.PrintErr("Level1BossDirector: ei parent-nodea — bossia ei lisätty.");
+			boss.QueueFree();
+			return;
+		}
+
+		parent.AddChild(boss);
 
 		if (_camera != null)
 		{
-			Vector3 lookAt = boss.GlobalPosition + Vector3.Up * 1.35f;
+			// Älä lue boss.GlobalPosition heti AddChild:n jälkeen (C# / puun synkronointi → !is_inside_tree).
+			Vector3 lookAt = stand + Vector3.Up * 1.35f;
 			Vector3 camEnd = lookAt + CinematicCameraOffsetFromBoss;
 			_camera.PlayBossIntroShot(lookAt, camEnd, CinematicBlendIn, CinematicHold, CinematicBlendOut);
 		}

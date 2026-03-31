@@ -96,9 +96,9 @@ environment = SubResource("Environment_6iamk")
 [node name="Sun" type="DirectionalLight3D" parent="." unique_id=700270488]
 transform = Transform3D(0.7071068, 0.5, -0.5, 0, 0.7071068, 0.7071068, 0.7071068, -0.5, 0.5, 0, 2.461134, 0)
 light_color = Color(0.26666668, 0.26666668, 0.6666667, 1)
-light_energy = 10.453
-light_indirect_energy = 0.907
-light_volumetric_fog_energy = 1.094
+light_energy = 16.0
+light_indirect_energy = 3.012
+light_volumetric_fog_energy = 1.683
 shadow_enabled = true
 sky_mode = 1
 
@@ -205,25 +205,25 @@ MaxPitchDeg = 45.0
 [node name="Neon_pink" type="OmniLight3D" parent="." unique_id=1217758410]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, -14)
 light_color = Color(1, 0, 1, 1)
-light_energy = 5.0
+light_energy = 7.189
 omni_range = 15.04
 
 [node name="Neon_Blue" type="OmniLight3D" parent="." unique_id=1319435971]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 14)
 light_color = Color(0, 1, 1, 1)
-light_energy = 5.0
+light_energy = 7.021
 omni_range = 14.609
 
 [node name="Neon_Purple" type="OmniLight3D" parent="." unique_id=224359026]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14, 2.5, 0)
 light_color = Color(0.53333336, 0, 1, 1)
-light_energy = 5.0
+light_energy = 7.105
 omni_range = 15.169
 
 [node name="Neon_Green" type="OmniLight3D" parent="." unique_id=922847629]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -14, 2.5, 0)
 light_color = Color(0, 1, 0.53333336, 1)
-light_energy = 5.0
+light_energy = 7.105
 omni_range = 15.169
 
 [node name="air-hockey2" parent="." unique_id=242405273 instance=ExtResource("9_gmpev")]
@@ -260,6 +260,7 @@ EnemyScene = ExtResource("16_iwr0g")
 [node name="Level1BossDirector" type="Node" parent="." unique_id=156060372]
 script = ExtResource("19_bossdir")
 BossScene = ExtResource("20_bossscn")
+BossStandOffsetLocal = Vector3(0, 0, -2.1)
 
 [node name="HUD" parent="." unique_id=499664610 instance=ExtResource("17_bahl2")]
 

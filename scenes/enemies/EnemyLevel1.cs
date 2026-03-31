@@ -5,13 +5,9 @@ public partial class EnemyLevel1 : CharacterBody3D
 {
 	[Export] public float Speed = 3.0f;
 	/// <summary>XZ-etäisyys pelaajaan, jolloin ZombieNeckBite alkaa (pienempi = pitää päästä lähemmäs). Jos jää vain juoksuun, nosta hieman.</summary>
-	[Export] public float AttackRange = 1.12f;
-	/// <summary>R2 tekee 1 ja R1 3 vahinkoa → 3×R2 tai 1×R1 kuolettaa oletuksella.</summary>
-	[Export] public int Health = 3;
+	[Export] public float AttackRange = 1.42f;
+	[Export] public int Health = 1;
 	[Export] public string AttackAnimPath = "res://assets/models/level1_susi/susiWithoutskin/ZombieNeckBite.fbx";
-
-	/// <summary>Miekan iskulinjan sallittu etäisyys vihollisen osumapisteisiin (metriä).</summary>
-	[Export] public float SwordHitRange = 2.65f;
 
 	/// <summary>Pääosuma-akselin korkeus GlobalPositionista (nelijalkainen: rintakehä).</summary>
 	[Export] public float HitCenterYOffset = 0.68f;
@@ -29,12 +25,12 @@ public partial class EnemyLevel1 : CharacterBody3D
 	/// <summary>
 	/// Sekuntia purema-animaation alusta ennen ensimmäistä vahinkoa (puree "osuu" eikä heti kun anim käynnistyy).
 	/// </summary>
-	[Export] public float BiteDamageWindupSeconds = 0.58f;
+	[Export] public float BiteDamageWindupSeconds = 0.38f;
 
 	/// <summary>
 	/// Puremavaurio vain kun hyökkäysanimaatio on edennyt vähintään näin paljon (0–1). Estää vahingon animaation alkuosassa.
 	/// </summary>
-	[Export] public float BiteDamageMinAttackPhase = 0.5f;
+	[Export] public float BiteDamageMinAttackPhase = 0.36f;
 
 	private Node3D _player;
 	private PlayerController _playerController;
@@ -85,7 +81,7 @@ public partial class EnemyLevel1 : CharacterBody3D
 
 		float planarDist = PlanarDistanceTo(_player.GlobalPosition);
 		float heightDiff = Mathf.Abs(_player.GlobalPosition.Y - GlobalPosition.Y);
-		bool inMeleeRange = planarDist <= AttackRange && heightDiff <= 1.6f;
+		bool inMeleeRange = planarDist <= AttackRange && heightDiff <= 1.9f;
 
 		if (inMeleeRange && !_wasInMeleeRange)
 		{
@@ -114,10 +110,7 @@ public partial class EnemyLevel1 : CharacterBody3D
 			TurnTowardsPlayer();
 
 			if (_animationPlayer != null && _animationPlayer.CurrentAnimation != "attack")
-			{
 				_animationPlayer.Play("attack");
-				_biteSFX?.Play();
-			}
 
 			_biteTimer -= dt;
 			if (_biteTimer <= 0f && CanApplyBiteDamageByAnimPhase())
@@ -135,25 +128,19 @@ public partial class EnemyLevel1 : CharacterBody3D
 			if (animTime >= hitFrom && !_hasBeenHitThisSwing)
 			{
 				Vector3 bodyBase = GlobalPosition;
-				Vector3 arcRef = bodyBase + Vector3.Up * HitCenterYOffset;
-				bool inHitCone = _playerController.IsPointInMeleeHitFacingArc(arcRef)
-					|| _playerController.IsPointInMeleeHitBladeArc(arcRef);
-				if (inHitCone)
-				{
-					var probes = SwordHitProbeHeights;
-					if (probes == null || probes.Length == 0)
-						probes = new[] { HitCenterYOffset };
+				var probes = SwordHitProbeHeights;
+				if (probes == null || probes.Length == 0)
+					probes = new[] { HitCenterYOffset };
 
-					for (int i = 0; i < probes.Length; i++)
+				for (int i = 0; i < probes.Length; i++)
+				{
+					Vector3 p = bodyBase + Vector3.Up * probes[i];
+					if (_playerController.CanApplyMeleeHitAtWorldPoint(p))
 					{
-						Vector3 p = bodyBase + Vector3.Up * probes[i];
-						if (_playerController.GetMeleeHitDistanceToPoint(p) < SwordHitRange)
-						{
-							TakeDamage(_playerController.GetMeleeAttackDamage());
-							_playerController.NotifyMeleeHitLanded();
-							_hasBeenHitThisSwing = true;
-							break;
-						}
+						TakeDamage(_playerController.GetMeleeAttackDamage());
+						_playerController.NotifyMeleeHitLanded();
+						_hasBeenHitThisSwing = true;
+						break;
 					}
 				}
 			}
@@ -208,6 +195,7 @@ public partial class EnemyLevel1 : CharacterBody3D
 		// Yksi pureman loopin vahinko ≈ kolmannes max-HP:stä (3 HP → 1 per animaatio).
 		int biteDamage = Mathf.Max(1, health.MaxHealth / 3);
 		health.TakeDamage(biteDamage);
+		_biteSFX?.Play();
 	}
 
 	private static float PlanarDistanceTo(Vector3 from, Vector3 to)

@@ -9,7 +9,6 @@ public partial class EnemyBasic : CharacterBody3D
 	[Export] public float Gravity = 24f;
 	[Export] public int MaxHealth = 1;
 	/// <summary>Vain miekka-tilassa, iskun aikana: etäisyys miekan osumapisteestä vihollisen osumakeskioon.</summary>
-	[Export] public float SwordHitRange = 2.15f;
 	/// <summary>CollisionShape3D Y-offset (torso); level_1 vihollisella 0.875.</summary>
 	[Export] public float HitCenterYOffset = 0.875f;
 	[Export] public float MeleeHitCooldown = 0.32f;
@@ -70,14 +69,10 @@ public partial class EnemyBasic : CharacterBody3D
 		TryContactDamageFromProximity(player);
 
 		Vector3 enemyHitCenter = GlobalPosition + new Vector3(0f, HitCenterYOffset, 0f);
-		float dist = player.GetMeleeHitDistanceToPoint(enemyHitCenter);
-		bool inCone = player.IsPointInMeleeHitFacingArc(enemyHitCenter)
-			|| player.IsPointInMeleeHitBladeArc(enemyHitCenter);
 		if (_meleeCd <= 0f
 			&& player.IsSwordWeaponMode()
 			&& player.IsMeleeAttackActive()
-			&& inCone
-			&& dist < SwordHitRange)
+			&& player.CanApplyMeleeHitAtWorldPoint(enemyHitCenter))
 		{
 			TakeDamage(Mathf.Max(1, player.GetMeleeAttackDamage()));
 			player.NotifyMeleeHitLanded();

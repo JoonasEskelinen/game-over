@@ -13,10 +13,10 @@ public partial class PlayerController : CharacterBody3D
 	// ─────────────────────────────────────────────
 
 	/// <summary>Kävelynopeus miekka+kilpi-tilassa.</summary>
-	[Export] public float Speed = 4.0f;
+	[Export] public float Speed = 3.0f;
 
 	/// <summary>Juoksunopeus normaalitilassa (ilman asetta).</summary>
-	[Export] public float RunSpeed = 8.5f;
+	[Export] public float RunSpeed = 8.0f;
 
 	/// <summary>Hypyn alkuvauhti ylöspäin.</summary>
 	[Export] public float JumpVelocity = 10.0f;
@@ -47,7 +47,7 @@ public partial class PlayerController : CharacterBody3D
 	/// Hahmon kääntymisen pehmeys.
 	/// 0 = välitön kääntyminen, suurempi arvo = pehmeämpi.
 	/// </summary>
-	[Export] public float FacingSmoothing { get; set; } = 16f;
+	[Export] public float FacingSmoothing { get; set; } = 18f;
 
 	/// <summary>
 	/// Viive hypyn painalluksesta ponnistukseen (sekunteina).
@@ -130,6 +130,8 @@ public partial class PlayerController : CharacterBody3D
 	/// <summary>R2: estää tuplapainallukset / vapinaa (sekunteja).</summary>
 	private float _lightAttackDebounce;
 
+	private float _lightMeleeCooldown;
+
 	private float _heavyAttackCooldown;
 
 	private bool _heavyCooldownBarUnlocked;
@@ -167,7 +169,24 @@ public partial class PlayerController : CharacterBody3D
 		if (!IsBlocking()) return false;
 		if (_characterModel == null || !_characterModel.IsInsideTree() || !IsInsideTree())
 			return false;
-		return IsWithinFacingArcXZ(threatWorldPosition, ShieldBlockThreatHalfAngleDeg);
+		return IsShieldBlockFacingArc(GlobalPosition, threatWorldPosition, ShieldBlockThreatHalfAngleDeg);
+	}
+
+	/// <summary>
+	/// Kilven torjunta XZ-kartiossa: katssuunta Mixamo/hahmomallissa on usein <c>-Basis.Z</c> (ei sama kuin miekan facing-kartio).
+	/// </summary>
+	private bool IsShieldBlockFacingArc(Vector3 origin, Vector3 worldPoint, float halfAngleDeg)
+	{
+		var to = worldPoint - origin;
+		to.Y = 0f;
+		if (to.LengthSquared() < 1e-8f) return true;
+		to = to.Normalized();
+		var forward = -_characterModel.GlobalTransform.Basis.Z;
+		forward.Y = 0f;
+		if (forward.LengthSquared() < 1e-8f) return true;
+		forward = forward.Normalized();
+		float cosLimit = Mathf.Cos(Mathf.DegToRad(halfAngleDeg));
+		return to.Dot(forward) >= cosLimit;
 	}
 	
 	/// <summary>
@@ -178,22 +197,35 @@ public partial class PlayerController : CharacterBody3D
 	/// <summary>
 	/// Pidentää iskusegmenttiä terän kärjestä eteenpäin (metriä). Säädä kantamaa ilman että muutat offset-vektoria.
 	/// </summary>
-	[Export] public float SwordHitReachExtraMeters = 0.5f;
+	[Export] public float SwordHitReachExtraMeters = 0.13f;
+
+	/// <summary>R1: lyhyempi “löysä” teränjatke — estää puolen kentän osumat.</summary>
+	[Export] public float HeavySwordHitReachExtraMeters = 0.05f;
 
 	/// <summary>
 	/// R2 (mixamo_com_005): kuinka paljon aikaisemmin osumaikkuna avautuu (vähennetään ikkunan alusta sekunteina).
 	/// </summary>
-	[Export] public float LightMeleeStrikeWindowAdvanceSeconds = 0.07f;
+	[Export] public float LightMeleeStrikeWindowAdvanceSeconds = 0.05f;
 
 	/// <summary>
 	/// Maksimikulma (astetta) hahmon etusuunnasta: osuma rekisteröityy vain tämän kartion sisällä.
 	/// </summary>
-	[Export] public float SwordHitFacingHalfAngleDeg = 100f;
+	[Export] public float SwordHitFacingHalfAngleDeg = 72f;
 
-	/// <summary>
-	/// Viholliskartio terän suuntaan (kahva→kärki XZ): auttaa kun hahmon juoksu-kääntö ja lyönnin terä eivät täsmää.
-	/// </summary>
-	[Export] public float MeleeBladeArcHalfAngleDeg = 92f;
+	/// <summary>R2-iskun teräkartion puolikulma (asteita). R1 käyttää <see cref="HeavyMeleeBladeArcHalfAngleDeg"/>.</summary>
+	[Export] public float MeleeBladeArcHalfAngleDeg = 56f;
+
+	/// <summary>R1: vain teräkartio, kapea — ei “teleporttivahinkoa”.</summary>
+	[Export] public float HeavyMeleeBladeArcHalfAngleDeg = 34f;
+
+	/// <summary>Max etäisyys osumapisteestä iskulinjaan (metriä), R2.</summary>
+	[Export] public float LightMeleeProximityMax = 0.92f;
+
+	/// <summary>Max etäisyys iskulinjaan, R1 (kapea).</summary>
+	[Export] public float HeavyMeleeProximityMax = 0.5f;
+
+	/// <summary>Facing-kartion origo: rintakorkeus hahmomallista (ei CharacterBody3D jalkojen juurta).</summary>
+	[Export] public float MeleeFacingTorsoHeightWorld = 0.88f;
 
 	/// <summary>Sekunteina: miekan osuttua lyönti pysähtyy tähän animaatioasentoon (hit-stop).</summary>
 	[Export] public float MeleeHitStopSeconds = 0.09f;
@@ -222,6 +254,9 @@ public partial class PlayerController : CharacterBody3D
 	[Export] public float AttackTriggerRearmBelow = 0.26f;
 
 	[Export] public float LightAttackDebounceSeconds = 0.1f;
+
+	/// <summary>R2: minimiaika sekunteina kahden iskun välillä (esim. 1 s).</summary>
+	[Export] public float LightMeleeRepeatCooldownSeconds = 0.6f;
 
 	/// <summary>R2: pikaveto — analogi ≥ tämä ja nousu ≥ SharpPullDelta (latch ohitetaan).</summary>
 	[Export] public float LightAttackSharpPullMin = 0.38f;
@@ -284,11 +319,12 @@ public partial class PlayerController : CharacterBody3D
 
 		if (IsSwordWeaponMode() && _sword != null && GodotObject.IsInstanceValid(_sword) && _sword.IsInsideTree())
 		{
+			float reachExtra = _attackDamage >= 3 ? HeavySwordHitReachExtraMeters : SwordHitReachExtraMeters;
 			segmentStart = _sword.GlobalPosition;
 			Vector3 tipWorld = _sword.GlobalTransform.Basis * SwordHitTipLocalOffset;
 			float tipLen = tipWorld.Length();
-			if (tipLen > 1e-5f && SwordHitReachExtraMeters > 0f)
-				segmentEnd = segmentStart + tipWorld + (tipWorld / tipLen) * SwordHitReachExtraMeters;
+			if (tipLen > 1e-5f && reachExtra > 0f)
+				segmentEnd = segmentStart + tipWorld + (tipWorld / tipLen) * reachExtra;
 			else
 				segmentEnd = segmentStart + tipWorld;
 			return;
@@ -316,11 +352,19 @@ public partial class PlayerController : CharacterBody3D
 	{
 		if (_characterModel == null || !_characterModel.IsInsideTree() || !IsInsideTree())
 			return true;
-		return IsWithinFacingArcXZ(worldPoint, SwordHitFacingHalfAngleDeg);
+		return IsWithinFacingArcFromOrigin(MeleeArcOriginWorld(), worldPoint, SwordHitFacingHalfAngleDeg);
 	}
 
 	/// <summary>Onko piste terän iskulinjan suuntaisessa kartiossa (XZ), kahvasta mitattuna.</summary>
 	public bool IsPointInMeleeHitBladeArc(Vector3 worldPoint)
+	{
+		return IsPointInMeleeHitBladeArcWithHalfAngle(worldPoint, GetCurrentBladeArcHalfAngleDeg());
+	}
+
+	private float GetCurrentBladeArcHalfAngleDeg()
+		=> _attackDamage >= 3 ? HeavyMeleeBladeArcHalfAngleDeg : MeleeBladeArcHalfAngleDeg;
+
+	private bool IsPointInMeleeHitBladeArcWithHalfAngle(Vector3 worldPoint, float halfAngleDeg)
 	{
 		GetMeleeHitSegment(out Vector3 a, out Vector3 b);
 		Vector3 seg = b - a;
@@ -333,8 +377,36 @@ public partial class PlayerController : CharacterBody3D
 			return true;
 		seg /= Mathf.Sqrt(segL2);
 		toP /= Mathf.Sqrt(toL2);
-		float cosLimit = Mathf.Cos(Mathf.DegToRad(MeleeBladeArcHalfAngleDeg));
+		float cosLimit = Mathf.Cos(Mathf.DegToRad(halfAngleDeg));
 		return toP.Dot(seg) >= cosLimit;
+	}
+
+	/// <summary>
+	/// Yksi osumatesti: etäisyys iskulinjaan + R1 vain teräkartio, R2 terä tai facing (rintaorigolla).
+	/// </summary>
+	/// <param name="proximityMaxOverride">Jos ≥ 0, käytetään tätä max-etäisyytenä metrienä (esim. korkea bossi).</param>
+	public bool CanApplyMeleeHitAtWorldPoint(Vector3 worldPoint, float proximityMaxOverride = -1f)
+	{
+		if (!IsInsideTree() || !IsMeleeAttackActive() || !IsSwordWeaponMode())
+			return false;
+		float maxDist = proximityMaxOverride >= 0f ? proximityMaxOverride : GetMeleeHitProximityMax();
+		if (GetMeleeHitDistanceToPoint(worldPoint) > maxDist)
+			return false;
+		bool blade = IsPointInMeleeHitBladeArc(worldPoint);
+		bool facing = IsPointInMeleeHitFacingArc(worldPoint);
+		if (_attackDamage >= 3)
+			return blade;
+		return blade || facing;
+	}
+
+	public float GetMeleeHitProximityMax()
+		=> _attackDamage >= 3 ? HeavyMeleeProximityMax : LightMeleeProximityMax;
+
+	private Vector3 MeleeArcOriginWorld()
+	{
+		if (_characterModel != null && _characterModel.IsInsideTree())
+			return _characterModel.GlobalPosition + Vector3.Up * MeleeFacingTorsoHeightWorld;
+		return GlobalPosition + Vector3.Up * 0.9f;
 	}
 
 	/// <summary>Kutsutaan kun miekka osuu viholliseen — lyhyt freeze osumakuvaan.</summary>
@@ -347,10 +419,15 @@ public partial class PlayerController : CharacterBody3D
 		_meleeHitStopTimer = MeleeHitStopSeconds;
 	}
 
-	/// <summary>XZ-kartio: onko <paramref name="worldPoint"/> hahmon edessä (Basis.Z) annetulla puolikulmalla.</summary>
+	/// <summary>XZ-kartio kilven torjuntaan: origo pelaajan juuresta.</summary>
 	private bool IsWithinFacingArcXZ(Vector3 worldPoint, float halfAngleDeg)
+		=> IsWithinFacingArcFromOrigin(GlobalPosition, worldPoint, halfAngleDeg);
+
+	private bool IsWithinFacingArcFromOrigin(Vector3 origin, Vector3 worldPoint, float halfAngleDeg)
 	{
-		var to = worldPoint - GlobalPosition;
+		if (_characterModel == null || !_characterModel.IsInsideTree())
+			return true;
+		var to = worldPoint - origin;
 		to.Y = 0f;
 		if (to.LengthSquared() < 1e-8f) return true;
 		to = to.Normalized();
@@ -521,6 +598,9 @@ public partial class PlayerController : CharacterBody3D
 				}
 			}
 		}
+
+		// Arcade-prop kerros 5 (Level1ArcadePhysicsSetup: bitmask 16) — pelaaja törmää, bossin syöksy-maski 1 ei.
+		SetCollisionMaskValue(5, true);
 	}
 
 	// ─────────────────────────────────────────────
@@ -539,6 +619,8 @@ public partial class PlayerController : CharacterBody3D
 			_heavyAttackCooldown = Mathf.Max(0f, _heavyAttackCooldown - dt);
 		if (_lightAttackDebounce > 0f)
 			_lightAttackDebounce = Mathf.Max(0f, _lightAttackDebounce - dt);
+		if (_lightMeleeCooldown > 0f)
+			_lightMeleeCooldown = Mathf.Max(0f, _lightMeleeCooldown - dt);
 
 		float lightAnalog = ReadAggregatedLightAttackAnalog();
 		if (lightAnalog < AttackTriggerRearmBelow)
@@ -638,7 +720,9 @@ public partial class PlayerController : CharacterBody3D
 		bool r2SharpPull = lightAnalog >= LightAttackSharpPullMin
 			&& (lightAnalog - _lightAnalogPreviousFrame) >= LightAttackSharpPullDelta;
 		bool r2AnalogFire = r2LatchFire || r2SharpPull;
-		bool r2Pressed = (r2KeyJust || r2AnalogFire) && _lightAttackDebounce <= 0f;
+		bool r2Pressed = (r2KeyJust || r2AnalogFire)
+			&& _lightAttackDebounce <= 0f
+			&& _lightMeleeCooldown <= 0f;
 
 		if (r2Pressed && IsSwordWeaponMode() && !_isBlocking)
 		{
@@ -650,6 +734,7 @@ public partial class PlayerController : CharacterBody3D
 			_swordSFX?.Play();
 			_lightTriggerArmed = false;
 			_lightAttackDebounce = LightAttackDebounceSeconds;
+			_lightMeleeCooldown = Mathf.Max(0f, LightMeleeRepeatCooldownSeconds);
 		}
 
 		// ── Hyökkäys R1 (vahva isku, vahinko 3) + cooldown ──
@@ -679,8 +764,8 @@ public partial class PlayerController : CharacterBody3D
 			_grabbedBody = null;
 
 		// ── Liikkuminen ──
-		// Istumistilassa tai blokatessa ei voi liikkua
-		bool canMove = !_isSitting && !_isBlocking;
+		// Istumistilassa, blokatessa tai miekan iskun aikana ei voi liikkua
+		bool canMove = !_isSitting && !_isBlocking && !_isAttacking;
 		float dirX = canMove ? Input.GetAxis("move_left", "move_right") : 0f;
 		float dirZ = 0f;
 
@@ -699,9 +784,9 @@ public partial class PlayerController : CharacterBody3D
 		if (planarInput.LengthSquared() > 1e-6f)
 		{
 			planarInput = planarInput.Normalized();
-			var cam = GetViewport().GetCamera3D();
+			var cam = GetViewport()?.GetCamera3D();
 
-			if (cam != null)
+			if (cam != null && cam.IsInsideTree())
 			{
 				// Liike suhteessa kameran katselusuuntaan
 				// Näin "eteen" tarkoittaa aina ruudun "eteen" riippumatta kameran kulmasta
@@ -998,6 +1083,7 @@ public partial class PlayerController : CharacterBody3D
 		_isSitting  = false;
 		_heavyAttackCooldown = 0f;
 		_lightAttackDebounce = 0f;
+		_lightMeleeCooldown = 0f;
 		_lightTriggerArmed = true;
 		_lightAnalogPreviousFrame = 0f;
 
@@ -1057,7 +1143,7 @@ public partial class PlayerController : CharacterBody3D
 			return;
 		}
 
-		if (_characterModel == null)
+		if (_characterModel == null || !_characterModel.IsInsideTree() || !IsInsideTree())
 		{
 			_grabbedBody = null;
 			return;

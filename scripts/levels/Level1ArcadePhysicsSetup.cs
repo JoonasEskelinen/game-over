@@ -1,3 +1,4 @@
+using System;
 using Godot;
 
 /// <summary>
@@ -9,6 +10,9 @@ public partial class Level1ArcadePhysicsSetup : Node3D
 	[Export] public string AirHockeyNodeName = "air-hockey2";
 
 	[Export] public float AirHockeyMass = 38f;
+
+	/// <summary>Kerros (bitmask), jolle arcade-propput menevät — Level 1 -bossin syöksy (mask 1) ei törmää.</summary>
+	[Export] public uint ArcadePropCollisionLayer = 16u;
 
 	public override void _Ready()
 	{
@@ -28,7 +32,7 @@ public partial class Level1ArcadePhysicsSetup : Node3D
 				continue;
 			if (nd.HasMeta("arcade_phys_done"))
 				continue;
-			AddStaticBoxForVisual(nd, floor);
+			AddStaticBoxForVisual(nd, floor, false);
 		}
 	}
 
@@ -52,7 +56,10 @@ public partial class Level1ArcadePhysicsSetup : Node3D
 			if (child.Name == AirHockeyNodeName)
 				SetupAirHockey(nd);
 			else
-				AddStaticBoxForVisual(nd, this);
+			{
+				bool floorPiece = s.StartsWith("floor", StringComparison.OrdinalIgnoreCase);
+				AddStaticBoxForVisual(nd, this, !floorPiece);
+			}
 		}
 	}
 
@@ -88,6 +95,7 @@ public partial class Level1ArcadePhysicsSetup : Node3D
 		parent.AddChild(rb);
 		parent.MoveChild(rb, idx);
 		rb.GlobalTransform = gt;
+		rb.CollisionLayer = ArcadePropCollisionLayer;
 		rb.AddChild(airRoot);
 		airRoot.Transform = Transform3D.Identity;
 
@@ -107,7 +115,7 @@ public partial class Level1ArcadePhysicsSetup : Node3D
 		rb.AddChild(col);
 	}
 
-	private void AddStaticBoxForVisual(Node3D visualRoot, Node parent)
+	private void AddStaticBoxForVisual(Node3D visualRoot, Node parent, bool useArcadePropLayer)
 	{
 		if (visualRoot.HasMeta("arcade_phys_done"))
 			return;
@@ -117,6 +125,7 @@ public partial class Level1ArcadePhysicsSetup : Node3D
 			return;
 
 		var sb = new StaticBody3D { Name = visualRoot.Name + "_Phys" };
+		sb.CollisionLayer = useArcadePropLayer ? ArcadePropCollisionLayer : 1u;
 		parent.AddChild(sb);
 		sb.GlobalPosition = worldAabb.GetCenter();
 

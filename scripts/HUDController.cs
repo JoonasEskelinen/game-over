@@ -7,6 +7,7 @@ public partial class HUDController : CanvasLayer
 {
 	private ProgressBar _healthBar;
 	private ProgressBar _heavyAttackBar;
+	private ProgressBar _bossHealthBar;
 	private Label _bossR1Hint;
 
 	private PlayerController _player;
@@ -17,7 +18,10 @@ public partial class HUDController : CanvasLayer
 		// Haetaan HealthBar-node HUD:in lapsista nimellä
 		_healthBar = GetNode<ProgressBar>("HealthBar");
 		_heavyAttackBar = GetNodeOrNull<ProgressBar>("HeavyAttackCooldownBar");
+		_bossHealthBar = GetNodeOrNull<ProgressBar>("BossHealthBar");
 		_bossR1Hint = GetNodeOrNull<Label>("BossR1Hint");
+		if (_bossHealthBar != null)
+			_bossHealthBar.Visible = false;
 
 		// Haetaan pelaaja scenetreestä — polku muuttuu myöhemmin jos rakenne muuttuu
 		// GetTree().Root hakee scenen juuresta, sitten etsitään Player-node
@@ -43,10 +47,22 @@ public partial class HUDController : CanvasLayer
 
 	public override void _Process(double delta)
 	{
+		var boss = GetTree().GetFirstNodeInGroup("level1_boss") as BossLevel1;
+
 		if (_bossR1Hint != null)
+			_bossR1Hint.Visible = boss != null && GodotObject.IsInstanceValid(boss) && boss.IsInsideTree() && boss.IsDanceVulnerable;
+
+		if (_bossHealthBar != null)
 		{
-			var boss = GetTree().GetFirstNodeInGroup("level1_boss") as BossLevel1;
-			_bossR1Hint.Visible = boss != null && boss.IsDanceVulnerable;
+			if (boss != null && GodotObject.IsInstanceValid(boss) && boss.IsInsideTree() && !boss.IsBossDead)
+			{
+				_bossHealthBar.Visible = true;
+				int maxHp = Mathf.Max(1, boss.GetBossMaxHealth());
+				_bossHealthBar.MaxValue = maxHp;
+				_bossHealthBar.Value = Mathf.Clamp(boss.GetBossCurrentHealth(), 0, maxHp);
+			}
+			else
+				_bossHealthBar.Visible = false;
 		}
 
 		if (_player == null || _heavyAttackBar == null) return;
@@ -68,7 +84,5 @@ public partial class HUDController : CanvasLayer
 		// Esimerkki: currentHealth=2, maxHealth=3 → 2/3 * 100 = 66.6%
 		float healthPercent = (float)currentHealth / maxHealth * 100f;
 		_healthBar.Value = healthPercent;
-
-		GD.Print($"HealthBar päivitetty: {healthPercent}%");
 	}
 }

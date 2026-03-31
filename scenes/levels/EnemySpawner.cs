@@ -69,7 +69,6 @@ public partial class EnemySpawner : Node3D
 		if (enemy == null) return;
 
 		var point = _spawnPoints[GD.RandRange(0, _spawnPoints.Length - 1)];
-		enemy.GlobalPosition = point;
 
 		// Satunnainen nopeus — silloin tällöin nopea vihollinen
 		var script = enemy as EnemyLevel1;
@@ -82,7 +81,9 @@ public partial class EnemySpawner : Node3D
 		}
 
 		enemy.AddToGroup("enemy");
+		// GlobalPosition vaatii että node on scene-puussa — muuten NativeCalls !is_inside_tree -varoitus.
 		GetParent().AddChild(enemy);
+		enemy.GlobalPosition = point;
 		_spawned++;
 	}
 }

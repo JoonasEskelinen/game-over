@@ -30,17 +30,22 @@ public partial class BossLevel1 : CharacterBody3D
 	/// <summary>Juoksuanimaation nimi pelissä.</summary>
 	[Export] public string RunClipName = "run";
 
-	/// <summary>Bossin elinvoima — vahva isku (R1, dmg=3) tappaa kerralla jos HP <= 3.</summary>
-	[Export] public int Health = 30;
+	/// <summary>Maksimi-HP — oletus 30 = 10 osumaa × R1-vahinko (3) tanssi-/otteluvaiheessa.</summary>
+	[Export] public int MaxBossHealth = 30;
+
+	private int _bossHealth;
 
 	/// <summary>Tanssin minimikesto sekunteina ennen syöksyä.</summary>
-	[Export] public float DanceDurationMin = 3.5f;
+	[Export] public float DanceDurationMin = 10.5f;
 
 	/// <summary>Tanssin maksimikesto sekunteina.</summary>
-	[Export] public float DanceDurationMax = 7f;
+	[Export] public float DanceDurationMax = 14f;
+
+	/// <summary>Aika tanssin päättymisen ja kameran palautumisen jälkeen ennen juoksua (run).</summary>
+	[Export] public float PostDanceDelayBeforeCharge = 3f;
 
 	/// <summary>Syöksyn nopeus.</summary>
-	[Export] public float ChargeSpeed = 14f;
+	[Export] public float ChargeSpeed = 12f;
 
 	/// <summary>Syöksyn maksimikesto — jos pelaajaa ei tavoiteta, palataan tanssimaan.</summary>
 	[Export] public float ChargeMaxSeconds = 3.2f;
@@ -52,28 +57,69 @@ public partial class BossLevel1 : CharacterBody3D
 	[Export] public float ChargeContactDamage = 1;
 
 	/// <summary>Aika sekunteina ennen kuin kontaktivahinko voi toistua.</summary>
-	[Export] public float ChargeContactCooldown = 0.85f;
-
-	/// <summary>Miekan kantama — kuinka kaukaa osuma rekisteröidään.</summary>
-	[Export] public float SwordHitRange = 2.85f;
+	[Export] public float ChargeContactCooldown = 2.5f;
 
 	/// <summary>Osumakeskipisteen korkeus Y-akselilla.</summary>
 	[Export] public float HitCenterYOffset = 0.9f;
 
-	/// <summary>Useita korkeuksia osumatarkistusta varten (jalat, keskivartalo, pää).</summary>
-	[Export] public float[] SwordHitProbeHeights = { 0.45f, 0.9f, 1.25f };
+	/// <summary>Korkeudet juuren <see cref="GlobalPosition"/>ista (jalat) — pitkä mesh + skaala.</summary>
+	[Export] public float[] SwordHitProbeHeights = { 0.35f, 1.0f, 1.85f, 2.7f, 3.5f, 4.35f };
+
+	/// <summary>Lisäpisteet <c>BossVisual</c>-solmun kohdalta (jos FBX on offsetoituna juureen nähden).</summary>
+	[Export] public float[] SwordHitProbeVisualYOffset = { -0.4f, 0.35f, 1.1f, 2.0f, 2.9f };
+
+	/// <summary>Lisää max-etäisyyttä terään verrattuna (korkea hahmo / R1-kapea ikkuna).</summary>
+	[Export] public float SwordHitExtraProximityMeters = 0.42f;
 
 	/// <summary>Lisäviive miekan osumaikkunaan (0 = heti kun animaatio alkaa).</summary>
 	[Export] public float SwordHitActivationTime = 0f;
 
 	/// <summary>Kuolemisanimaation kesto sekunteina (kutistuminen).</summary>
-	[Export] public float DeathShrinkDuration = 0.55f;
+	[Export] public float DeathShrinkDuration = 1.55f;
 
 	/// <summary>
 	/// Visuaalisen meshin skaalauskerroin.
-	/// Mixamon FBX on usein ~100x liian pieni — aseta 100 tai säädä editorissa.
+	/// Mixamon FBX on usein ~100x liian pieni — oletus ~1,5× aiemmasta (150).
+	/// Aseta 1 jos haluat säilyttää scenen lapsen skaalan sellaisenaan.
 	/// </summary>
-	[Export] public float BossVisualUniformScale = 100f;
+	[Export] public float BossVisualUniformScale = 150f;
+
+	/// <summary>Laske koko hahmoa näin paljon spawnin jälkeen (m) — kun FBX-jalat eivät osu juureen.</summary>
+	[Export] public float AdditionalStandLowerY = 0f;
+
+	/// <summary>Uudelleenlattiasnap _Ready:ssä (sulkee oman colliderin pois säteestä).</summary>
+	[Export] public bool SnapFeetToFloorOnReady = true;
+
+	[Export] public float FeetSnapRayStartUpM = 14f;
+	[Export] public float FeetSnapRayLengthDownM = 24f;
+	[Export] public float FeetSnapOffsetAboveFloor = 0.06f;
+
+	/// <summary>Level 1 -bossin taustamusiikki (loop) koko eliniän — tiedosto: musiclevel1.mp3.</summary>
+	[Export] public string BossMusicPath = "res://assets/audio/music/musiclevel1.mp3";
+
+	[Export] public float BossMusicVolumeDb = -4f;
+
+	/// <summary>Lisäspotti tanssivaiheessa (Pi: varjo pois).</summary>
+	[Export] public bool BossDanceHighlightEnabled = true;
+
+	[Export] public float BossDanceLightEnergy = 4.2f;
+
+	/// <summary>Spotin kantama (Godot SpotRange).</summary>
+	[Export] public float BossDanceLightRange = 14f;
+
+	[Export] public Color BossDanceLightColor = new(1f, 0.94f, 0.86f, 1f);
+
+	/// <summary>Valokiilan puolikulma (astetta, Godot SpotAngle).</summary>
+	[Export] public float BossDanceSpotAngleDeg = 52f;
+
+	/// <summary>Valon sijainti: korkeus bossin jaloista (maailmay).</summary>
+	[Export] public float BossDanceSpotHeightM = 4.2f;
+
+	/// <summary>Kuinka paljon valo siirtyy kameraa kohti XZ-tasossa (lavaste).</summary>
+	[Export] public float BossDanceSpotTowardCameraM = 1.1f;
+
+	/// <summary>LookAt-kohdan korkeus bossin jaloista (valo osoittaa tähän pisteeseen).</summary>
+	[Export] public float BossDanceSpotAimYOffsetM = 1.35f;
 
 	// ─────────────────────────────────────────────
 	// TEKSTUURIPOLUT — säädettävissä Inspectorissa
@@ -95,8 +141,17 @@ public partial class BossLevel1 : CharacterBody3D
 	// JULKISET OMINAISUUDET
 	// ─────────────────────────────────────────────
 
-	/// <summary>True kun bossi tanssii — vain tällöin vahva isku (R1) voi osua.</summary>
-	public bool IsDanceVulnerable => !_isDead && _phase == BossPhase.Dancing;
+	/// <summary>True kun bossi tanssii — vain tällöin vahva isku (R1) voi osua (ei post-tanssi-viivettä).</summary>
+	public bool IsDanceVulnerable => !_isDead && _phase == BossPhase.Dancing && !_waitingAfterDance;
+
+	/// <summary>True vain tanssilaskurin aikana — lähipiirikamera (ei post-tanssi-viivettä).</summary>
+	public bool IsBossCloseupDanceCameraActive => !_isDead && _phase == BossPhase.Dancing && !_waitingAfterDance && _danceTimeLeft > 0f;
+
+	public bool IsBossDead => _isDead;
+
+	public int GetBossCurrentHealth() => _bossHealth;
+
+	public int GetBossMaxHealth() => MaxBossHealth;
 
 	// ─────────────────────────────────────────────
 	// PRIVAATIT MUUTTUJAT
@@ -109,6 +164,11 @@ public partial class BossLevel1 : CharacterBody3D
 
 	/// <summary>Jäljellä oleva tanssinäytösaika.</summary>
 	private float _danceTimeLeft;
+
+	/// <summary>Tanssiaikataulun jälkeen: viive ennen <see cref="BeginCharge"/>.</summary>
+	private float _postDanceWaitLeft;
+
+	private bool _waitingAfterDance;
 
 	/// <summary>Jäljellä oleva syöksyaika.</summary>
 	private float _chargeTimeLeft;
@@ -134,6 +194,12 @@ public partial class BossLevel1 : CharacterBody3D
 	/// <summary>Lattian Y-korkeus — pidetään bossi lattiatasolla.</summary>
 	private float _floorY;
 
+	private uint _savedCollisionMask = 3;
+
+	private AudioStreamPlayer _bossMusic;
+
+	private SpotLight3D _danceSpotLight;
+
 	// ─────────────────────────────────────────────
 	// ALUSTUS
 	// ─────────────────────────────────────────────
@@ -147,14 +213,21 @@ public partial class BossLevel1 : CharacterBody3D
 		_configuredFromDirector = true;
 		_standWorldPos = standWorldPosition;
 		_floorY = standWorldPosition.Y;
+		_waitingAfterDance = false;
+		_postDanceWaitLeft = 0f;
 	}
 
 	public override void _Ready()
 	{
+		_bossHealth = MaxBossHealth;
+
 		// Törmäyskerrokset: Layer 2 = vihollinen, Mask 3 = pelaaja + maailma
 		CollisionLayer = 2;
 		CollisionMask = 3;
+		_savedCollisionMask = CollisionMask;
 		AddToGroup("level1_boss");
+
+		SetupBossMusic();
 
 		// Asetetaan sijainti joko Configure():sta tai editorin arvosta
 		if (_configuredFromDirector)
@@ -189,6 +262,115 @@ public partial class BossLevel1 : CharacterBody3D
 
 		// Linkitetään tekstuurit meshiin
 		ApplyBossTextures();
+
+		ApplyStandVerticalAdjustments();
+
+		SetupDanceHighlightLight();
+	}
+
+	public override void _ExitTree()
+	{
+		StopBossMusic();
+		base._ExitTree();
+	}
+
+	private void SetupBossMusic()
+	{
+		if (string.IsNullOrWhiteSpace(BossMusicPath))
+			return;
+
+		_bossMusic = new AudioStreamPlayer { Name = "BossMusicPlayer" };
+		AddChild(_bossMusic);
+
+		var stream = GD.Load<AudioStream>(BossMusicPath);
+		if (stream == null)
+		{
+			GD.PrintErr($"BossLevel1: musiikkia ei löydy — laita tiedosto: {BossMusicPath}");
+			_bossMusic.QueueFree();
+			_bossMusic = null;
+			return;
+		}
+
+		switch (stream)
+		{
+			case AudioStreamMP3 mp3:
+				mp3.Loop = true;
+				break;
+			case AudioStreamOggVorbis ogg:
+				ogg.Loop = true;
+				break;
+		}
+
+		_bossMusic.Stream = stream;
+		_bossMusic.VolumeDb = BossMusicVolumeDb;
+		_bossMusic.Play();
+	}
+
+	private void StopBossMusic()
+	{
+		if (_bossMusic == null)
+			return;
+		if (_bossMusic.Playing)
+			_bossMusic.Stop();
+		_bossMusic.Stream = null;
+		_bossMusic.QueueFree();
+		_bossMusic = null;
+	}
+
+	private void SetupDanceHighlightLight()
+	{
+		if (!BossDanceHighlightEnabled)
+			return;
+
+		_danceSpotLight = new SpotLight3D { Name = "BossDanceSpotlight" };
+		_danceSpotLight.LightColor = BossDanceLightColor;
+		_danceSpotLight.LightEnergy = BossDanceLightEnergy;
+		_danceSpotLight.SpotRange = BossDanceLightRange;
+		_danceSpotLight.SpotAngle = BossDanceSpotAngleDeg;
+		_danceSpotLight.ShadowEnabled = false;
+		_danceSpotLight.Visible = false;
+		AddChild(_danceSpotLight);
+	}
+
+	private void ApplyStandVerticalAdjustments()
+	{
+		if (SnapFeetToFloorOnReady)
+			TrySnapFeetToWorldFloor();
+		if (!Mathf.IsZeroApprox(AdditionalStandLowerY))
+			ShiftStandAndPosition(-AdditionalStandLowerY);
+	}
+
+	private void ShiftStandAndPosition(float deltaY)
+	{
+		var d = Vector3.Up * deltaY;
+		GlobalPosition += d;
+		_standWorldPos += d;
+		_floorY = GlobalPosition.Y;
+	}
+
+	/// <summary>Lattia-säde juuren XZ:stä; oma RID pois jotta isokapseli ei osu itseensä.</summary>
+	private void TrySnapFeetToWorldFloor()
+	{
+		if (!IsInsideTree())
+			return;
+		var space = GetWorld3D()?.DirectSpaceState;
+		if (space == null)
+			return;
+
+		Vector3 p = GlobalPosition;
+		var from = p + Vector3.Up * FeetSnapRayStartUpM;
+		var to = p + Vector3.Down * FeetSnapRayLengthDownM;
+		var q = PhysicsRayQueryParameters3D.Create(from, to);
+		q.CollideWithAreas = false;
+		q.Exclude = new Godot.Collections.Array<Rid> { GetRid() };
+
+		var hit = space.IntersectRay(q);
+		if (hit.Count == 0 || !hit.ContainsKey("position"))
+			return;
+
+		float floorY = ((Vector3)hit["position"]).Y;
+		float targetRootY = floorY + FeetSnapOffsetAboveFloor;
+		ShiftStandAndPosition(targetRootY - GlobalPosition.Y);
 	}
 
 	// ─────────────────────────────────────────────
@@ -347,7 +529,10 @@ public partial class BossLevel1 : CharacterBody3D
 		switch (_phase)
 		{
 			case BossPhase.Dancing:  ProcessDancing(dt);  break;
-			case BossPhase.Charging: ProcessCharging(dt); break;
+			case BossPhase.Charging:
+				UpdateDanceHighlightLight(false);
+				ProcessCharging(dt);
+				break;
 		}
 
 		// Tarkistetaan osuuko pelaajan miekka
@@ -367,9 +552,90 @@ public partial class BossLevel1 : CharacterBody3D
 	{
 		GlobalPosition = _standWorldPos; // Pidetään bossi paikallaan
 		Velocity = Vector3.Zero;
+
+		FaceTowardActiveCamera();
+		UpdateDanceHighlightLight(true);
+
+		if (_waitingAfterDance)
+		{
+			_postDanceWaitLeft -= dt;
+			if (_postDanceWaitLeft <= 0f)
+			{
+				_waitingAfterDance = false;
+				BeginCharge();
+			}
+			return;
+		}
+
 		_danceTimeLeft -= dt;
 		if (_danceTimeLeft > 0f) return;
-		BeginCharge();
+
+		_waitingAfterDance = true;
+		_postDanceWaitLeft = Mathf.Max(0f, PostDanceDelayBeforeCharge);
+		if (_postDanceWaitLeft <= 0f)
+		{
+			_waitingAfterDance = false;
+			BeginCharge();
+		}
+	}
+
+	/// <summary>Tanssissa katsotaan aktiivista kameraa (XZ) + 180° kuten Mixamo-juoksu.</summary>
+	private void FaceTowardActiveCamera()
+	{
+		if (!IsInsideTree())
+			return;
+
+		Camera3D cam = GetViewport()?.GetCamera3D();
+		Vector3 target = cam != null && cam.IsInsideTree()
+			? cam.GlobalPosition
+			: (_player != null && GodotObject.IsInstanceValid(_player) ? _player.GlobalPosition : GlobalPosition + Vector3.Forward);
+
+		var look = target with { Y = GlobalPosition.Y };
+		if (GlobalPosition.DistanceTo(look) < 0.06f)
+			return;
+
+		LookAt(look, Vector3.Up);
+		RotateY(Mathf.Pi);
+	}
+
+	private void UpdateDanceHighlightLight(bool dancePhase)
+	{
+		if (_danceSpotLight == null)
+			return;
+		_danceSpotLight.Visible = dancePhase && BossDanceHighlightEnabled;
+		if (_danceSpotLight.Visible)
+		{
+			_danceSpotLight.LightEnergy = BossDanceLightEnergy;
+			_danceSpotLight.SpotRange = BossDanceLightRange;
+			_danceSpotLight.SpotAngle = BossDanceSpotAngleDeg;
+			_danceSpotLight.LightColor = BossDanceLightColor;
+			UpdateBossDanceSpotTransform();
+		}
+	}
+
+	/// <summary>Päivittää spotin maailmasijainnin ja suunnan (kamera kohti, kohde bossin yläpuolella).</summary>
+	private void UpdateBossDanceSpotTransform()
+	{
+		if (_danceSpotLight == null || !_danceSpotLight.Visible || !_danceSpotLight.IsInsideTree() || !IsInsideTree())
+			return;
+
+		Vector3 anchor = GlobalPosition;
+		Camera3D cam = GetViewport()?.GetCamera3D();
+		Vector3 camPos = cam != null && cam.IsInsideTree()
+			? cam.GlobalPosition
+			: anchor + Vector3.Forward * 8f;
+
+		Vector3 flat = camPos with { Y = anchor.Y };
+		flat -= anchor with { Y = anchor.Y };
+		if (flat.LengthSquared() < 1e-6f)
+			flat = Vector3.Forward;
+		else
+			flat = flat.Normalized();
+
+		Vector3 eyeWorld = anchor + Vector3.Up * BossDanceSpotHeightM + flat * BossDanceSpotTowardCameraM;
+		Vector3 aimWorld = anchor + Vector3.Up * BossDanceSpotAimYOffsetM;
+		_danceSpotLight.GlobalPosition = eyeWorld;
+		_danceSpotLight.LookAt(aimWorld, Vector3.Up);
 	}
 
 	/// <summary>
@@ -377,7 +643,10 @@ public partial class BossLevel1 : CharacterBody3D
 	/// </summary>
 	private void BeginCharge()
 	{
+		UpdateDanceHighlightLight(false);
 		_phase = BossPhase.Charging;
+		// Syöksy: vain kerros 1 (lattia + pelaaja) — ei arcade-proppeja (kerros 5).
+		CollisionMask = 1;
 
 		// Teleportataan satunnaiselle reunalle
 		Vector3 edge = PickRandomArenaEdge();
@@ -389,8 +658,10 @@ public partial class BossLevel1 : CharacterBody3D
 		{
 			var look = _player.GlobalPosition with { Y = GlobalPosition.Y };
 			if (GlobalPosition.DistanceTo(look) > 0.05f)
+			{
 				LookAt(look, Vector3.Up);
-				RotateY(Mathf.Pi); // ← käännetään 180°
+				RotateY(Mathf.Pi);
+			}
 		}
 
 		// Vaihdetaan juoksuanimaatioon
@@ -456,12 +727,20 @@ public partial class BossLevel1 : CharacterBody3D
 	/// <summary>Tarkistaa osuuko bossi pelaajaan ja vahingoittaa tarvittaessa.</summary>
 	private void TryChargeContactDamage()
 	{
+		// Vain syöksyvaiheessa — tanssi ei saa vahingoittaa (turva myös jos tila epäsynkassa).
+		if (_phase != BossPhase.Charging || _isDead)
+			return;
 		if (_chargeContactCd > 0f || _playerController == null) return;
+
+		Vector3 threatFromBoss = GlobalPosition + Vector3.Up * HitCenterYOffset;
 
 		for (int i = 0; i < GetSlideCollisionCount(); i++)
 		{
 			if (GetSlideCollision(i).GetCollider() is PlayerController)
 			{
+				if (_playerController.IsBlockingEffectiveAgainst(threatFromBoss))
+					return;
+
 				var hc = _playerController.GetNodeOrNull<HealthComponent>("HealthComponent");
 				hc?.TakeDamage(Mathf.RoundToInt(ChargeContactDamage));
 				_chargeContactCd = ChargeContactCooldown;
@@ -475,7 +754,10 @@ public partial class BossLevel1 : CharacterBody3D
 	{
 		GlobalPosition = _standWorldPos;
 		Velocity = Vector3.Zero;
+		CollisionMask = _savedCollisionMask;
 		_phase = BossPhase.Dancing;
+		_waitingAfterDance = false;
+		_postDanceWaitLeft = 0f;
 		_danceTimeLeft = (float)GD.RandRange(DanceDurationMin, DanceDurationMax);
 		if (_animationPlayer.HasAnimation(DanceClipName))
 			_animationPlayer.Play(DanceClipName);
@@ -522,25 +804,46 @@ public partial class BossLevel1 : CharacterBody3D
 		// Tanssivaiheessa vain vahva isku (R1) osuu
 		if (_phase == BossPhase.Dancing && dmg < 3) return;
 
-		// Tarkistetaan onko bossi oikeassa kulmassa miekkaan nähden
-		Vector3 arcRef = GlobalPosition + Vector3.Up * HitCenterYOffset;
-		bool inCone = _playerController.IsPointInMeleeHitFacingArc(arcRef)
-			|| _playerController.IsPointInMeleeHitBladeArc(arcRef);
-		if (!inCone) return;
+		float proxMax = _playerController.GetMeleeHitProximityMax() + SwordHitExtraProximityMeters;
 
-		// Tarkistetaan etäisyys useissa eri korkeuksissa
-		var probes = SwordHitProbeHeights ?? new[] { HitCenterYOffset };
-		for (int i = 0; i < probes.Length; i++)
+		var rootHeights = SwordHitProbeHeights;
+		if (rootHeights == null || rootHeights.Length == 0)
+			rootHeights = new[] { HitCenterYOffset };
+
+		for (int i = 0; i < rootHeights.Length; i++)
 		{
-			Vector3 p = GlobalPosition + Vector3.Up * probes[i];
-			if (_playerController.GetMeleeHitDistanceToPoint(p) < SwordHitRange)
+			Vector3 p = GlobalPosition + Vector3.Up * rootHeights[i];
+			if (_playerController.CanApplyMeleeHitAtWorldPoint(p, proxMax))
 			{
-				TakeDamage(dmg);
-				_playerController.NotifyMeleeHitLanded();
-				_hasBeenHitThisSwing = true;
+				ApplySwordHitFromPlayer(dmg);
 				return;
 			}
 		}
+
+		var visual = GetNodeOrNull<Node3D>("BossVisual");
+		if (visual != null && GodotObject.IsInstanceValid(visual) && visual.IsInsideTree())
+		{
+			var visOff = SwordHitProbeVisualYOffset;
+			if (visOff != null && visOff.Length > 0)
+			{
+				for (int i = 0; i < visOff.Length; i++)
+				{
+					Vector3 p = visual.GlobalPosition + Vector3.Up * visOff[i];
+					if (_playerController.CanApplyMeleeHitAtWorldPoint(p, proxMax))
+					{
+						ApplySwordHitFromPlayer(dmg);
+						return;
+					}
+				}
+			}
+		}
+	}
+
+	private void ApplySwordHitFromPlayer(int dmg)
+	{
+		TakeDamage(dmg);
+		_playerController.NotifyMeleeHitLanded();
+		_hasBeenHitThisSwing = true;
 	}
 
 	// ─────────────────────────────────────────────
@@ -551,9 +854,12 @@ public partial class BossLevel1 : CharacterBody3D
 	public void TakeDamage(int amount)
 	{
 		if (_isDead) return;
-		Health -= amount;
-		GD.Print($"Bossi sai {amount} vahinkoa! HP jäljellä: {Health}");
-		if (Health <= 0) Die();
+		_bossHealth -= amount;
+		if (_bossHealth <= 0)
+		{
+			_bossHealth = 0;
+			Die();
+		}
 	}
 
 	/// <summary>Bossin kuolema — poistetaan törmäys ja kutistetaan mesh nollaan.</summary>
@@ -561,6 +867,8 @@ public partial class BossLevel1 : CharacterBody3D
 	{
 		_isDead = true;
 		Velocity = Vector3.Zero;
+		StopBossMusic();
+		UpdateDanceHighlightLight(false);
 
 		// Poistetaan törmäys heti ettei fysiikkavirheitä tule
 		var col = GetNodeOrNull<CollisionShape3D>("CollisionShape3D");

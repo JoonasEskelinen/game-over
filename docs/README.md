@@ -1,121 +1,87 @@
-# 🎮 [Pelin Nimi] — Modern Retro Platformer
+# Game Over — projektin esittely (docs)
 
-> Mario-tyylinen retropeli modernilla HD-2D -visuaalisella tyylillä. Kehitetty työharjoitteluprojektina.
-
-![Godot](https://img.shields.io/badge/Godot-4.x-478CBF?logo=godot-engine)
-![Platform](https://img.shields.io/badge/Platform-Linux%20%7C%20Windows%20%7C%20Steam-blue)
-![License](https://img.shields.io/badge/License-Proprietary-red)
-
----
-
-## 📖 Sisällysluettelo
-
-- [Yleiskatsaus](#yleiskatsaus)
-- [Ominaisuudet](#ominaisuudet)
-- [Asennus ja käynnistys](#asennus-ja-käynnistys)
-- [Ohjaimet](#ohjaimet)
-- [Rakenne](#rakenne)
-- [Kehitysympäristö](#kehitysympäristö)
-- [Lisensointi](#lisensointi)
+**Huom:** Tämä kuvaus päivitetään sitä mukaa kun peli ja rakenne elävät. Tarkin pelisuunnitelma: [GDD.md](GDD.md).
 
 ---
 
 ## Yleiskatsaus
 
-Tämä projekti on asiakkaan tilaama peliluola- ja Steam-julkaisu. Peli yhdistää klassisen Mario-tyylisen platformer-pelimekaniikan moderniin HD-2D -visuaaliseen tyyliin — pikselitaide kohtaa dynaamisen valaistuksen ja partikkeliefektit.
-
-**Kohdelaitteet:**
-- Raspberry Pi 5 (8GB) — peliluokkaympäristö
-- PS5 DualSense -ohjain
-- Steam (Windows/Linux)
+- **Pelimoottori:** Godot 4.x (projektissa määritelty esim. 4.6), **C# / .NET** (`config/features` sisältää C#).
+- **Genre / toteutus:** 2.5D-tyylinen **3D**-action (sivulta kuvattu liike, `CharacterBody3D`, kamera seuraa pelaajaa).
+- **Päähahmo:** Game Over — Mixamo-animaatiot (FBX), miekka, kilpi, hyppy, tarttuminen (mm. arcade-kentän fysiikkapropit).
+- **Kohdealusta:** PC-kehitys; **Raspberry Pi 5 (8 GB)** min-spec / peliluolatavoite (ks. projektin `.cursor/rules` ja alla).
 
 ---
 
-## Ominaisuudet
+## Vaatimukset ja käynnistys
 
-- ✅ Klassiset platformer-mekanikat (hyppy, juoksu, vihollispolku)
-- ✅ HD-2D -visuaalisuus: pikselitaide + dynaaminen 2D-valaistus
-- ✅ Parallax-taustat syvyysvaikutelmalla
-- ✅ PS5 DualSense -tuki (haptinen palaute suunnitteilla)
-- ✅ Raspberry Pi 5 -optimoitu Linux-buildi
-- ✅ Steam-yhteensopiva (Steamworks SDK)
-- ✅ CRT-shader -vaihtoehto asetuksissa
-- ✅ Asiakkaan omat hahmot ja maailma
+1. [Godot 4.x](https://godotengine.org/download/) **.NET**-build (C#-tuki).
+2. [.NET SDK](https://dotnet.microsoft.com/download), joka vastaa Godotin odotuksia.
+3. Kloonaa repo ja avaa **`project.godot`** Godotissa → **Run** (F5).
 
----
+**Pääikkuna:** `run/main_scene` osoittaa tällä hetkellä `scenes/ui/main_menu.tscn`.
 
-## Asennus ja käynnistys
-
-### Vaatimukset
-
-- [Godot 4.x](https://godotengine.org/download/) (stable)
-- Git
-- PS5-ohjain (USB tai Bluetooth)
-
-### Kloonausprojekti
+**C#-käännös (CI tai terminaali):**
 
 ```bash
-git clone https://github.com/[käyttäjä]/[repo-nimi].git
-cd [repo-nimi]
+dotnet build GameOver.csproj
 ```
 
-### Avaa Godotissa
-
-1. Avaa Godot Engine
-2. Valitse **Import** → etsi `project.godot`
-3. Paina **Run** (F5)
-
-### Raspberry Pi 5 -buildi
-
-```bash
-# Exportoi Godot Editorista:
-# Project → Export → Linux (ARM64)
-# Kopioi .pck ja binary Raspberry Pi:lle
-```
+Polku repojuuresta: `GameOver.csproj`.
 
 ---
 
-## Ohjaimet
+## Ohjaimet (lyhyt)
 
-| Toiminto | PS5 Ohjain | Näppäimistö |
-|---|---|---|
-| Liiku | Vasen tatti / D-pad | WASD / nuolinäppäimet |
-| Hyppy | ✕ (Cross) | Välilyönti |
-| Juoksu | R2 | Shift |
-| Tauko | OPTIONS | Esc |
-| Interaktio | ▲ (Triangle) | E |
+Projektin **Input Map** määrittelee mm. PS5 DualSense -akselit ja näppäimet. Tärkeitä aktoja (tarkista `project.godot`):
+
+| Toiminto | Esimerkki (ohjain / näppäin) |
+|----------|------------------------------|
+| Liike XZ | Vasen tatti |
+| Hyppy | Ristinäppäin (Cross) |
+| Kilpi | L2 (axis `block`) |
+| Hyökkäys / tatti | R2 (`attack`), R1 (`attack_r1`) |
+| Tarttuminen | Kolmio / E (`grab`) |
+| Aseistila | Kolmio (`toggle_weapon`) |
+| Kamera | Oikea tatti (`cam_look_*`) |
+
+Tarkat bindaukset elävät editorissa — älä luota vain tähän taulukkoon jos inputtia muutetaan.
 
 ---
 
-## Rakenne
+## Hakemistorakenne (korkea taso)
 
 ```
 /
 ├── assets/
-│   ├── sprites/          # Hahmot ja tilet
-│   ├── audio/            # Musiikki ja äänet
-│   └── shaders/          # CRT-shader, valo-efektit
+│   ├── audio/           # musiikki, SFX (.mp3 / importit)
+│   └── models/          # FBX/GLB: pelaaja-animaatiot, susi, boss, arcade, luonto…
 ├── scenes/
-│   ├── characters/       # Pelaaja, viholliset
-│   ├── levels/           # Kentät
-│   └── ui/               # HUD, valikot
-├── scripts/              # GDScript-tiedostot
-├── docs/                 # Projektidokumentaatio
+│   ├── characters/      # player.tscn, gameover_character.tscn
+│   ├── enemies/       # EnemyLevel1, BossLevel1 (+ playtest)
+│   ├── levels/        # level_1, test_level, World1/*, World2/*, spawnerit
+│   └── ui/            # main_menu, hud, game_over
+├── scripts/             # C#: pelaaja, viholliset, kamera, tasologiikka, HUD
+├── docs/                # GDD, arkkitehtuuri, changelog, tämä tiedosto
+├── addons/              # esim. Mixamo-retarget -työkalu
 └── project.godot
 ```
 
+Yksityiskohtainen tekninen jako: [ARCHITECTURE.md](ARCHITECTURE.md).
+
 ---
 
-## Kehitysympäristö
+## Muu dokumentaatio
 
-- **Pelimoottori:** Godot 4.x
-- **Kieli:** GDScript
-- **Versionhallinta:** Git + GitHub
-- **Taiteentuotanto:** Aseprite (pikselitaide)
-- **Äänet:** [DAW / äänikirjasto]
+| Tiedosto | Sisältö |
+|----------|---------|
+| [GDD.md](GDD.md) | Pelisuunnitelma, mekaniikat, maailmat |
+| [ARCHITECTURE.md](ARCHITECTURE.md) | Tekninen rakenne, skriptit, tasot |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | Git, commitit, PR:t (päivitä C#-tyyli tarvittaessa) |
+| [CHANGELOG.md](CHANGELOG.md) | Julkaisumuistiinpanot |
 
 ---
 
 ## Lisensointi
 
-Peli ja sen sisältö ovat asiakkaan omaisuutta. Katso [LICENSE](LICENSE) lisätietoja varten.
+Katso [LICENSE](LICENSE) (proprietary / asiakas — tarkista sisältö ennen jakamista).

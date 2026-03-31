@@ -1,156 +1,120 @@
-# Tekninen Arkkitehtuuridokumentti
+# Tekninen arkkitehtuuridokumentti — Game Over
 
-**Projekti:** [Pelin Nimi]  
-**Versio:** 0.1  
-**Pelimoottori:** Godot 4.x
+**Versio:** elää repossa (päivitä tämä otsikko tai git-tag merkittävissä välietapeissa)  
+**Pelimoottori:** Godot 4.x, **C# / .NET**  
+**Renderöinti:** Forward Plus (`project.godot`)  
+**Fysiikka 3D:** Jolt Physics
 
----
-
-## 1. Projektihakemistorakenne
-
-```
-project.godot
-├── assets/
-│   ├── sprites/
-│   │   ├── player/          # Pelaajahahmon spritesheet + animaatiot
-│   │   ├── enemies/         # Vihollisten spritesheet
-│   │   ├── tiles/           # Tilesetit kenttiin
-│   │   └── ui/              # HUD-elementit, ikonit
-│   ├── audio/
-│   │   ├── music/           # Taustamusiikki (.ogg)
-│   │   └── sfx/             # Ääniefektit (.wav)
-│   └── shaders/
-│       ├── crt.gdshader      # CRT-efekti
-│       └── pixellight.gdshader
-│
-├── scenes/
-│   ├── autoload/
-│   │   ├── GameManager.tscn  # Autoload: pelin tila, pisteet
-│   │   └── AudioManager.tscn # Autoload: äänentoisto
-│   ├── characters/
-│   │   ├── Player.tscn       # Pelaajahahmo
-│   │   └── enemies/
-│   ├── levels/
-│   │   ├── World1/
-│   │   └── World2/
-│   ├── ui/
-│   │   ├── HUD.tscn
-│   │   ├── MainMenu.tscn
-│   │   └── PauseMenu.tscn
-│   └── objects/
-│       ├── Coin.tscn
-│       └── Checkpoint.tscn
-│
-├── scripts/
-│   ├── player/
-│   │   ├── PlayerController.gd
-│   │   └── PlayerAnimator.gd
-│   ├── enemies/
-│   │   └── BaseEnemy.gd
-│   ├── managers/
-│   │   ├── GameManager.gd
-│   │   └── AudioManager.gd
-│   └── ui/
-│       └── HUD.gd
-│
-└── docs/                     # Tämä kansio
-```
+Tämä dokumentti kuvaa **nykytilan**. Kun skenejä tai vastuita siirretään, päivitä vastaavat kohdat.
 
 ---
 
-## 2. Autoload (Singleton) -rakenne
+## 1. Sovelluksen käynnistys
 
-```
-GameManager      — Pelin tila, pisteet, elinvoima, scene-vaihdot
-AudioManager     — Musiikin ja SFX:n hallinta
-InputManager     — Ohjainmäppäykset (PS5 + näppäimistö)
-SaveManager      — Tallennukset (Godot ResourceSaver)
-```
+- **`run/main_scene`:** `scenes/ui/main_menu.tscn`
+- **Autoloadit:** ei määritelty `project.godot`-issa tällä hetkellä; pelitila ja äänet hoidetaan pääosin scene-puun nodeilla ja skripteillä.
 
 ---
 
-## 3. Pelaajan Node-rakenne
+## 2. Hakemistot ja roolit
 
-```
-Player (CharacterBody2D)
-├── CollisionShape2D        — Törmäysalue
-├── Sprite2D / AnimatedSprite2D
-├── Camera2D                — Seuraa pelaajaa, smooth + limits
-├── CoyoteTimer (Timer)     — Coyote time -toteutus
-├── JumpBufferTimer (Timer) — Jump buffer
-└── Hurtbox (Area2D)        — Vahinkoalue
-    └── CollisionShape2D
-```
-
----
-
-## 4. Renderöintiputki
-
-```
-SubViewport (320×180)
-  └── Pelin sisältö (tilemap, hahmot, valaistus)
-      ↓ (integer scale)
-TextureRect (koko näyttö)
-  └── crt.gdshader (valinnainen, asetuksista)
-```
-
-**Pikseliresoluutio:** 320×180  
-**Skaalaus:** Integer scaling (1x, 2x, 3x... ruudun koon mukaan)  
-**Tavoite FPS:** 60 (Raspberry Pi 5 + PC)
+| Polku | Rooli |
+|-------|--------|
+| `scripts/player/` | `PlayerController`, `HealthComponent`, tangenttikorjaukset |
+| `scripts/enemies/` | `BossLevel1`, `EnemyBasic`, playtest-kamera |
+| `scripts/levels/` | Boss-director, arcade-fysiikka, scatter, checkpoint, exit, kill zone, aalto-director |
+| `scripts/` (juuri) | `CameraFollow`, `HUDController` |
+| `scripts/util/` | Yleiset apuskriptit (esim. mesh) |
+| `scenes/characters/` | Pelaajan `CharacterBody3D` + instanssi `gameover_character` |
+| `scenes/enemies/` | Vihollisten scenet; osa logiikasta `EnemyLevel1.cs` scenen vieressä |
+| `scenes/levels/` | Kentät, `EnemySpawner.cs`, testi- ja tuotantotason scenet |
+| `scenes/ui/` | Valikot, HUD, game over |
+| `assets/models/` | Mixamo/FBX, boss, susi, arcade-paketti, luonto |
+| `assets/audio/` | Musiikki ja SFX |
 
 ---
 
-## 5. Tallennusjärjestelmä
+## 3. Pelaaja (node-rakenne, käsite)
 
-- Godot `FileAccess` + JSON tai `ResourceSaver`
-- Tallennetaan: kenttäedistyminen, pisteet, asetukset
-- Tiedostopolku: `user://save_data.json`
-- Steam Cloud Save -tuki lisätään Steamworks-integraation yhteydessä
+`scenes/characters/player.tscn`:
 
----
+- **`CharacterBody3D`** (`PlayerController.cs`) — ryhmä **`player`** (haetaan koodissa `GetTree().GetFirstNodeInGroup("player")`).
+- **`HealthComponent`** — elinvoima / vahinko.
+- **`gameover_character`** (PackedScene) — varsinainen mesh + animaatiot (Mixamo).
+- Törmäys: `CapsuleShape3D`; debug-mesh voi olla piilotettu.
 
-## 6. Ohjainintegraatio
-
-### PS5 DualSense
-- Godot 4 tunnistaa DualSense:n automaattisesti SDL2:n kautta
-- Haptinen palaute: `Input.start_joy_vibration(device, weak, strong, duration)`
-- Adaptive triggers: vaatii lisäplugineja (tutkitaan myöhemmin)
-
-### Input Map (Godot Project Settings)
-```
-ui_left / ui_right / ui_up / ui_down  — Liike
-jump                                   — Hyppy (✕ + välilyönti)
-run                                    — Juoksu (R2 + Shift)
-interact                               — Interaktio (▲ + E)
-pause                                  — Tauko (OPTIONS + Esc)
-```
+Keskeiset vastuut `PlayerController.cs`: liike (myös syvyysakseli kun käytössä), hyppy, miekka (R2/R1), kilpi (L2), tarttuminen `grabbable`-ryhmään, asemodet, animaatioiden ohjaus.
 
 ---
 
-## 7. Steam-integraatio
+## 4. Kamera
 
-1. Lataa [GodotSteam](https://godotsteam.com/) — suositeltava Godot 4 Steamworks-plugin
-2. Aseta Steam AppID: `steam_appid.txt` projektin juureen
-3. Toteuta: saavutukset, pisteet, cloud save
-4. Testaa SteamDeckilla ja Linuxilla ennen julkaisua
+- **`CameraFollow.cs`** — seuraa pelaajaa; tukee mm. boss-tilanteisiin liittyviä blendejä / erikoistiloja (tarkista skriptin exportit ja kenttäkohtainen wiring).
 
 ---
 
-## 8. Raspberry Pi 5 -optimointi
+## 5. Viholliset ja boss
 
-- Käytä **Compatibility** render mode (ei Forward+)
-- Pidä draw call -määrä pienenä (sprite atlakset)
-- Vältä raskaita shadereitä — CRT vain jos FPS riittää
-- Testaa aina fyysisellä laitteella, ei vain emulaattorilla
-- Kohdenna ARM64 Linux export template
+- **`EnemyLevel1.cs`** / `EnemyLevel1.tscn` — tason vihollinen (esim. susi), purema, torjunta kilvellä (`PlayerController.IsBlockingEffectiveAgainst`).
+- **`BossLevel1.cs`** — level 1 -boss: tanssi-/syöksyfaset, kontaktivahinko, miekan osumat, tanssivalo (SpotLight3D), musiikki; ryhmä **`level1_boss`**.
+- **`EnemySpawner.cs`** — spawnauslogiikka (ryhmä **`enemy`** spawneille).
 
 ---
 
-## 9. Suorituskykybudetti (Raspberry Pi 5)
+## 6. Tasot ja ohjaus
 
-| Resurssi | Tavoite |
-|---|---|
-| FPS | 60 vakaasti |
-| Muisti (RAM) | < 512 MB |
-| GPU draw calls / frame | < 200 |
-| Äänikanavat yhtaikaa | max 16 |
+Esimerkkejä (nimet voivat laajentua):
+
+| Scene / skripti | Tehtävä |
+|-----------------|--------|
+| `level_1.tscn` | Pääkenttä / arena-tyyppinen kooste (pelaaja, propsit, boss-setup) |
+| `Level1BossDirector.cs` | Bossin ja kameran / draaman synkronointi |
+| `Level1ArcadePhysicsSetup.cs` | Arcade-objektien fysiikka; `grabbable`-ryhmä |
+| `ForestScatter.cs` | Luonnon propit (instanssit / suorituskyky — Pi-tavoite) |
+| `Checkpoint.cs`, `LevelExit.cs`, `KillZone.cs` | Eteminen / kuolema |
+| `ArenaWaveDirector.cs` | Aaltopohjainen logiikka (jos käytössä kentällä) |
+
+Tarkka node-puu on kussakin `.tscn`-tiedostossa — älä kopioi vanhoja 2D-puita tästä dokumentista, vaan editori.
+
+---
+
+## 7. UI
+
+- `main_menu.tscn` + `MainMenu.cs`
+- `hud.tscn` + `HUDController.cs`
+- `game_over.tscn` + `GameOver.cs`
+
+---
+
+## 8. Input
+
+Kaikki määritellään Godotin **Project → Project Settings → Input Map** -kautta; lähde totuus on `project.godot` `[input]`-osio. C# käyttää `Input.GetAxis` / `Input.IsActionPressed` -tyylisiä kutsuja action-nimillä (`move_left`, `attack`, `block`, …).
+
+---
+
+## 9. Suorituskyky ja Raspberry Pi 5
+
+- Tavoite: pelattavuus **heikolla integroidulla GPU:lla** (Pi 5).
+- Käytännössä: vältä turhia draw calleja ja varjoja, LOD / presetit / scatter-luvut, testaa **ARM64**-build oikealla laitteella ennen julkaisua.
+- Projektissa voi olla Cursor-sääntö `.cursor/rules/raspberry-pi5-target.mdc` — täydentää tätä dokumenttia.
+
+---
+
+## 10. Riippuvuudet ja työkalut
+
+- **C#:** `GameOver.csproj`, assembly name `GameOver` (`project.godot` → `[dotnet]`).
+- **Addons:** esim. `addons/Godot-Mixamo-Animation-Retargeter-main` — retarget / animaatioputki editorissa.
+
+---
+
+## 11. Historia vs. toteutus
+
+Alkuperäinen suunnitelma voi sisältää 2D / HD-2D -elementtejä (GDD:n visio). **Nykyinen toteutus** on pääosin **3D-skenet + C#**. Vanhat kaaviot, jotka viittaavat vain `CharacterBody2D` / SubViewport-pikseliputkeen, eivät kuvaa tätä branchia — päivitä ne tähän dokumenttiin tai merkitse arkistoksi erikseen.
+
+---
+
+## 12. Liitteet
+
+- [README.md](README.md) — käynnistys ja kansiorakenne  
+- [GDD.md](GDD.md) — pelisuunnitelma  
+- [CHANGELOG.md](CHANGELOG.md) — mitä muuttui versiosta toiseen  
