@@ -7,6 +7,7 @@ public partial class HUDController : CanvasLayer
 {
 	private ProgressBar _healthBar;
 	private ProgressBar _heavyAttackBar;
+	private Label _bossR1Hint;
 
 	private PlayerController _player;
 
@@ -16,6 +17,7 @@ public partial class HUDController : CanvasLayer
 		// Haetaan HealthBar-node HUD:in lapsista nimellä
 		_healthBar = GetNode<ProgressBar>("HealthBar");
 		_heavyAttackBar = GetNodeOrNull<ProgressBar>("HeavyAttackCooldownBar");
+		_bossR1Hint = GetNodeOrNull<Label>("BossR1Hint");
 
 		// Haetaan pelaaja scenetreestä — polku muuttuu myöhemmin jos rakenne muuttuu
 		// GetTree().Root hakee scenen juuresta, sitten etsitään Player-node
@@ -41,6 +43,12 @@ public partial class HUDController : CanvasLayer
 
 	public override void _Process(double delta)
 	{
+		if (_bossR1Hint != null)
+		{
+			var boss = GetTree().GetFirstNodeInGroup("level1_boss") as BossLevel1;
+			_bossR1Hint.Visible = boss != null && boss.IsDanceVulnerable;
+		}
+
 		if (_player == null || _heavyAttackBar == null) return;
 		if (!_player.ShouldShowHeavyCooldownBar())
 		{

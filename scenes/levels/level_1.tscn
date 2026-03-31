@@ -19,6 +19,8 @@
 [ext_resource type="PackedScene" uid="uid://cppxj34ufkxc7" path="res://scenes/enemies/EnemyLevel1.tscn" id="16_iwr0g"]
 [ext_resource type="PackedScene" uid="uid://uh6pto3nrmqe" path="res://scenes/ui/hud.tscn" id="17_bahl2"]
 [ext_resource type="Script" uid="uid://dgobhgwrxatv" path="res://scripts/levels/Level1ArcadePhysicsSetup.cs" id="18_arcphys"]
+[ext_resource type="Script" uid="uid://6ycjaijvsor1" path="res://scripts/levels/Level1BossDirector.cs" id="19_bossdir"]
+[ext_resource type="PackedScene" uid="uid://8s0cyg2mwx3r" path="res://scenes/enemies/BossLevel1.tscn" id="20_bossscn"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_7u6i3"]
 
@@ -254,6 +256,10 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7.529998, 0.05000019, -4.566
 [node name="EnemySpawner" type="Node3D" parent="." unique_id=899631862]
 script = ExtResource("15_wtwp4")
 EnemyScene = ExtResource("16_iwr0g")
+
+[node name="Level1BossDirector" type="Node" parent="." unique_id=156060372]
+script = ExtResource("19_bossdir")
+BossScene = ExtResource("20_bossscn")
 
 [node name="HUD" parent="." unique_id=499664610 instance=ExtResource("17_bahl2")]
 

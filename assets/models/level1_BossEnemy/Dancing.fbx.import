@@ -3,13 +3,13 @@
 importer="scene"
 importer_version=1
 type="PackedScene"
-uid="uid://d1j2ccbwb2bp0"
-path="res://.godot/imported/Push Start.fbx-4c31fa23293a7be87450c10c5cf9df28.scn"
+uid="uid://c4c5ccllmqb7u"
+path="res://.godot/imported/Dancing.fbx-4f2889f65dee4d22643e7cb30bb9de71.scn"
 
 [deps]
 
-source_file="res://assets/models/animations/Push Start.fbx"
-dest_files=["res://.godot/imported/Push Start.fbx-4c31fa23293a7be87450c10c5cf9df28.scn"]
+source_file="res://assets/models/level1_BossEnemy/Dancing.fbx"
+dest_files=["res://.godot/imported/Dancing.fbx-4f2889f65dee4d22643e7cb30bb9de71.scn"]
 
 [params]
 

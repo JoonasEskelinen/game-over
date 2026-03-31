@@ -116,6 +116,9 @@ public partial class PlayerController : CharacterBody3D
 	/// <summary>Fysiikkakello R2-osumaa varten (AnimationPlayer-position voi jäädä jälkeen blendissä).</summary>
 	private float _meleeSwingElapsed;
 
+	private float _meleeHitStopTimer;
+	private double _meleeHitStopSeekPos;
+
 	private RigidBody3D _grabbedBody;
 
 	/// <summary>R2: liipasin uudelleen "sallittu" kun akseli on päästetty tarpeeksi alas (latch).</summary>
@@ -136,6 +139,9 @@ public partial class PlayerController : CharacterBody3D
 
 	/// <summary>Kilpi-node — haetaan Skeleton3D:n alta. Näkyy vain SwordShield-tilassa.</summary>
 	private Node3D _shield;
+
+	private AudioStreamPlayer _swordSFX;
+	private AudioStreamPlayer _damageSFX;
 
 	// ─────────────────────────────────────────────
 	// JULKISET METODIT — vihollinen käyttää näitä
@@ -185,6 +191,14 @@ public partial class PlayerController : CharacterBody3D
 	[Export] public float SwordHitFacingHalfAngleDeg = 100f;
 
 	/// <summary>
+	/// Viholliskartio terän suuntaan (kahva→kärki XZ): auttaa kun hahmon juoksu-kääntö ja lyönnin terä eivät täsmää.
+	/// </summary>
+	[Export] public float MeleeBladeArcHalfAngleDeg = 92f;
+
+	/// <summary>Sekunteina: miekan osuttua lyönti pysähtyy tähän animaatioasentoon (hit-stop).</summary>
+	[Export] public float MeleeHitStopSeconds = 0.09f;
+
+	/// <summary>
 	/// Kilpi torjuu vain uhat tämän puolikulman sisällä (asteita). Kapeampi kuin miekan kaari.
 	/// </summary>
 	[Export] public float ShieldBlockThreatHalfAngleDeg = 52f;
@@ -192,7 +206,8 @@ public partial class PlayerController : CharacterBody3D
 	/// <summary>Ryhmä <c>grabbable</c> RigidBody3D — neliö + pitää pohjassa (level_1 air-hockey).</summary>
 	[Export] public float GrabInteractRange = 2.5f;
 
-	[Export] public float GrabFacingMinDot = 0.35f;
+	/// <summary>Työntötilassa hahmon käännös kohti kohdetta: kerroin <see cref="FacingSmoothing"/>-arvoon (isompi = napakampi).</summary>
+	[Export] public float GrabFaceTowardObjectSmoothingScale = 2.2f;
 
 	[Export] public float GrabHoldDistance = 1.15f;
 
@@ -304,6 +319,34 @@ public partial class PlayerController : CharacterBody3D
 		return IsWithinFacingArcXZ(worldPoint, SwordHitFacingHalfAngleDeg);
 	}
 
+	/// <summary>Onko piste terän iskulinjan suuntaisessa kartiossa (XZ), kahvasta mitattuna.</summary>
+	public bool IsPointInMeleeHitBladeArc(Vector3 worldPoint)
+	{
+		GetMeleeHitSegment(out Vector3 a, out Vector3 b);
+		Vector3 seg = b - a;
+		seg.Y = 0f;
+		Vector3 toP = worldPoint - a;
+		toP.Y = 0f;
+		float segL2 = seg.LengthSquared();
+		float toL2 = toP.LengthSquared();
+		if (segL2 < 1e-8f || toL2 < 1e-8f)
+			return true;
+		seg /= Mathf.Sqrt(segL2);
+		toP /= Mathf.Sqrt(toL2);
+		float cosLimit = Mathf.Cos(Mathf.DegToRad(MeleeBladeArcHalfAngleDeg));
+		return toP.Dot(seg) >= cosLimit;
+	}
+
+	/// <summary>Kutsutaan kun miekka osuu viholliseen — lyhyt freeze osumakuvaan.</summary>
+	public void NotifyMeleeHitLanded()
+	{
+		if (!_isAttacking || _animationPlayer == null)
+			return;
+		if (_meleeHitStopTimer <= 0f)
+			_meleeHitStopSeekPos = _animationPlayer.CurrentAnimationPosition;
+		_meleeHitStopTimer = MeleeHitStopSeconds;
+	}
+
 	/// <summary>XZ-kartio: onko <paramref name="worldPoint"/> hahmon edessä (Basis.Z) annetulla puolikulmalla.</summary>
 	private bool IsWithinFacingArcXZ(Vector3 worldPoint, float halfAngleDeg)
 	{
@@ -397,6 +440,8 @@ public partial class PlayerController : CharacterBody3D
 		if (!Mathf.IsZeroApprox(CharacterVisualGroundOffsetY))
 			_characterModel.Position += new Vector3(0f, CharacterVisualGroundOffsetY, 0f);
 		_healthComponent = GetNode<HealthComponent>("HealthComponent");
+		_swordSFX = GetNodeOrNull<AudioStreamPlayer>("SwordSFX");
+		_damageSFX = GetNodeOrNull<AudioStreamPlayer>("DamageSFX");
 
 		// Kytketään HealthComponentin signaalit tähän skriptiin
 		_healthComponent.HealthChanged += OnHealthChanged;
@@ -602,6 +647,7 @@ public partial class PlayerController : CharacterBody3D
 			_meleeStrikeClip = "mixamo_com_005";
 			PlayAnim("mixamo_com_005");
 			Vibrate(0.3f, 0.5f, 0.15f);
+			_swordSFX?.Play();
 			_lightTriggerArmed = false;
 			_lightAttackDebounce = LightAttackDebounceSeconds;
 		}
@@ -617,6 +663,7 @@ public partial class PlayerController : CharacterBody3D
 			_meleeStrikeClip = "mixamo_com_010";
 			PlayAnim("mixamo_com_010");
 			Vibrate(0.6f, 1.0f, 0.25f);
+			_swordSFX?.Play();
 			_heavyCooldownBarUnlocked = true;
 			_heavyAttackCooldown = HeavyAttackCooldownSeconds;
 		}
@@ -630,8 +677,6 @@ public partial class PlayerController : CharacterBody3D
 		}
 		if (!Input.IsActionPressed("grab"))
 			_grabbedBody = null;
-		else if (_grabbedBody != null)
-			ApplyGrabPull();
 
 		// ── Liikkuminen ──
 		// Istumistilassa tai blokatessa ei voi liikkua
@@ -689,9 +734,27 @@ public partial class PlayerController : CharacterBody3D
 			velocity.Y = wish.Y;
 
 		// ── Hahmon kääntyminen ──
-		// Hahmo kääntyy liikkeen suuntaan pehmeästi FacingSmoothing-arvon mukaan
+		// Työntäessä katsotaan kohdetta (push-suunta), muuten liikkeen suuntaan.
 		Vector3 wishHorizontal = new(wish.X, 0f, wish.Z);
-		if (wishHorizontal.LengthSquared() > 1e-5f)
+		bool grabbing = _grabbedBody != null && Input.IsActionPressed("grab")
+			&& GodotObject.IsInstanceValid(_grabbedBody) && _grabbedBody.IsInsideTree();
+		if (grabbing)
+		{
+			var toObj = _grabbedBody.GlobalPosition - GlobalPosition;
+			toObj.Y = 0f;
+			if (toObj.LengthSquared() > 1e-5f)
+			{
+				var dirObj = toObj.Normalized();
+				var targetYaw = Basis.LookingAt(-dirObj, Vector3.Up).GetEuler(EulerOrder.Yxz).Y;
+				float s = FacingSmoothing * Mathf.Max(0.01f, GrabFaceTowardObjectSmoothingScale);
+				if (s <= 0.01f)
+					_facingYaw = targetYaw;
+				else
+					_facingYaw = Mathf.LerpAngle(_facingYaw, targetYaw, 1f - Mathf.Exp(-s * dt));
+				_characterModel.Rotation = new Vector3(0f, _facingYaw, 0f);
+			}
+		}
+		else if (wishHorizontal.LengthSquared() > 1e-5f)
 		{
 			var dir = wishHorizontal.Normalized();
 			var targetYaw = Basis.LookingAt(-dir, Vector3.Up).GetEuler(EulerOrder.Yxz).Y;
@@ -702,6 +765,9 @@ public partial class PlayerController : CharacterBody3D
 
 			_characterModel.Rotation = new Vector3(0f, _facingYaw, 0f);
 		}
+
+		if (grabbing)
+			ApplyGrabPull();
 
 		// ── Liike-animaatiot ──
 		// Vaihdetaan animaatiota tilanteen mukaan
@@ -739,8 +805,23 @@ public partial class PlayerController : CharacterBody3D
 
 		_lightAnalogPreviousFrame = lightAnalog;
 
+		if (_meleeHitStopTimer > 0f)
+		{
+			_meleeHitStopTimer = Mathf.Max(0f, _meleeHitStopTimer - dt);
+			if (_animationPlayer != null && _isAttacking)
+			{
+				_animationPlayer.SpeedScale = 0f;
+				_animationPlayer.Seek(_meleeHitStopSeekPos, true);
+			}
+			if (_meleeHitStopTimer <= 0f && _animationPlayer != null)
+				_animationPlayer.SpeedScale = 1f;
+		}
+		else if (_animationPlayer != null && _animationPlayer.SpeedScale == 0f && !_isAttacking)
+			_animationPlayer.SpeedScale = 1f;
+
+		float swingDt = (_meleeHitStopTimer > 0f) ? 0f : dt;
 		if (_isAttacking)
-			_meleeSwingElapsed += dt;
+			_meleeSwingElapsed += swingDt;
 		else
 			_meleeSwingElapsed = 0f;
 	}
@@ -837,6 +918,9 @@ public partial class PlayerController : CharacterBody3D
 		{
 			_isAttacking = false;
 			_meleeStrikeClip = default;
+			_meleeHitStopTimer = 0f;
+			if (_animationPlayer != null)
+				_animationPlayer.SpeedScale = 1f;
 		}
 
 		// Vahva lyönti loppui
@@ -844,6 +928,9 @@ public partial class PlayerController : CharacterBody3D
 		{
 			_isAttacking = false;
 			_meleeStrikeClip = default;
+			_meleeHitStopTimer = 0f;
+			if (_animationPlayer != null)
+				_animationPlayer.SpeedScale = 1f;
 		}
 
 		// Hyppyanimaatio loppui — palataan idle:en
@@ -863,6 +950,8 @@ public partial class PlayerController : CharacterBody3D
 	{
 		GD.Print($"HP: {currentHealth}/{maxHealth}");
 		Vibrate(0.8f, 0.8f, 0.3f);
+		if (currentHealth <= 0)
+			_damageSFX?.Play();
 		// TODO: päivitä HUD tässä
 	}
 
@@ -937,31 +1026,22 @@ public partial class PlayerController : CharacterBody3D
 		if (_isSitting || _isAttacking || _isBlocking)
 			return;
 
-		var forward = _characterModel.GlobalTransform.Basis.Z;
-		forward.Y = 0f;
-		if (forward.LengthSquared() < 1e-6f)
-			return;
-		forward = forward.Normalized();
-
+		// Lähin grabbable XZ-tasossa — ei vaadi "edestä" -asentoa; työntö kääntää hahmon kohti kohdetta.
 		RigidBody3D best = null;
-		float bestScore = -1f;
+		float bestDistSq = float.MaxValue;
 		foreach (var n in GetTree().GetNodesInGroup("grabbable"))
 		{
 			if (n is not RigidBody3D rb || !GodotObject.IsInstanceValid(rb) || !rb.IsInsideTree())
 				continue;
 			var to = rb.GlobalPosition - GlobalPosition;
 			to.Y = 0f;
-			float d = to.Length();
+			float dSq = to.LengthSquared();
+			float d = Mathf.Sqrt(dSq);
 			if (d > GrabInteractRange || d < 0.06f)
 				continue;
-			to /= d;
-			float facing = forward.Dot(to);
-			if (facing < GrabFacingMinDot)
-				continue;
-			float score = facing / (d + 0.12f);
-			if (score > bestScore)
+			if (dSq < bestDistSq)
 			{
-				bestScore = score;
+				bestDistSq = dSq;
 				best = rb;
 			}
 		}

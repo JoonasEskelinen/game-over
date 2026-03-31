@@ -1,0 +1,124 @@
+using Godot;
+
+/// <summary>
+/// Käynnistää level 1 -bossin kun EnemySpawner on spawmannut kaikki normiviholliset ja ne on tuhottu.
+/// Spawn-kohta: käytä <see cref="BossStandOffsetGlobal"/> (maailma-avaruus) — paikallinen offset tanssikoneen rotaation kanssa helposti vie hahmon seinän taakse.
+/// </summary>
+public partial class Level1BossDirector : Node
+{
+	[Export] public NodePath EnemySpawnerPath = new("../EnemySpawner");
+	[Export] public NodePath DanceMachinePath = new("../dance-machine2");
+	[Export] public NodePath CameraPath = new("../Camera3D");
+	[Export] public PackedScene BossScene;
+
+	/// <summary>
+	/// Kun true: <see cref="BossStandOffsetLocal"/> koneen avaruudessa (varo rotaatiota/skaalaa).
+	/// Kun false (suositus): <see cref="BossStandOffsetGlobal"/> lisätään koneen maailmasijaintiin.
+	/// </summary>
+	[Export] public bool UseDanceMachineLocalOffset = false;
+
+	[Export] public Vector3 BossStandOffsetLocal = new(0f, 0.08f, -2.1f);
+
+	/// <summary>Lisätään dance-machine2 GlobalPositioniin (tyypillisesti negatiivinen Z vie kentän keskemmäs).</summary>
+	[Export] public Vector3 BossStandOffsetGlobal = new(0f, 0.2f, -5.5f);
+
+	[Export] public bool ClampStandInsideArena = true;
+	[Export] public float ArenaStandClampHalf = 12f;
+
+	[Export] public bool SnapStandYToFloorRaycast = true;
+
+	[Export] public float CinematicBlendIn = 1.05f;
+	[Export] public float CinematicHold = 0.45f;
+	[Export] public float CinematicBlendOut = 1.35f;
+	[Export] public Vector3 CinematicCameraOffsetFromBoss = new(5f, 3.4f, 7.5f);
+
+	private EnemySpawner _spawner;
+	private Node3D _danceMachine;
+	private CameraFollow _camera;
+	private bool _bossStarted;
+
+	public override void _Ready()
+	{
+		_spawner = GetNodeOrNull<EnemySpawner>(EnemySpawnerPath);
+		_danceMachine = GetNodeOrNull<Node3D>(DanceMachinePath);
+		_camera = GetNodeOrNull<CameraFollow>(CameraPath);
+		if (BossScene == null)
+			GD.PrintErr("Level1BossDirector: BossScene puuttuu (BossLevel1.tscn).");
+	}
+
+	public override void _Process(double delta)
+	{
+		if (_bossStarted || BossScene == null || _spawner == null || _danceMachine == null)
+			return;
+		if (!_spawner.IsNormalEncounterComplete())
+			return;
+
+		_bossStarted = true;
+		SpawnBossAndPlayIntro();
+	}
+
+	private Vector3 ComputeBossStandWorld()
+	{
+		if (!_danceMachine.IsInsideTree())
+			return BossStandOffsetGlobal;
+
+		Vector3 stand = UseDanceMachineLocalOffset
+			? _danceMachine.ToGlobal(BossStandOffsetLocal)
+			: _danceMachine.GlobalPosition + BossStandOffsetGlobal;
+
+		if (ClampStandInsideArena)
+		{
+			float h = ArenaStandClampHalf;
+			stand.X = Mathf.Clamp(stand.X, -h, h);
+			stand.Z = Mathf.Clamp(stand.Z, -h, h);
+		}
+
+		if (SnapStandYToFloorRaycast && IsInsideTree())
+			stand = SnapStandYToFloor(stand);
+
+		return stand;
+	}
+
+	private Vector3 SnapStandYToFloor(Vector3 stand)
+	{
+		var w3d = (GetParent() as Node3D)?.GetWorld3D() ?? GetViewport()?.GetWorld3D();
+		var space = w3d?.DirectSpaceState;
+		if (space == null)
+			return stand;
+
+		var from = stand + Vector3.Up * 6f;
+		var to = stand + Vector3.Down * 12f;
+		var q = PhysicsRayQueryParameters3D.Create(from, to);
+		q.CollideWithAreas = false;
+		var hit = space.IntersectRay(q);
+		if (hit.Count > 0 && hit.ContainsKey("position"))
+		{
+			float y = ((Vector3)hit["position"]).Y;
+			stand.Y = y + 0.06f;
+		}
+
+		return stand;
+	}
+
+	private void SpawnBossAndPlayIntro()
+	{
+		var boss = BossScene.Instantiate() as BossLevel1;
+		if (boss == null)
+		{
+			GD.PrintErr("Level1BossDirector: BossScene ei ole BossLevel1.");
+			return;
+		}
+
+		Vector3 stand = ComputeBossStandWorld();
+		boss.Configure(stand);
+
+		GetParent()?.AddChild(boss);
+
+		if (_camera != null)
+		{
+			Vector3 lookAt = boss.GlobalPosition + Vector3.Up * 1.35f;
+			Vector3 camEnd = lookAt + CinematicCameraOffsetFromBoss;
+			_camera.PlayBossIntroShot(lookAt, camEnd, CinematicBlendIn, CinematicHold, CinematicBlendOut);
+		}
+	}
+}

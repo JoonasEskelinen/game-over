@@ -71,13 +71,16 @@ public partial class EnemyBasic : CharacterBody3D
 
 		Vector3 enemyHitCenter = GlobalPosition + new Vector3(0f, HitCenterYOffset, 0f);
 		float dist = player.GetMeleeHitDistanceToPoint(enemyHitCenter);
+		bool inCone = player.IsPointInMeleeHitFacingArc(enemyHitCenter)
+			|| player.IsPointInMeleeHitBladeArc(enemyHitCenter);
 		if (_meleeCd <= 0f
 			&& player.IsSwordWeaponMode()
 			&& player.IsMeleeAttackActive()
-			&& player.IsPointInMeleeHitFacingArc(enemyHitCenter)
+			&& inCone
 			&& dist < SwordHitRange)
 		{
 			TakeDamage(Mathf.Max(1, player.GetMeleeAttackDamage()));
+			player.NotifyMeleeHitLanded();
 			_meleeCd = MeleeHitCooldown;
 		}
 	}

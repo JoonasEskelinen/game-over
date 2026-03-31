@@ -5,6 +5,8 @@ public partial class EnemySpawner : Node3D
 	[Export] public PackedScene EnemyScene;
 	[Export] public float MinSpeed = 1.5f;
 	[Export] public float MaxSpeed = 3.5f;
+	/// <summary>Kaikki normiviholliset (ryhmä enemy) ennen bossia.</summary>
+	[Export] public int TotalNormalEnemiesToSpawn = 20;
 
 	private Vector3[] _spawnPoints = new Vector3[]
 	{
@@ -18,33 +20,28 @@ public partial class EnemySpawner : Node3D
 		new(-10, 0, -10),
 	};
 
-	private int _wave = 1;
 	private int _enemiesInWave = 0;
 	private int _spawned = 0;
 	private float _timer = 0f;
-	private float _spawnInterval = 3.0f;
+	private float _spawnInterval = 2.2f;
 	private bool _waveInProgress = false;
 
 	public override void _Ready()
 	{
-		StartWave(_wave);
+		StartLevelSpawns();
+	}
+
+	/// <summary>Kaikki säännellyt viholliset spawattu ja ryhmässä enemy ei ole ketään (boss ei ole tässä ryhmässä).</summary>
+	public bool IsNormalEncounterComplete()
+	{
+		if (!_waveInProgress)
+			return false;
+		int alive = GetTree().GetNodesInGroup("enemy").Count;
+		return _spawned >= _enemiesInWave && alive == 0;
 	}
 
 	public override void _Process(double delta)
 	{
-		// Tarkista onko aalto ohi
-		if (_waveInProgress)
-		{
-			int aliveEnemies = GetTree().GetNodesInGroup("enemy").Count;
-			if (aliveEnemies == 0 && _spawned >= _enemiesInWave)
-			{
-				_wave++;
-				GD.Print("Aalto " + _wave + " alkaa!");
-				StartWave(_wave);
-			}
-		}
-
-		// Spawnaa vihollisia aaltoon
 		if (_spawned < _enemiesInWave)
 		{
 			_timer += (float)delta;
@@ -56,15 +53,12 @@ public partial class EnemySpawner : Node3D
 		}
 	}
 
-	private void StartWave(int wave)
+	private void StartLevelSpawns()
 	{
 		_spawned = 0;
 		_waveInProgress = true;
-
-		// Aalto 1: 1 vihollinen, Aalto 2: 2 vihollista jne.
-		// Satunnainen nopeusvihollinen silloin tällöin
-		_enemiesInWave = wave;
-		_spawnInterval = Mathf.Max(1.5f, 4.0f - wave * 0.2f); // Nopeutuu aalloittain
+		_enemiesInWave = Mathf.Max(1, TotalNormalEnemiesToSpawn);
+		_spawnInterval = Mathf.Max(1.2f, 5.0f - _enemiesInWave * 0.12f);
 	}
 
 	private void SpawnEnemy()

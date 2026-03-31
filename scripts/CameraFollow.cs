@@ -31,6 +31,15 @@ public partial class CameraFollow : Camera3D
 	private float _minPitchRad;
 	private float _maxPitchRad;
 
+	private int _cinemaPhase = -1;
+	private float _cinemaPhaseTime;
+	private Vector3 _cinemaLookAt;
+	private Vector3 _cinemaCamFrom;
+	private Vector3 _cinemaCamHold;
+	private float _cinemaBlendIn = 1f;
+	private float _cinemaHold;
+	private float _cinemaBlendOut = 1f;
+
 	public override void _Ready()
 	{
 		_player = GetNodeOrNull<Node3D>(PlayerPath);
@@ -45,9 +54,24 @@ public partial class CameraFollow : Camera3D
 		_yaw = Mathf.Atan2(nd.X, nd.Z);
 	}
 
+	/// <summary>Lyhyt intro: siirtyy kohteeseen, pysähtyy, palaa seurantaan.</summary>
+	public void PlayBossIntroShot(Vector3 lookAtWorld, Vector3 cameraEndWorld, float blendInSeconds, float holdSeconds, float blendOutSeconds)
+	{
+		_cinemaPhase = 0;
+		_cinemaPhaseTime = 0f;
+		_cinemaLookAt = lookAtWorld;
+		_cinemaCamFrom = GlobalPosition;
+		_cinemaCamHold = cameraEndWorld;
+		_cinemaBlendIn = Mathf.Max(0.05f, blendInSeconds);
+		_cinemaHold = Mathf.Max(0f, holdSeconds);
+		_cinemaBlendOut = Mathf.Max(0.05f, blendOutSeconds);
+	}
+
 	public override void _UnhandledInput(InputEvent @event)
 	{
 		if (!MouseLookEnabled || _player == null)
+			return;
+		if (_cinemaPhase >= 0 && _cinemaPhase <= 1)
 			return;
 		if (MouseLookRequiresRightButton && !Input.IsMouseButtonPressed(MouseButton.Right))
 			return;
@@ -66,15 +90,20 @@ public partial class CameraFollow : Camera3D
 			return;
 
 		float dt = (float)delta;
-		float ax = Input.GetAxis("cam_look_left", "cam_look_right");
-		float ay = Input.GetAxis("cam_look_up", "cam_look_down");
-		_yaw -= ax * LookSensitivity * dt;
-		_pitch -= ay * LookSensitivity * dt;
-		_pitch = Mathf.Clamp(_pitch, _minPitchRad, _maxPitchRad);
+		bool lockOrbit = _cinemaPhase >= 0 && _cinemaPhase <= 1;
 
-		var pivot = _player.GlobalPosition + new Vector3(0f, PivotHeight, 0f);
+		if (!lockOrbit)
+		{
+			float ax = Input.GetAxis("cam_look_left", "cam_look_right");
+			float ay = Input.GetAxis("cam_look_up", "cam_look_down");
+			_yaw -= ax * LookSensitivity * dt;
+			_pitch -= ay * LookSensitivity * dt;
+			_pitch = Mathf.Clamp(_pitch, _minPitchRad, _maxPitchRad);
+		}
+
+		var pivotFollow = _player.GlobalPosition + new Vector3(0f, PivotHeight, 0f);
 		if (ClampCameraAboveGround)
-			ApplyGroundPitchClamp(pivot);
+			ApplyGroundPitchClamp(pivotFollow);
 
 		float cp = Mathf.Cos(_pitch);
 		var dir = new Vector3(Mathf.Sin(_yaw) * cp, Mathf.Sin(_pitch), Mathf.Cos(_yaw) * cp);
@@ -83,29 +112,58 @@ public partial class CameraFollow : Camera3D
 		else
 			dir = dir.Normalized();
 
-		Vector3 targetPos = pivot + dir * _distance;
+		Vector3 targetPos = pivotFollow + dir * _distance;
 
-		// --- Seinäläpäisyn esto (wall clipping fix) ---
 		var world = GetWorld3D();
 		var spaceState = world?.DirectSpaceState;
 		if (spaceState != null)
 		{
-			var wallQuery = PhysicsRayQueryParameters3D.Create(pivot, targetPos);
+			var wallQuery = PhysicsRayQueryParameters3D.Create(pivotFollow, targetPos);
 			wallQuery.CollideWithAreas = false;
 			if (_player is CollisionObject3D playerCol)
 				wallQuery.Exclude = new Godot.Collections.Array<Rid> { playerCol.GetRid() };
 			var wallHit = spaceState.IntersectRay(wallQuery);
 			if (wallHit.Count > 0 && wallHit.ContainsKey("position"))
-			{
-				// Pysäytä kamera hieman ennen seinää
 				targetPos = (Vector3)wallHit["position"] + dir * -0.2f;
-			}
 		}
-		// ----------------------------------------------
+
+		if (_cinemaPhase >= 0)
+		{
+			_cinemaPhaseTime += dt;
+			if (_cinemaPhase == 0)
+			{
+				float u = Mathf.Clamp(_cinemaPhaseTime / _cinemaBlendIn, 0f, 1f);
+				GlobalPosition = _cinemaCamFrom.Lerp(_cinemaCamHold, u);
+				LookAt(_cinemaLookAt, Vector3.Up);
+				if (u >= 1f)
+				{
+					_cinemaPhase = 1;
+					_cinemaPhaseTime = 0f;
+				}
+				return;
+			}
+			if (_cinemaPhase == 1)
+			{
+				GlobalPosition = _cinemaCamHold;
+				LookAt(_cinemaLookAt, Vector3.Up);
+				if (_cinemaPhaseTime >= _cinemaHold)
+				{
+					_cinemaPhase = 2;
+					_cinemaPhaseTime = 0f;
+				}
+				return;
+			}
+			float uo = Mathf.Clamp(_cinemaPhaseTime / _cinemaBlendOut, 0f, 1f);
+			GlobalPosition = _cinemaCamHold.Lerp(targetPos, uo);
+			LookAt(pivotFollow, Vector3.Up);
+			if (uo >= 1f)
+				_cinemaPhase = -1;
+			return;
+		}
 
 		float t = Mathf.Clamp(FollowSpeed * dt, 0f, 1f);
 		GlobalPosition = GlobalPosition.Lerp(targetPos, t);
-		LookAt(pivot, Vector3.Up);
+		LookAt(pivotFollow, Vector3.Up);
 	}
 
 	/// <summary>

@@ -6,6 +6,7 @@ public partial class EnemyLevel1 : CharacterBody3D
 	[Export] public float Speed = 3.0f;
 	/// <summary>XZ-etäisyys pelaajaan, jolloin ZombieNeckBite alkaa (pienempi = pitää päästä lähemmäs). Jos jää vain juoksuun, nosta hieman.</summary>
 	[Export] public float AttackRange = 1.12f;
+	/// <summary>R2 tekee 1 ja R1 3 vahinkoa → 3×R2 tai 1×R1 kuolettaa oletuksella.</summary>
 	[Export] public int Health = 3;
 	[Export] public string AttackAnimPath = "res://assets/models/level1_susi/susiWithoutskin/ZombieNeckBite.fbx";
 
@@ -44,6 +45,7 @@ public partial class EnemyLevel1 : CharacterBody3D
 	private bool _isDead = false;
 	private const float Gravity = 20f;
 	private bool _hasBeenHitThisSwing = false;
+	private AudioStreamPlayer _biteSFX;
 
 	public override void _Ready()
 	{
@@ -53,6 +55,7 @@ public partial class EnemyLevel1 : CharacterBody3D
 		_player = GetTree().GetFirstNodeInGroup("player") as Node3D;
 		_playerController = _player as PlayerController;
 		_animationPlayer = FindChild("AnimationPlayer", true, false) as AnimationPlayer;
+		_biteSFX = GetNodeOrNull<AudioStreamPlayer>("BiteSFX");
 
 		if (_animationPlayer != null)
 		{
@@ -111,7 +114,10 @@ public partial class EnemyLevel1 : CharacterBody3D
 			TurnTowardsPlayer();
 
 			if (_animationPlayer != null && _animationPlayer.CurrentAnimation != "attack")
+			{
 				_animationPlayer.Play("attack");
+				_biteSFX?.Play();
+			}
 
 			_biteTimer -= dt;
 			if (_biteTimer <= 0f && CanApplyBiteDamageByAnimPhase())
@@ -130,7 +136,9 @@ public partial class EnemyLevel1 : CharacterBody3D
 			{
 				Vector3 bodyBase = GlobalPosition;
 				Vector3 arcRef = bodyBase + Vector3.Up * HitCenterYOffset;
-				if (_playerController.IsPointInMeleeHitFacingArc(arcRef))
+				bool inHitCone = _playerController.IsPointInMeleeHitFacingArc(arcRef)
+					|| _playerController.IsPointInMeleeHitBladeArc(arcRef);
+				if (inHitCone)
 				{
 					var probes = SwordHitProbeHeights;
 					if (probes == null || probes.Length == 0)
@@ -142,6 +150,7 @@ public partial class EnemyLevel1 : CharacterBody3D
 						if (_playerController.GetMeleeHitDistanceToPoint(p) < SwordHitRange)
 						{
 							TakeDamage(_playerController.GetMeleeAttackDamage());
+							_playerController.NotifyMeleeHitLanded();
 							_hasBeenHitThisSwing = true;
 							break;
 						}
