@@ -20,6 +20,8 @@ public partial class BossLevel1 : CharacterBody3D
 
 	/// <summary>FastRun.fbx polku — Mixamosta ladattu without skin.</summary>
 	[Export] public string FastRunFbxPath = "res://assets/models/level1_BossEnemy/FastRun.fbx";
+	
+	[Export] public string DeathFbxPath = "res://assets/models/level1_BossEnemy/Death.fbx";
 
 	/// <summary>Mixamon animaation sisäinen nimi FBX:ssä.</summary>
 	[Export] public string MixamoAnimSourceName = "mixamo_com";
@@ -29,6 +31,8 @@ public partial class BossLevel1 : CharacterBody3D
 
 	/// <summary>Juoksuanimaation nimi pelissä.</summary>
 	[Export] public string RunClipName = "run";
+	
+	[Export] public string DeathClipName = "death";
 
 	/// <summary>Maksimi-HP — oletus 30 = 10 osumaa × R1-vahinko (3) tanssi-/otteluvaiheessa.</summary>
 	[Export] public int MaxBossHealth = 30;
@@ -252,8 +256,10 @@ public partial class BossLevel1 : CharacterBody3D
 			return;
 		}
 
-		// Ladataan juoksuanimaatio without skin -tiedostosta
+		// Ladataan juoksuanimaatio sekä kuolema animaatio without skin -tiedostosta
 		LoadAnim(FastRunFbxPath, MixamoAnimSourceName, RunClipName, loop: true);
+		
+		LoadAnim(DeathFbxPath, MixamoAnimSourceName, DeathClipName, loop: false);
 
 		// Aloitetaan tanssi
 		_animationPlayer.Play(DanceClipName);
@@ -338,6 +344,7 @@ public partial class BossLevel1 : CharacterBody3D
 			TrySnapFeetToWorldFloor();
 		if (!Mathf.IsZeroApprox(AdditionalStandLowerY))
 			ShiftStandAndPosition(-AdditionalStandLowerY);
+			GD.Print($"[BossSnap] GlobalPosition.Y after snap = {GlobalPosition.Y:F3}");
 	}
 
 	private void ShiftStandAndPosition(float deltaY)
@@ -870,17 +877,28 @@ public partial class BossLevel1 : CharacterBody3D
 		StopBossMusic();
 		UpdateDanceHighlightLight(false);
 
-		// Poistetaan törmäys heti ettei fysiikkavirheitä tule
 		var col = GetNodeOrNull<CollisionShape3D>("CollisionShape3D");
 		if (col != null) col.Disabled = true;
 
-		// Kutistetaan visuaali nollaan — haetaan BossVisual tai käytetään juurta
-		Node3D visual = GetNodeOrNull<Node3D>("BossVisual") ?? (Node3D)this;
-		var tween = CreateTween();
-		tween.TweenProperty(visual, "scale", Vector3.Zero, DeathShrinkDuration)
-			.SetTrans(Tween.TransitionType.Cubic)
-			.SetEase(Tween.EaseType.In);
-		tween.TweenCallback(Callable.From(() => QueueFree()));
+		// Toista kuolema-animaatio jos löytyy
+		if (_animationPlayer != null && _animationPlayer.HasAnimation(DeathClipName))
+		{
+			_animationPlayer.SpeedScale = 0.25f; // 1.0 = normaali, 0.25 = neljäsosa nopeudesta
+			_animationPlayer.Play(DeathClipName);
+			float deathLen = (float)_animationPlayer.CurrentAnimationLength;
+			// Poistetaan hahmo animaation jälkeen
+			GetTree().CreateTimer(deathLen).Timeout += () => QueueFree();
+		}
+		else
+		{
+			// Fallback: vanha kutistuminen jos animaatiota ei löydy
+			Node3D visual = GetNodeOrNull<Node3D>("BossVisual") ?? (Node3D)this;
+			var tween = CreateTween();
+			tween.TweenProperty(visual, "scale", Vector3.Zero, DeathShrinkDuration)
+				.SetTrans(Tween.TransitionType.Cubic)
+				.SetEase(Tween.EaseType.In);
+			tween.TweenCallback(Callable.From(() => QueueFree()));
+		}
 	}
 
 	// ─────────────────────────────────────────────

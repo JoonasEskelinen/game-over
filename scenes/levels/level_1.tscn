@@ -191,6 +191,9 @@ transform = Transform3D(1.1, 0, 0, 0, 1.1, 0, 0, 0, 1.1, 0, 0.004, 2.16)
 RunSpeed = 6.0
 DepthClampMin = -14.0
 DepthClampMax = 14.0
+SwordHitReachExtraMeters = 0.08
+LightMeleeProximityMax = 0.85
+HeavyMeleeProximityMax = 0.9
 
 [node name="Camera3D" type="Camera3D" parent="." unique_id=1312101267]
 transform = Transform3D(1, 0, 0, 0, 0.9848158, 0.17360279, 0, -0.17360279, 0.9848158, 0, 3, 12)
@@ -201,6 +204,10 @@ FollowSpeed = 12.0
 Offset = Vector3(2, 2, 4)
 MinPitchDeg = -45.0
 MaxPitchDeg = 45.0
+BossDanceLookAtYOffset = 1.0
+BossDanceCamDistance = 9.0
+BossDanceCamFrontHeightM = 2.5
+BossDanceCamFollowSpeed = 2.0
 
 [node name="Neon_pink" type="OmniLight3D" parent="." unique_id=1217758410]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, -14)

@@ -5,17 +5,21 @@
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_boss"]
 radius = 2.4086914
-height = 5.314728
+height = 5.643135
 
 [node name="BossLevel1" type="CharacterBody3D" unique_id=221002251]
-transform = Transform3D(2, 0, 0, 0, 2, 0, 0, 0, 2, 0, -6.8656883, 0)
+transform = Transform3D(0.5, 0, 0, 0, 0.5, 0, 0, 0, 0.5, 0, -1.3408074, 0)
 collision_layer = 2
 collision_mask = 3
 script = ExtResource("1_boss")
+SwordHitProbeHeights = PackedFloat32Array(0.05, 0.45, 0.9, 1.4, 1.9, 2.4)
+SwordHitProbeVisualYOffset = PackedFloat32Array(-0.5, 0.05, 0.55, 1.1, 1.7)
+BossVisualUniformScale = 1.0
+AdditionalStandLowerY = 0.11
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1088415914]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.4491416, 1.7773635, -0.009433342)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.4491416, 1.9235694, -0.009433342)
 shape = SubResource("CapsuleShape3D_boss")
 
 [node name="Dancing" parent="." unique_id=666478246 instance=ExtResource("2_4pk4r")]
-transform = Transform3D(600, 0, 0, 0, 600, 0, 0, 0, 600, -0.5488049, -0.49182487, 0.11196828)
+transform = Transform3D(600, 0, 0, 0, 600, 0, 0, 0, 600, -0.549, -0.549, 0.112)

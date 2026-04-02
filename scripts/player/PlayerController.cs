@@ -181,7 +181,7 @@ public partial class PlayerController : CharacterBody3D
 		to.Y = 0f;
 		if (to.LengthSquared() < 1e-8f) return true;
 		to = to.Normalized();
-		var forward = -_characterModel.GlobalTransform.Basis.Z;
+		var forward = _characterModel.GlobalTransform.Basis.Z;
 		forward.Y = 0f;
 		if (forward.LengthSquared() < 1e-8f) return true;
 		forward = forward.Normalized();
@@ -1157,7 +1157,9 @@ public partial class PlayerController : CharacterBody3D
 			return;
 		}
 
-		var hold = GlobalPosition + _characterModel.GlobalTransform.Basis.Z * GrabHoldDistance + Vector3.Up * 0.22f;
+		
+		Vector3 facingDir = new Vector3(Mathf.Sin(_facingYaw), 0f, Mathf.Cos(_facingYaw));
+		var hold = GlobalPosition + (-facingDir) * GrabHoldDistance + Vector3.Up * 0.22f;
 		hold.Y = _grabbedBody.GlobalPosition.Y;
 		var delta = hold - _grabbedBody.GlobalPosition;
 		delta.Y = 0f;

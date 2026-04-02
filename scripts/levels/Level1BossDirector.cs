@@ -125,6 +125,8 @@ public partial class Level1BossDirector : Node
 
 	private void SpawnBossAndPlayIntro()
 	{
+		Vector3 stand = ComputeBossStandWorld();
+		GD.Print($"[BossDirector] stand Y={stand.Y:F3}, danceMachine Y={_danceMachine.GlobalPosition.Y:F3}");
 		var boss = BossScene.Instantiate() as BossLevel1;
 		if (boss == null)
 		{
@@ -132,7 +134,6 @@ public partial class Level1BossDirector : Node
 			return;
 		}
 
-		Vector3 stand = ComputeBossStandWorld();
 		boss.Configure(stand);
 
 		Node parent = GetParent();
