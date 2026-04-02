@@ -1158,8 +1158,8 @@ public partial class PlayerController : CharacterBody3D
 		}
 
 		
-		Vector3 facingDir = new Vector3(Mathf.Sin(_facingYaw), 0f, Mathf.Cos(_facingYaw));
-		var hold = GlobalPosition + (-facingDir) * GrabHoldDistance + Vector3.Up * 0.22f;
+		Vector3 facingDir = new Vector3(Mathf.Sin(_facingYaw + Mathf.Pi), 0f, Mathf.Cos(_facingYaw + Mathf.Pi));
+		var hold = GlobalPosition + facingDir * GrabHoldDistance + Vector3.Up * 0.22f;
 		hold.Y = _grabbedBody.GlobalPosition.Y;
 		var delta = hold - _grabbedBody.GlobalPosition;
 		delta.Y = 0f;
