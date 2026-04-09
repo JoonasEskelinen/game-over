@@ -244,8 +244,8 @@ public partial class PlayerController : CharacterBody3D
 	[Export] public float GrabHoldDistance = 1.15f;
 
 	[Export] public float GrabPullGain = 7f;
-
-	[Export] public float GrabMaxHorizontalSpeed = 3.8f;
+	
+	[Export] public float GrabMaxHorizontalSpeed = 1.1f;
 
 	/// <summary>R2: latch-polku: analogi ≥ tämä laukaisee (kun aseistettu).</summary>
 	[Export] public float AttackTriggerPressThreshold = 0.4f;
@@ -757,8 +757,11 @@ public partial class PlayerController : CharacterBody3D
 		if (Input.IsActionJustPressed("grab"))
 		{
 			TryBeginGrab();
-			if (_grabbedBody != null)
-				PlayAnim("mixamo_com_011");
+			if (!_isSitting && !_isAttacking && !_isBlocking)
+			{
+				_animationPlayer?.Stop();
+				_animationPlayer?.Play("mixamo_com_011");
+			}
 		}
 		if (!Input.IsActionPressed("grab"))
 			_grabbedBody = null;
@@ -813,6 +816,28 @@ public partial class PlayerController : CharacterBody3D
 		if (IsOnFloor() && !_isWindingUp)
 			wish = wish.Slide(GetFloorNormal());
 
+		// Tarttuessa (neliö pohjassa) liike rajoitetaan vain pöytää kohti.
+		// Sivuttaisliike ja taaksepäin kävely estetään kokonaan.
+		if (_grabbedBody != null && Input.IsActionPressed("grab")
+			&& GodotObject.IsInstanceValid(_grabbedBody) && _grabbedBody.IsInsideTree())
+		{
+			var toObj = _grabbedBody.GlobalPosition - GlobalPosition;
+			toObj.Y = 0f;
+			if (toObj.LengthSquared() > 1e-5f)
+			{
+				var pushDir = toObj.Normalized();
+				float fwd = new Vector3(wish.X, 0f, wish.Z).Dot(pushDir);
+				fwd = Mathf.Max(0f, fwd);
+				wish.X = pushDir.X * fwd;
+				wish.Z = pushDir.Z * fwd;
+			}
+			else
+			{
+				wish.X = 0f;
+				wish.Z = 0f;
+			}
+		}
+
 		velocity.X = wish.X;
 		velocity.Z = wish.Z;
 		if (IsOnFloor() && !_isWindingUp && velocity.Y < JumpVelocity * 0.25f)
@@ -851,8 +876,8 @@ public partial class PlayerController : CharacterBody3D
 			_characterModel.Rotation = new Vector3(0f, _facingYaw, 0f);
 		}
 
-		if (grabbing)
-			ApplyGrabPull();
+	if (grabbing)
+		ApplyGrabPull(new Vector3(wish.X, 0f, wish.Z));
 
 		// ── Liike-animaatiot ──
 		// Vaihdetaan animaatiota tilanteen mukaan
@@ -1135,7 +1160,7 @@ public partial class PlayerController : CharacterBody3D
 		_grabbedBody = best;
 	}
 
-	private void ApplyGrabPull()
+	private void ApplyGrabPull(Vector3 playerWishXZ)
 	{
 		if (_grabbedBody == null || !GodotObject.IsInstanceValid(_grabbedBody) || !_grabbedBody.IsInsideTree())
 		{
@@ -1157,16 +1182,17 @@ public partial class PlayerController : CharacterBody3D
 			return;
 		}
 
-		
-		Vector3 facingDir = new Vector3(Mathf.Sin(_facingYaw + Mathf.Pi), 0f, Mathf.Cos(_facingYaw + Mathf.Pi));
-		var hold = GlobalPosition + facingDir * GrabHoldDistance + Vector3.Up * 0.22f;
-		hold.Y = _grabbedBody.GlobalPosition.Y;
-		var delta = hold - _grabbedBody.GlobalPosition;
-		delta.Y = 0f;
-		var vh = delta * GrabPullGain;
-		if (vh.Length() > GrabMaxHorizontalSpeed)
-			vh = vh.Normalized() * GrabMaxHorizontalSpeed;
+		var pushDir = toRb.Normalized();
+
+		// Työntövoima = pelaajan liikevektorin projektio kohti pöytää.
+		// Paikallaan seisominen ei liikuta pöytää; kävely kohti pöytää siirtää sitä.
+		// Negatiivinen projektio (pelaaja kävelee poispäin) nollataan — ei vedetä takaisin.
+		float speed = Mathf.Clamp(playerWishXZ.Dot(pushDir), 0f, GrabMaxHorizontalSpeed);
+
 		var lv = _grabbedBody.LinearVelocity;
-		_grabbedBody.LinearVelocity = new Vector3(vh.X, lv.Y, vh.Z);
+		_grabbedBody.LinearVelocity = new Vector3(
+			pushDir.X * speed,
+			lv.Y,
+			pushDir.Z * speed);
 	}
 }

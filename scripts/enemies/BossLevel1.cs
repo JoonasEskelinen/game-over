@@ -545,6 +545,11 @@ public partial class BossLevel1 : CharacterBody3D
 		// Tarkistetaan osuuko pelaajan miekka
 		TrySwordHits();
 		MoveAndSlide();
+
+		// Jolt-fysiikka voi depenetroida bossit irti pelaajasta MoveAndSlide():ssa
+		// vaikka Velocity=Zero — lukitaan positio uudestaan tanssivaiheen jälkeen.
+		if (_phase == BossPhase.Dancing)
+			GlobalPosition = _standWorldPos;
 	}
 
 	// ─────────────────────────────────────────────

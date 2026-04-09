@@ -14,6 +14,12 @@ public partial class Level1ArcadePhysicsSetup : Node3D
 	/// <summary>Kerros (bitmask), jolle arcade-propput menevät — Level 1 -bossin syöksy (mask 1) ei törmää.</summary>
 	[Export] public uint ArcadePropCollisionLayer = 16u;
 
+	/// <summary>
+	/// Ilmanvastus / lineaaridamppi air-hockey-pöydälle.
+	/// Korkea arvo = pöytä pysähtyy nopeasti kun neliö päästetään irti → raskas tuntuma.
+	/// </summary>
+	[Export] public float AirHockeyLinearDamp = 7f;
+
 	public override void _Ready()
 	{
 		SetupRootProps();
@@ -88,7 +94,7 @@ public partial class Level1ArcadePhysicsSetup : Node3D
 			AxisLockAngularX = true,
 			AxisLockAngularY = true,
 			AxisLockAngularZ = true,
-			LinearDamp = 2.2f,
+			LinearDamp = AirHockeyLinearDamp,
 			AngularDamp = 8f
 		};
 		rb.AddToGroup("grabbable");
@@ -96,6 +102,10 @@ public partial class Level1ArcadePhysicsSetup : Node3D
 		parent.MoveChild(rb, idx);
 		rb.GlobalTransform = gt;
 		rb.CollisionLayer = ArcadePropCollisionLayer;
+		// Mask = 0: pöytä ei reagoi fysiikalla kenenkään törmäykseen (ei pelaajan eikä muidenkaan).
+		// AxisLockLinearY pitää pöydän korkeudella ilman lattiakollisiota.
+		// Pelaajan oma maski (kerros 5) silti estää pelaajaa kävelemästä pöydän läpi.
+		rb.CollisionMask = 0;
 		rb.AddChild(airRoot);
 		airRoot.Transform = Transform3D.Identity;
 
