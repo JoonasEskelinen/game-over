@@ -1,6 +1,5 @@
 [gd_scene format=3 uid="uid://d2m7272w51ns5"]
 
-[ext_resource type="Script" uid="uid://kyce1q6fuf0n" path="res://scripts/helloworld.cs" id="1_jbqir"]
 [ext_resource type="Script" uid="uid://cdno0yakghq2r" path="res://scripts/CameraFollow.cs" id="2_fr1um"]
 [ext_resource type="PackedScene" uid="uid://vbg00ynsdulu" path="res://scenes/characters/player.tscn" id="2_yautc"]
 [ext_resource type="PackedScene" uid="uid://uh6pto3nrmqe" path="res://scenes/ui/hud.tscn" id="4_v45ci"]
@@ -30,7 +29,6 @@ size = Vector3(5, 0.5, 4)
 size = Vector3(5, 0.5, 4)
 
 [node name="testnode" type="Node3D" unique_id=1426165380]
-script = ExtResource("1_jbqir")
 
 [node name="World" type="Node3D" parent="." unique_id=1311929197]
 

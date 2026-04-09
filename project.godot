@@ -15,6 +15,10 @@ run/main_scene="uid://bobhxppm1r3x3"
 config/features=PackedStringArray("4.6", "C#", "Forward Plus")
 config/icon="res://icon.svg"
 
+[autoload]
+
+GameState="*res://scripts/GameState.cs"
+
 [dotnet]
 
 project/assembly_name="GameOver"

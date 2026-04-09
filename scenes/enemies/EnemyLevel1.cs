@@ -135,7 +135,8 @@ public partial class EnemyLevel1 : CharacterBody3D
 				for (int i = 0; i < probes.Length; i++)
 				{
 					Vector3 p = bodyBase + Vector3.Up * probes[i];
-					if (_playerController.CanApplyMeleeHitAtWorldPoint(p))
+					if (_playerController.CanApplyMeleeHitAtWorldPoint(p)
+						&& _playerController.TryClaimEnemyMeleeHit())
 					{
 						TakeDamage(_playerController.GetMeleeAttackDamage());
 						_playerController.NotifyMeleeHitLanded();
@@ -147,8 +148,9 @@ public partial class EnemyLevel1 : CharacterBody3D
 		}
 		else
 		{
-			// Lyonti loppui - nollataan
+			// Lyonti loppui — nollataan omat ja pelaajan swingivaraus
 			_hasBeenHitThisSwing = false;
+			_playerController?.ClearEnemyHitThisSwing();
 		}
 
 		Velocity = velocity;

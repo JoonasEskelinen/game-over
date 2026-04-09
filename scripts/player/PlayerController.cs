@@ -142,8 +142,20 @@ public partial class PlayerController : CharacterBody3D
 	/// <summary>Kilpi-node — haetaan Skeleton3D:n alta. Näkyy vain SwordShield-tilassa.</summary>
 	private Node3D _shield;
 
+	/// <summary>Drone-joystickin visuaali oikeassa kädessä — luodaan koodissa SetupDroneJoystick().</summary>
+	private Node3D _droneJoystick;
+
+	/// <summary>True kun drone-moodi on aktiivinen (kolmio + HasJoystick).</summary>
+	private bool _isDroneMode = false;
+
 	private AudioStreamPlayer _swordSFX;
 	private AudioStreamPlayer _damageSFX;
+
+	/// <summary>
+	/// True kun jokin EnemyLevel1 on jo rekisteröinyt osuman tällä lyöntiswingillä.
+	/// Estää yhden swingin tappamasta useita vihollisia kerralla.
+	/// </summary>
+	private bool _enemyHitThisSwing = false;
 
 	// ─────────────────────────────────────────────
 	// JULKISET METODIT — vihollinen käyttää näitä
@@ -409,6 +421,21 @@ public partial class PlayerController : CharacterBody3D
 		return GlobalPosition + Vector3.Up * 0.9f;
 	}
 
+	/// <summary>
+	/// Kutsutaan EnemyLevel1:stä: yrittää varata miekan swingin tälle osumalle.
+	/// Palauttaa true vain kerran per swing — estää yhden swingin tappamasta monta vihollista.
+	/// Swingien välissä lippu nollataan automaattisesti <see cref="ClearEnemyHitThisSwing"/>.
+	/// </summary>
+	public bool TryClaimEnemyMeleeHit()
+	{
+		if (_enemyHitThisSwing) return false;
+		_enemyHitThisSwing = true;
+		return true;
+	}
+
+	/// <summary>Kutsutaan EnemyLevel1:stä kun hyökkäys on ohi — nollaa swingivaraus.</summary>
+	public void ClearEnemyHitThisSwing() => _enemyHitThisSwing = false;
+
 	/// <summary>Kutsutaan kun miekka osuu viholliseen — lyhyt freeze osumakuvaan.</summary>
 	public void NotifyMeleeHitLanded()
 	{
@@ -561,6 +588,9 @@ public partial class PlayerController : CharacterBody3D
 		if (_sword  != null) _sword.Visible  = false;
 		if (_shield != null) _shield.Visible = false;
 
+		// Luodaan drone-joystickin visuaali oikeaan käteen (piilotettu kunnes drone-moodi aktivoituu)
+		SetupDroneJoystick();
+
 		// Korjataan tangentit miekalle ja kilpelle (estää shader-varoitukset)
 		try
 		{
@@ -678,9 +708,17 @@ public partial class PlayerController : CharacterBody3D
 			}
 		}
 
-		// ── Asemoodi (kolmio): vain Normal ↔ SwordShield
+		// ── Asemoodi (kolmio): drone-moodi jos joystick on poimittu, muuten asevaihto
 		if (Input.IsActionJustPressed("toggle_weapon"))
 		{
+			// Joystick on pelaajan hallussa → kolmio = drone-moodi
+			if (GameState.Instance?.HasJoystick == true)
+			{
+				if (_isDroneMode) ExitDroneMode();
+				else              EnterDroneMode();
+				return; // ei jatketa normaalia asevaihtoon
+			}
+
 			_weaponMode = _weaponMode == WeaponMode.Normal ? WeaponMode.SwordShield : WeaponMode.Normal;
 			_isAttacking = false;
 			_meleeStrikeClip = default;
@@ -1129,6 +1167,80 @@ public partial class PlayerController : CharacterBody3D
 	{
 		Input.StartJoyVibration(0, weak, strong, duration);
 	}
+
+	// ─────────────────────────────────────────────
+	// DRONE-MOODI (joystick kädessä)
+	// ─────────────────────────────────────────────
+
+	/// <summary>
+	/// Luo yksinkertaisen joystick-visuaalin oikeaan käteen (SwordAttachment-boneen).
+	/// Käytetään CylinderMesh + SphereMesh -yhdistelmää. Korvaa myöhemmin oikealla mallilla.
+	/// </summary>
+	private void SetupDroneJoystick()
+	{
+		var swordAttach = GetNodeOrNull<Node3D>("gameover_character/Skeleton3D/SwordAttachment");
+		if (swordAttach == null) return;
+
+		// Varsi (lieriö)
+		var handle = new MeshInstance3D { Name = "DroneJoystick", Visible = false };
+		handle.Mesh = new CylinderMesh
+		{
+			Height       = 0.11f,
+			TopRadius    = 0.014f,
+			BottomRadius = 0.02f,
+		};
+		// Sijoitus kämmeneen — säädä tarvittaessa Inspectorista tai suoraan tästä
+		handle.Position = new Vector3(0f, -0.04f, 0.02f);
+
+		// Nappi/pallo ylhäällä
+		var ball = new MeshInstance3D { Name = "DroneJoystickBall" };
+		ball.Mesh = new SphereMesh { Radius = 0.026f, Height = 0.052f };
+		ball.Position = new Vector3(0f, 0.07f, 0f);
+		handle.AddChild(ball);
+
+		var mat = new StandardMaterial3D { AlbedoColor = new Color(0.12f, 0.12f, 0.14f) };
+		handle.MaterialOverride = mat;
+		ball.MaterialOverride   = mat;
+
+		swordAttach.AddChild(handle);
+		_droneJoystick = handle;
+	}
+
+	/// <summary>Aktivoi drone-moodin: pelaaja istuu, joystick tulee käteen.</summary>
+	private void EnterDroneMode()
+	{
+		_isDroneMode     = true;
+		_isSitting       = true;
+		_isAttacking     = false;
+		_meleeStrikeClip = default;
+		_grabbedBody     = null;
+		_isBlocking      = false;
+
+		if (_sword         != null) _sword.Visible         = false;
+		if (_shield        != null) _shield.Visible        = false;
+		if (_droneJoystick != null) _droneJoystick.Visible = true;
+
+		PlayAnim("mixamo_com_004"); // istumisanimaatio
+		GD.Print("DroneMode: aktivoitu — joystick kädessä.");
+	}
+
+	/// <summary>Poistaa drone-moodin: pelaaja nousee ylös, joystick häviää kädestä.</summary>
+	private void ExitDroneMode()
+	{
+		_isDroneMode = false;
+		_isSitting   = false;
+
+		if (_droneJoystick != null) _droneJoystick.Visible = false;
+
+		bool showWeapons = _weaponMode == WeaponMode.SwordShield;
+		if (_sword  != null) _sword.Visible  = showWeapons;
+		if (_shield != null) _shield.Visible = showWeapons;
+
+		PlayAnim(showWeapons ? "mixamo_com_007" : "mixamo_com");
+		GD.Print("DroneMode: poistettu.");
+	}
+
+	// ─────────────────────────────────────────────
 
 	private void TryBeginGrab()
 	{

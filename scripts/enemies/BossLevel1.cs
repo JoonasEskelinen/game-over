@@ -40,13 +40,13 @@ public partial class BossLevel1 : CharacterBody3D
 	private int _bossHealth;
 
 	/// <summary>Tanssin minimikesto sekunteina ennen syöksyä.</summary>
-	[Export] public float DanceDurationMin = 10.5f;
+	[Export] public float DanceDurationMin = 8.5f;
 
 	/// <summary>Tanssin maksimikesto sekunteina.</summary>
-	[Export] public float DanceDurationMax = 14f;
+	[Export] public float DanceDurationMax = 10.5f;
 
 	/// <summary>Aika tanssin päättymisen ja kameran palautumisen jälkeen ennen juoksua (run).</summary>
-	[Export] public float PostDanceDelayBeforeCharge = 3f;
+	[Export] public float PostDanceDelayBeforeCharge = 1.0f;
 
 	/// <summary>Syöksyn nopeus.</summary>
 	[Export] public float ChargeSpeed = 12f;
@@ -102,6 +102,22 @@ public partial class BossLevel1 : CharacterBody3D
 	[Export] public string BossMusicPath = "res://assets/audio/music/musiclevel1.mp3";
 
 	[Export] public float BossMusicVolumeDb = -4f;
+
+	/// <summary>Kuolema-äänitehoste — sijoita tiedosto tähän polkuun.</summary>
+	[Export] public string DeathSfxPath = "res://assets/audio/sfx/death.mp3";
+
+	[Export] public float DeathSfxVolumeDb = 0f;
+
+	/// <summary>Ääni kun pelaajan miekka osuu bossiin.</summary>
+	[Export] public string SwordHitSfxPath = "res://assets/audio/sfx/miekka.mp3";
+
+	/// <summary>Bossin vahinkoääni osuman jälkeen.</summary>
+	[Export] public string BossDamageSfxPath = "res://assets/audio/sfx/enemybosshit.mp3";
+
+	[Export] public float HitSfxVolumeDb = 0f;
+
+	/// <summary>Viive sekunteina miekka-äänen ja vahinko-äänen välillä.</summary>
+	[Export] public float BossDamageSfxDelay = 0.1f;
 
 	/// <summary>Lisäspotti tanssivaiheessa (Pi: varjo pois).</summary>
 	[Export] public bool BossDanceHighlightEnabled = true;
@@ -321,6 +337,11 @@ public partial class BossLevel1 : CharacterBody3D
 		_bossMusic.Stream = null;
 		_bossMusic.QueueFree();
 		_bossMusic = null;
+	}
+
+	private void PlayDeathSfx()
+	{
+		PlaySfxOnRoot(DeathSfxPath, DeathSfxVolumeDb);
 	}
 
 	private void SetupDanceHighlightLight()
@@ -856,6 +877,35 @@ public partial class BossLevel1 : CharacterBody3D
 		TakeDamage(dmg);
 		_playerController.NotifyMeleeHitLanded();
 		_hasBeenHitThisSwing = true;
+		PlaySwordHitSfx();
+	}
+
+	private void PlaySwordHitSfx()
+	{
+		// Miekan iskuääni heti
+		PlaySfxOnRoot(SwordHitSfxPath, HitSfxVolumeDb);
+
+		// Bossin vahinkoääni pienen viiveen jälkeen
+		if (!string.IsNullOrWhiteSpace(BossDamageSfxPath))
+		{
+			GetTree().CreateTimer(BossDamageSfxDelay).Timeout +=
+				() => PlaySfxOnRoot(BossDamageSfxPath, HitSfxVolumeDb);
+		}
+	}
+
+	/// <summary>
+	/// Toistaa äänen scene-juuressa, jotta se ei katoa bossin QueueFreen mukana.
+	/// </summary>
+	private void PlaySfxOnRoot(string path, float volumeDb)
+	{
+		if (string.IsNullOrWhiteSpace(path) || !IsInsideTree()) return;
+		var stream = GD.Load<AudioStream>(path);
+		if (stream == null) { GD.PrintErr($"BossLevel1: SFX ei löydy: {path}"); return; }
+		var sfx = new AudioStreamPlayer { VolumeDb = volumeDb };
+		GetTree().Root.AddChild(sfx);
+		sfx.Stream = stream;
+		sfx.Play();
+		sfx.Finished += () => sfx.QueueFree();
 	}
 
 	// ─────────────────────────────────────────────
@@ -888,11 +938,11 @@ public partial class BossLevel1 : CharacterBody3D
 		// Toista kuolema-animaatio jos löytyy
 		if (_animationPlayer != null && _animationPlayer.HasAnimation(DeathClipName))
 		{
-			_animationPlayer.SpeedScale = 0.25f; // 1.0 = normaali, 0.25 = neljäsosa nopeudesta
+			_animationPlayer.SpeedScale = 0.18f; // ~1/5.5 nopeudesta — pitkä, dramaattinen kuolema
 			_animationPlayer.Play(DeathClipName);
 			float deathLen = (float)_animationPlayer.CurrentAnimationLength;
-			// Poistetaan hahmo animaation jälkeen
-			GetTree().CreateTimer(deathLen).Timeout += () => QueueFree();
+			// Huom: jaetaan SpeedScalella jotta ajastin vastaa todellista toistoaikaa
+			GetTree().CreateTimer(deathLen / _animationPlayer.SpeedScale).Timeout += () => QueueFree();
 		}
 		else
 		{
@@ -904,6 +954,7 @@ public partial class BossLevel1 : CharacterBody3D
 				.SetEase(Tween.EaseType.In);
 			tween.TweenCallback(Callable.From(() => QueueFree()));
 		}
+		PlayDeathSfx();
 	}
 
 	// ─────────────────────────────────────────────

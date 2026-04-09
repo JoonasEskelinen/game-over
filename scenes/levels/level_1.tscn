@@ -21,6 +21,7 @@
 [ext_resource type="Script" uid="uid://dgobhgwrxatv" path="res://scripts/levels/Level1ArcadePhysicsSetup.cs" id="18_arcphys"]
 [ext_resource type="Script" uid="uid://6ycjaijvsor1" path="res://scripts/levels/Level1BossDirector.cs" id="19_bossdir"]
 [ext_resource type="PackedScene" uid="uid://8s0cyg2mwx3r" path="res://scenes/enemies/BossLevel1.tscn" id="20_bossscn"]
+[ext_resource type="Script" uid="uid://2ktb8dsqvp8w" path="res://scripts/levels/Level1ExitHole.cs" id="21_exithole"]
 [ext_resource type="Script" uid="uid://dpwtmiouoyjmt" path="res://scenes/levels/JoystickLever.cs" id="22_ndtll"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_7u6i3"]
@@ -141,25 +142,25 @@ transform = Transform3D(1.5, 0, 0, 0, 1.5, 0, 0, 0, 1.5, -7.3587313, -0.05239111
 transform = Transform3D(1.5, 0, 0, 0, 1.5, 0, 0, 0, 1.5, -10.6519575, -0.026687175, -1.5631306)
 
 [node name="pinball2" parent="Floor" unique_id=1566738860 instance=ExtResource("3_iwr0g")]
-transform = Transform3D(-2.4993565, 0, -0.05671811, 0, 2.5, 0, 0.05671811, 0, -2.4993565, 9.330131, 0.05000019, 13.519054)
+transform = Transform3D(-2.4993565, 0, -0.05671811, 0, 2.5, 0, 0.05671811, 0, -2.4993565, 9.330131, -0.13567322, 13.519054)
 
 [node name="pinball3" parent="Floor" unique_id=389439800 instance=ExtResource("3_iwr0g")]
-transform = Transform3D(-2.4993565, 0, -0.05671811, 0, 2.5, 0, 0.05671811, 0, -2.4993565, 5.586643, 0.05142212, 13.477146)
+transform = Transform3D(-2.4993565, 0, -0.05671811, 0, 2.5, 0, 0.05671811, 0, -2.4993565, 5.586643, -0.0977326, 13.477146)
 
 [node name="pinball4" parent="Floor" unique_id=1583446803 instance=ExtResource("3_iwr0g")]
-transform = Transform3D(-2.4993565, 0, -0.05671811, 0, 2.5, 0, 0.05671811, 0, -2.4993565, 1.8417411, 0.05000019, 13.5574)
+transform = Transform3D(-2.4993565, 0, -0.05671811, 0, 2.5, 0, 0.05671811, 0, -2.4993565, 1.8417411, -0.064050674, 13.5574)
 
 [node name="prize-wheel2" parent="Floor" unique_id=1555938896 instance=ExtResource("4_bahl2")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.4728622, -0.054025352, 0.45307732)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.4728622, -0.1543054, 0.45307732)
 
 [node name="ticket-machine2" parent="Floor" unique_id=1139679256 instance=ExtResource("5_np2pn")]
 transform = Transform3D(2, 0, 0, 0, 2, 0, 0, 0, 2, -8.691927, 0.04028687, -5.103322)
 
 [node name="wall2" parent="Floor" unique_id=2081416588 instance=ExtResource("6_v6ha0")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.7973862, 0.05000013, 5.9375954)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.7973862, -0.17449349, 5.9375954)
 
 [node name="wall3" parent="Floor" unique_id=1401809605 instance=ExtResource("6_v6ha0")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4.142742, 0.0011034012, 6.0338316)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4.142742, -0.15828931, 6.0338316)
 
 [node name="wall-window2" parent="Floor" unique_id=741675250 instance=ExtResource("7_v6ha0")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.1287484, 1.8217595, 14.200001)
@@ -206,11 +207,11 @@ surface_material_override/0 = SubResource("StandardMaterial3D_nsrm0")
 shape = SubResource("BoxShape3D_s8va5")
 
 [node name="Player" parent="." unique_id=1514760592 instance=ExtResource("1_ksju7")]
-transform = Transform3D(1.1, 0, 0, 0, 1.1, 0, 0, 0, 1.1, 0, 0.004, 2.16)
+transform = Transform3D(1.1, 0, 0, 0, 1.1, 0, 0, 0, 1.1, 0, -0.073586024, 2.16)
 RunSpeed = 6.0
 DepthClampMin = -14.0
 DepthClampMax = 14.0
-SwordHitReachExtraMeters = 0.08
+SwordHitReachExtraMeters = 0.05
 LightMeleeProximityMax = 0.85
 HeavyMeleeProximityMax = 0.9
 
@@ -256,13 +257,13 @@ omni_range = 15.169
 transform = Transform3D(2, 0, 0, 0, 2, 0, 0, 0, 2, -0.5397968, 0.02799493, -13.879285)
 
 [node name="basketball-game2" parent="." unique_id=292658738 instance=ExtResource("11_ndtll")]
-transform = Transform3D(3, 0, 0, 0, 3, 0, 0, 0, 3, 7.284423, 0.049999952, -13.141411)
+transform = Transform3D(3, 0, 0, 0, 3, 0, 0, 0, 3, 7.284423, -0.18616152, -13.141411)
 
 [node name="cash-register2" parent="." unique_id=1331345879 instance=ExtResource("12_7h2jl")]
 transform = Transform3D(2, 0, 0, 0, 2, 0, 0, 0, 2, -4.062439, -0.15835112, -5.2910895)
 
 [node name="dance-machine2" parent="." unique_id=1831863263 instance=ExtResource("13_mqh5v")]
-transform = Transform3D(-2.4993565, 0, -0.05671827, 0, 2.5, 0, 0.05671827, 0, -2.4993565, -4.2619376, 0.12601167, 13.116182)
+transform = Transform3D(-2.4993565, 0, -0.05671827, 0, 2.5, 0, 0.05671827, 0, -2.4993565, -4.2619376, -0.066184044, 13.116182)
 
 [node name="floor2" parent="." unique_id=808562053 instance=ExtResource("14_7o3do")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7.5339622, 0.050000668, -5.5294065)
@@ -322,3 +323,6 @@ transform = Transform3D(0.5, 0, 0, 0, 0.5, 0, 0, 0, 0.5, 0.21429539, 0.081704006
 [node name="CollisionShape3D" type="CollisionShape3D" parent="air-hockey2" unique_id=1897500254]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.0054198503, 0, -0.0063476563)
 shape = SubResource("BoxShape3D_ndtll")
+
+[node name="ExitHole" type="Node3D" parent="." unique_id=-1393629876]
+script = ExtResource("21_exithole")
