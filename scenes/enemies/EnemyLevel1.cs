@@ -35,6 +35,7 @@ public partial class EnemyLevel1 : CharacterBody3D
 	private Node3D _player;
 	private PlayerController _playerController;
 	private AnimationPlayer _animationPlayer;
+	private CameraFollow _camera;
 	private float _biteTimer;
 	private float _biteInterval = 2.5f;
 	private bool _wasInMeleeRange;
@@ -210,10 +211,65 @@ public partial class EnemyLevel1 : CharacterBody3D
 	private float PlanarDistanceTo(Vector3 targetGlobal)
 		=> PlanarDistanceTo(GlobalPosition, targetGlobal);
 
+	private CameraFollow GetOrFindCamera()
+	{
+		if (_camera != null && GodotObject.IsInstanceValid(_camera)) return _camera;
+		_camera = GetViewport()?.GetCamera3D() as CameraFollow;
+		return _camera;
+	}
+
+	/// <summary>Välitön visuaalinen palaute miekkaosumahetkellä — ennen kuolemaa.</summary>
+	private void OnSwordHitFeedback()
+	{
+		// 1. Ruututärinä
+		GetOrFindCamera()?.ShakeImpulse(0.20f, 0.24f);
+
+		// 2. Hit flash: hetkellinen valkoinen/punainen siluetti (50 ms peliaika)
+		var geos = new List<GeometryInstance3D>();
+		CollectGeometryInstances(this, geos);
+		if (geos.Count > 0)
+		{
+			var flashMat = new StandardMaterial3D
+			{
+				ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded,
+				AlbedoColor = new Color(1f, 0.82f, 0.82f),
+				EmissionEnabled = true,
+				Emission = new Color(1f, 0.35f, 0.35f),
+				EmissionEnergyMultiplier = 2.2f,
+			};
+			foreach (var g in geos)
+				if (GodotObject.IsInstanceValid(g))
+					g.MaterialOverride = flashMat;
+
+			var flashTween = CreateTween();
+			flashTween.TweenInterval(0.05f);
+			flashTween.TweenCallback(Callable.From(() =>
+			{
+				foreach (var g in geos)
+					if (GodotObject.IsInstanceValid(g))
+						g.MaterialOverride = null;
+			}));
+		}
+
+		// 3. Vihollisen hit-stop: jäädyttää animaatio 60 ms
+		if (_animationPlayer != null && GodotObject.IsInstanceValid(_animationPlayer))
+		{
+			_animationPlayer.SpeedScale = 0f;
+			var animFreeze = CreateTween();
+			animFreeze.TweenInterval(0.06f);
+			animFreeze.TweenCallback(Callable.From(() =>
+			{
+				if (GodotObject.IsInstanceValid(_animationPlayer))
+					_animationPlayer.SpeedScale = 1f;
+			}));
+		}
+	}
+
 	public void TakeDamage(int amount)
 	{
 		if (_isDead) return;
 		Health -= amount;
+		OnSwordHitFeedback();
 		if (Health <= 0) Die();
 	}
 
@@ -236,17 +292,37 @@ public partial class EnemyLevel1 : CharacterBody3D
 				away = away.Normalized();
 		}
 
+		// Slow motion: 70 ms reaaliaikaa, riippumaton TimeScalesta
+		Engine.TimeScale = 0.15f;
+		if (IsInsideTree())
+		{
+			var slowTimer = GetTree().CreateTimer(0.07f, processInPhysics: false, ignoreTimeScale: true);
+			slowTimer.Timeout += () => { if (Engine.TimeScale < 1f) Engine.TimeScale = 1f; };
+		}
+
 		float rollY = (float)GD.RandRange(-38.0, 38.0);
 		float rollZ = (float)GD.RandRange(-28.0, 28.0);
 		Vector3 tilt = visual.RotationDegrees + new Vector3(86f, rollY, rollZ);
-		Vector3 slide = visual.IsInsideTree()
-			? visual.GlobalPosition + new Vector3(away.X * 0.28f, -0.22f, away.Z * 0.28f)
-			: visual.Position + new Vector3(away.X * 0.28f, -0.22f, away.Z * 0.28f);
+
+		// Kickback: nopea loikka poispäin → sitten kaatuminen alas
+		Vector3 basePos = visual.IsInsideTree() ? visual.GlobalPosition : visual.Position;
+		Vector3 kickPos  = basePos  + new Vector3(away.X * 0.45f,  0.10f, away.Z * 0.45f);
+		Vector3 slidePos = kickPos  + new Vector3(away.X * 0.10f, -0.38f, away.Z * 0.10f);
 
 		var tween = CreateTween();
+
+		// Rinnakkainen alkuisku: scale-punch + tilt + kickback alkaa yhtä aikaa
+		tween.SetParallel(true);
+		tween.TweenProperty(visual, "scale", new Vector3(1.13f, 1.13f, 1.13f), 0.05f)
+			.SetTrans(Tween.TransitionType.Sine).SetEase(Tween.EaseType.Out);
 		tween.TweenProperty(visual, "rotation_degrees", tilt, DeathTiltDuration)
 			.SetTrans(Tween.TransitionType.Sine).SetEase(Tween.EaseType.Out);
-		tween.TweenProperty(visual, "global_position", slide, DeathSlideDuration)
+		tween.TweenProperty(visual, "global_position", kickPos, 0.07f)
+			.SetTrans(Tween.TransitionType.Sine).SetEase(Tween.EaseType.Out);
+		tween.SetParallel(false);
+
+		// Kaatumisliuku
+		tween.TweenProperty(visual, "global_position", slidePos, DeathSlideDuration)
 			.SetTrans(Tween.TransitionType.Quad).SetEase(Tween.EaseType.In);
 
 		var geos = new List<GeometryInstance3D>();

@@ -53,6 +53,31 @@ public partial class CameraFollow : Camera3D
 
 	private float _bossCloseupBlend;
 
+	// Screen shake
+	private float _shakeAmplitude;
+	private float _shakeDecayDuration = 0.25f;
+	private float _shakeTimer;
+
+	/// <summary>Käynnistää ruututärinän — kutsutaan miekkaosumahetkellä.</summary>
+	public void ShakeImpulse(float amplitude, float decaySeconds = 0.25f)
+	{
+		_shakeAmplitude = Mathf.Max(_shakeAmplitude, amplitude);
+		_shakeDecayDuration = decaySeconds;
+		_shakeTimer = Mathf.Max(_shakeTimer, decaySeconds);
+	}
+
+	private void ApplyScreenShake(float dt)
+	{
+		if (_shakeTimer <= 0f) return;
+		_shakeTimer = Mathf.Max(0f, _shakeTimer - dt);
+		float frac = _shakeDecayDuration > 0f ? _shakeTimer / _shakeDecayDuration : 0f;
+		float amount = _shakeAmplitude * frac * frac; // square → sharp start, fast decay
+		var right = GlobalTransform.Basis.X;
+		var up = GlobalTransform.Basis.Y;
+		GlobalPosition += right * (float)GD.RandRange(-amount, amount)
+						+ up    * (float)GD.RandRange(-amount * 0.55f, amount * 0.55f);
+	}
+
 	public override void _Ready()
 	{
 		_player = GetNodeOrNull<Node3D>(PlayerPath);
@@ -229,6 +254,7 @@ public partial class CameraFollow : Camera3D
 				float spd = Mathf.Lerp(FollowSpeed, BossDanceCamFollowSpeed, bossBlendSmooth);
 				float td = Mathf.Clamp(spd * dt, 0f, 1f);
 				GlobalPosition = GlobalPosition.Lerp(blendedPos, td);
+				ApplyScreenShake(dt);
 				if (blendedLook.DistanceSquaredTo(GlobalPosition) > 1e-6f)
 					LookAt(blendedLook, Vector3.Up);
 				return;
@@ -237,6 +263,7 @@ public partial class CameraFollow : Camera3D
 
 		float t = Mathf.Clamp(FollowSpeed * dt, 0f, 1f);
 		GlobalPosition = GlobalPosition.Lerp(targetPos, t);
+		ApplyScreenShake(dt);
 		LookAt(pivotFollow, Vector3.Up);
 	}
 

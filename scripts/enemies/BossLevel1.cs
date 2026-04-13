@@ -220,6 +220,13 @@ public partial class BossLevel1 : CharacterBody3D
 
 	private SpotLight3D _danceSpotLight;
 
+	// Hit-feedback
+	private CameraFollow _camera;
+	private Vector3 _bossVisualBaseScale;
+	private Tween _recoilTween;
+	private Tween _squashTween;
+	private Tween _hitFlashTween;
+
 	// ─────────────────────────────────────────────
 	// ALUSTUS
 	// ─────────────────────────────────────────────
@@ -519,8 +526,16 @@ public partial class BossLevel1 : CharacterBody3D
 	private void ApplyBossVisualScale(Node3D visualRoot)
 	{
 		if (visualRoot == null || BossVisualUniformScale <= 0f) return;
-		if (Mathf.IsEqualApprox(BossVisualUniformScale, 1f)) return;
-		visualRoot.Scale = Vector3.One * BossVisualUniformScale;
+		if (!Mathf.IsEqualApprox(BossVisualUniformScale, 1f))
+			visualRoot.Scale = Vector3.One * BossVisualUniformScale;
+		_bossVisualBaseScale = visualRoot.Scale; // tallennetaan squash-laskentaa varten
+	}
+
+	private CameraFollow GetOrFindCamera()
+	{
+		if (_camera != null && GodotObject.IsInstanceValid(_camera)) return _camera;
+		_camera = GetViewport()?.GetCamera3D() as CameraFollow;
+		return _camera;
 	}
 
 	/// <summary>Varmistaa että AnimationPlayerilla on tyhjä animaatiokirjasto.</summary>
@@ -878,6 +893,123 @@ public partial class BossLevel1 : CharacterBody3D
 		_playerController.NotifyMeleeHitLanded();
 		_hasBeenHitThisSwing = true;
 		PlaySwordHitSfx();
+		OnSwordHitFeedback(_isDead); // _isDead = true jos tämä oli tappoisku
+	}
+
+	/// <summary>
+	/// Kaikki visuaalinen palaute miekkaosumahetkellä — shake, flash, hitstop, recoil, squash, spotlight.
+	/// </summary>
+	private void OnSwordHitFeedback(bool isKillingBlow)
+	{
+		// 1. Ruututärinä — voimistuu mitä vähemmän HP on jäljellä
+		float hpFrac = MaxBossHealth > 0 ? (float)_bossHealth / MaxBossHealth : 0f;
+		float shakeAmp = isKillingBlow ? 0.32f : Mathf.Lerp(0.22f, 0.10f, hpFrac);
+		GetOrFindCamera()?.ShakeImpulse(shakeAmp, 0.30f);
+
+		// 2. Slow motion vain tappoiskussa (70 ms reaaliaikaa)
+		if (isKillingBlow && IsInsideTree())
+		{
+			Engine.TimeScale = 0.15f;
+			var slowTimer = GetTree().CreateTimer(0.07f, processInPhysics: false, ignoreTimeScale: true);
+			slowTimer.Timeout += () => { if (Engine.TimeScale < 1f) Engine.TimeScale = 1f; };
+		}
+
+		// 3. Hit flash: hetkellinen valkoinen/punainen siluetti kaikille mesheille
+		var meshList = new System.Collections.Generic.List<MeshInstance3D>();
+		foreach (Node n in FindChildren("*", "MeshInstance3D", true, false))
+			if (n is MeshInstance3D mi) meshList.Add(mi);
+
+		if (meshList.Count > 0)
+		{
+			var flashMat = new StandardMaterial3D
+			{
+				ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded,
+				AlbedoColor = new Color(1f, 0.78f, 0.78f),
+				EmissionEnabled = true,
+				Emission = new Color(1f, 0.20f, 0.20f),
+				EmissionEnergyMultiplier = 2.8f,
+			};
+			foreach (var m in meshList)
+				if (GodotObject.IsInstanceValid(m))
+					m.MaterialOverride = flashMat;
+
+			float flashDuration = isKillingBlow ? 0.09f : 0.06f;
+			_hitFlashTween?.Kill();
+			_hitFlashTween = CreateTween();
+			_hitFlashTween.TweenInterval(flashDuration);
+			_hitFlashTween.TweenCallback(Callable.From(() =>
+			{
+				foreach (var m in meshList)
+					if (GodotObject.IsInstanceValid(m))
+						m.MaterialOverride = null;
+			}));
+		}
+
+		// Tappoiskussa jätetään recoil/squash/hitstop pois — kuolema-animaatio hoitaa draaman
+		if (isKillingBlow) return;
+
+		// 4. Boss AnimationPlayer hit-stop (80 ms)
+		if (_animationPlayer != null && GodotObject.IsInstanceValid(_animationPlayer))
+		{
+			_animationPlayer.SpeedScale = 0f;
+			var animFreeze = CreateTween();
+			animFreeze.TweenInterval(0.08f);
+			animFreeze.TweenCallback(Callable.From(() =>
+			{
+				if (GodotObject.IsInstanceValid(_animationPlayer) && !_isDead)
+					_animationPlayer.SpeedScale = 1f;
+			}));
+		}
+
+		var visual = GetNodeOrNull<Node3D>("BossVisual");
+		if (visual != null && GodotObject.IsInstanceValid(visual))
+		{
+			// 5. Body recoil: BossVisual loikkaa poispäin pelaajasta, sitten palaa jousimaisesti
+			Vector3 awayDir = -GlobalTransform.Basis.Z;
+			if (_player != null && GodotObject.IsInstanceValid(_player))
+			{
+				var d = GlobalPosition - _player.GlobalPosition;
+				d.Y = 0f;
+				if (d.LengthSquared() > 1e-5f) awayDir = d.Normalized();
+			}
+			Vector3 pushLocal = GlobalTransform.Basis.Inverse() * (awayDir * 0.32f);
+
+			_recoilTween?.Kill();
+			_recoilTween = CreateTween();
+			_recoilTween.TweenProperty(visual, "position", pushLocal, 0.04f)
+				.SetTrans(Tween.TransitionType.Sine).SetEase(Tween.EaseType.Out);
+			_recoilTween.TweenProperty(visual, "position", Vector3.Zero, 0.22f)
+				.SetTrans(Tween.TransitionType.Back).SetEase(Tween.EaseType.Out);
+
+			// 6. Squash-stretch: litistää pystysuunnassa, laajenee XZ:ssä (kuin iskun paino)
+			if (_bossVisualBaseScale.LengthSquared() > 0.001f)
+			{
+				Vector3 squashTarget = _bossVisualBaseScale * new Vector3(1.08f, 0.90f, 1.08f);
+				_squashTween?.Kill();
+				_squashTween = CreateTween();
+				_squashTween.TweenProperty(visual, "scale", squashTarget, 0.04f)
+					.SetTrans(Tween.TransitionType.Sine).SetEase(Tween.EaseType.Out);
+				_squashTween.TweenProperty(visual, "scale", _bossVisualBaseScale, 0.24f)
+					.SetTrans(Tween.TransitionType.Back).SetEase(Tween.EaseType.Out);
+			}
+		}
+
+		// 7. Spotlight flash: tanssivalo välkähtää punaisena
+		if (_danceSpotLight != null && GodotObject.IsInstanceValid(_danceSpotLight) && _danceSpotLight.Visible)
+		{
+			_danceSpotLight.LightEnergy = BossDanceLightEnergy * 3.0f;
+			_danceSpotLight.LightColor = new Color(1f, 0.22f, 0.18f);
+			var lightTween = CreateTween();
+			lightTween.TweenInterval(0.10f);
+			lightTween.TweenCallback(Callable.From(() =>
+			{
+				if (GodotObject.IsInstanceValid(_danceSpotLight))
+				{
+					_danceSpotLight.LightEnergy = BossDanceLightEnergy;
+					_danceSpotLight.LightColor = BossDanceLightColor;
+				}
+			}));
+		}
 	}
 
 	private void PlaySwordHitSfx()
