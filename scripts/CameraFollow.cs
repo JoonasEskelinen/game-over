@@ -24,6 +24,22 @@ public partial class CameraFollow : Camera3D
 	[Export] public float MouseSensitivity = 0.0045f;
 	[Export] public bool MouseLookRequiresRightButton = true;
 
+	/// <summary>
+	/// Kiinteä sivunäkymä (putki tms.): ei orbit-sauvaa/hiirtä, yaw/pitch pysyvät asetuksissa.
+	/// Etäisyys = <see cref="Offset"/>.Length() (säädä Offset suuremmaksi zoomataksesi kauemmas).
+	/// </summary>
+	[ExportGroup("Side-scroller / kiinteä kulma")]
+	[Export] public bool SideScrollerLock = false;
+	[Export] public float SideScrollerYawDeg = 0f;
+	[Export] public float SideScrollerPitchDeg = 14f;
+	[Export] public bool SideScrollerDisableOrbitInput = true;
+
+	/// <summary>
+	/// Side-scroller: älä lyhennä kameraetäisyyttä seinä-raylla (sama etäisyys putkessa vs. avoin luola).
+	/// Lisäksi täysi seuranta yhdellä framella (ei lerp + LookAt -värinää).
+	/// </summary>
+	[Export] public bool SideScrollerSkipWallRayAndSnap = true;
+
 	[ExportGroup("Level 1 boss — tanssikamera")]
 	[Export] public bool EnableBossDanceCamera = true;
 	[Export] public float BossDanceLookAtYOffset = 1.35f;
@@ -58,6 +74,19 @@ public partial class CameraFollow : Camera3D
 	private float _shakeDecayDuration = 0.25f;
 	private float _shakeTimer;
 
+	/// <summary>Hetkellinen etäisyyden muutos (metriä) pivotista — negatiivinen = zoom lähemmäs. Level 1 joystick.</summary>
+	private float _momentaryDistanceDelta;
+	private float _momentaryDistanceTimer;
+
+	/// <summary>
+	/// Lyhyt “cinematic” zoom: siirtää kameraa lähemmäs tai kauemmas hetkeksi (esim. joystickin aktivointi).
+	/// </summary>
+	public void ApplyMomentaryDistanceOffset(float deltaMeters, float durationSeconds)
+	{
+		_momentaryDistanceDelta = deltaMeters;
+		_momentaryDistanceTimer   = Mathf.Max(0.01f, durationSeconds);
+	}
+
 	/// <summary>Käynnistää ruututärinän — kutsutaan miekkaosumahetkellä.</summary>
 	public void ShakeImpulse(float amplitude, float decaySeconds = 0.25f)
 	{
@@ -86,10 +115,21 @@ public partial class CameraFollow : Camera3D
 		var o = Offset;
 		if (o.LengthSquared() < 0.01f)
 			o = new Vector3(0f, 2f, 10f);
-		_distance = o.Length();
-		var nd = o.Normalized();
-		_pitch = Mathf.Asin(Mathf.Clamp(nd.Y, -1f, 1f));
-		_yaw = Mathf.Atan2(nd.X, nd.Z);
+		if (SideScrollerLock)
+		{
+			_distance = o.Length();
+			if (_distance < 0.01f)
+				_distance = 16f;
+			_yaw = Mathf.DegToRad(SideScrollerYawDeg);
+			_pitch = Mathf.Clamp(Mathf.DegToRad(SideScrollerPitchDeg), _minPitchRad, _maxPitchRad);
+		}
+		else
+		{
+			_distance = o.Length();
+			var nd = o.Normalized();
+			_pitch = Mathf.Asin(Mathf.Clamp(nd.Y, -1f, 1f));
+			_yaw = Mathf.Atan2(nd.X, nd.Z);
+		}
 	}
 
 	/// <summary>Lyhyt intro: siirtyy kohteeseen, pysähtyy, palaa seurantaan.</summary>
@@ -118,6 +158,8 @@ public partial class CameraFollow : Camera3D
 	{
 		if (!MouseLookEnabled || _player == null)
 			return;
+		if (SideScrollerLock && SideScrollerDisableOrbitInput)
+			return;
 		if (_cinemaPhase >= 0 && _cinemaPhase <= 1)
 			return;
 		if (IsBossDanceCameraBlockingInput())
@@ -141,7 +183,12 @@ public partial class CameraFollow : Camera3D
 		float dt = (float)delta;
 		bool lockOrbit = (_cinemaPhase >= 0 && _cinemaPhase <= 1) || IsBossDanceCameraBlockingInput();
 
-		if (!lockOrbit)
+		if (SideScrollerLock)
+		{
+			_yaw = Mathf.DegToRad(SideScrollerYawDeg);
+			_pitch = Mathf.Clamp(Mathf.DegToRad(SideScrollerPitchDeg), _minPitchRad, _maxPitchRad);
+		}
+		else if (!lockOrbit)
 		{
 			float ax = Input.GetAxis("cam_look_left", "cam_look_right");
 			float ay = Input.GetAxis("cam_look_up", "cam_look_down");
@@ -151,7 +198,7 @@ public partial class CameraFollow : Camera3D
 		}
 
 		var pivotFollow = _player.GlobalPosition + new Vector3(0f, PivotHeight, 0f);
-		if (ClampCameraAboveGround)
+		if (ClampCameraAboveGround && !SideScrollerLock)
 			ApplyGroundPitchClamp(pivotFollow);
 
 		float cp = Mathf.Cos(_pitch);
@@ -161,11 +208,24 @@ public partial class CameraFollow : Camera3D
 		else
 			dir = dir.Normalized();
 
-		Vector3 targetPos = pivotFollow + dir * _distance;
+		float effectiveDist = _distance;
+		if (_momentaryDistanceTimer > 0f)
+		{
+			effectiveDist += _momentaryDistanceDelta;
+			_momentaryDistanceTimer -= dt;
+			if (_momentaryDistanceTimer <= 0f)
+			{
+				_momentaryDistanceTimer   = 0f;
+				_momentaryDistanceDelta     = 0f;
+			}
+		}
+
+		Vector3 targetPos = pivotFollow + dir * effectiveDist;
 
 		var world = GetWorld3D();
 		var spaceState = world?.DirectSpaceState;
-		if (spaceState != null)
+		bool skipWallForSide = SideScrollerLock && SideScrollerSkipWallRayAndSnap;
+		if (spaceState != null && !skipWallForSide)
 		{
 			var wallQuery = PhysicsRayQueryParameters3D.Create(pivotFollow, targetPos);
 			wallQuery.CollideWithAreas = false;
@@ -261,7 +321,9 @@ public partial class CameraFollow : Camera3D
 			}
 		}
 
-		float t = Mathf.Clamp(FollowSpeed * dt, 0f, 1f);
+		float t = skipWallForSide
+			? 1f
+			: Mathf.Clamp(FollowSpeed * dt, 0f, 1f);
 		GlobalPosition = GlobalPosition.Lerp(targetPos, t);
 		ApplyScreenShake(dt);
 		LookAt(pivotFollow, Vector3.Up);

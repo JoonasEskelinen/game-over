@@ -8,6 +8,7 @@ using Godot;
 /// 1. Dancing-vaihe: bossi tanssii paikallaan satunnaisen ajan
 /// 2. Charging-vaihe: bossi teleporttaa areenan reunalle ja syöksyy pelaajaa kohti
 /// 3. Bossi voi ottaa vahinkoa vain tanssiessaan (vahva isku R1 tappaa)
+/// 4. osuma.fbx R1-osumalla; syöksyssä Mma Kick kun etäisyys pelaajaan ≤ MmaKickTriggerDistanceM → tanssiin takaisin
 /// </summary>
 public partial class BossLevel1 : CharacterBody3D
 {
@@ -23,6 +24,12 @@ public partial class BossLevel1 : CharacterBody3D
 	
 	[Export] public string DeathFbxPath = "res://assets/models/level1_BossEnemy/Death.fbx";
 
+	/// <summary>Osuma-animaatio (with skin) — toistuu R1-osumalla.</summary>
+	[Export] public string HitReactFbxPath = "res://assets/models/level1_BossEnemy/osuma.fbx";
+
+	/// <summary>MMA-potku (without skin) — syöksyn päätteeksi kun bossi on pelaajan luona.</summary>
+	[Export] public string MmaKickFbxPath = "res://assets/models/level1_BossEnemy/Mma Kick.fbx";
+
 	/// <summary>Mixamon animaation sisäinen nimi FBX:ssä.</summary>
 	[Export] public string MixamoAnimSourceName = "mixamo_com";
 
@@ -33,6 +40,13 @@ public partial class BossLevel1 : CharacterBody3D
 	[Export] public string RunClipName = "run";
 	
 	[Export] public string DeathClipName = "death";
+
+	[Export] public string HitClipName = "hit_react";
+
+	[Export] public string MmaKickClipName = "mma_kick";
+
+	/// <summary>Vaakasuora etäisyys (m): MMA-potku käynnistyy kun bossi on tätä lähempänä pelaajaa.</summary>
+	[Export] public float MmaKickTriggerDistanceM = 2.0f;
 
 	/// <summary>Maksimi-HP — oletus 30 = 10 osumaa × R1-vahinko (3) tanssi-/otteluvaiheessa.</summary>
 	[Export] public int MaxBossHealth = 30;
@@ -227,6 +241,15 @@ public partial class BossLevel1 : CharacterBody3D
 	private Tween _squashTween;
 	private Tween _hitFlashTween;
 
+	private bool _hitReactPlaying;
+
+	/// <summary>Animaatio johon palataan osuman jälkeen (tanssi tai juoksu).</summary>
+	private string _resumeClipAfterHit = "";
+
+	private bool _chargingKickActive;
+
+	private bool _kickTriggeredThisCharge;
+
 	// ─────────────────────────────────────────────
 	// ALUSTUS
 	// ─────────────────────────────────────────────
@@ -283,6 +306,11 @@ public partial class BossLevel1 : CharacterBody3D
 		LoadAnim(FastRunFbxPath, MixamoAnimSourceName, RunClipName, loop: true);
 		
 		LoadAnim(DeathFbxPath, MixamoAnimSourceName, DeathClipName, loop: false);
+
+		LoadAnim(HitReactFbxPath, MixamoAnimSourceName, HitClipName, loop: false);
+		LoadAnim(MmaKickFbxPath, MixamoAnimSourceName, MmaKickClipName, loop: false);
+
+		_animationPlayer.AnimationFinished += OnBossAnimationFinished;
 
 		// Aloitetaan tanssi
 		_animationPlayer.Play(DanceClipName);
@@ -604,6 +632,10 @@ public partial class BossLevel1 : CharacterBody3D
 		FaceTowardActiveCamera();
 		UpdateDanceHighlightLight(true);
 
+		// Osuma-animaatio: ei kuluteta tanssiaikaa
+		if (_hitReactPlaying)
+			return;
+
 		if (_waitingAfterDance)
 		{
 			_postDanceWaitLeft -= dt;
@@ -693,6 +725,8 @@ public partial class BossLevel1 : CharacterBody3D
 	{
 		UpdateDanceHighlightLight(false);
 		_phase = BossPhase.Charging;
+		_chargingKickActive = false;
+		_kickTriggeredThisCharge = false;
 		// Syöksy: vain kerros 1 (lattia + pelaaja) — ei arcade-proppeja (kerros 5).
 		CollisionMask = 1;
 
@@ -742,7 +776,43 @@ public partial class BossLevel1 : CharacterBody3D
 	/// </summary>
 	private void ProcessCharging(float dt)
 	{
+		// MMA-potku: pysähdys, ei kuluteta syöksyaikaa
+		if (_chargingKickActive)
+		{
+			ApplyChargeVerticalPhysics(dt);
+			Velocity = new Vector3(0f, Velocity.Y, 0f);
+			return;
+		}
+
+		// Miekan osuma-animaatio syöksyn aikana: pysäytä vaakasuunta
+		if (_hitReactPlaying)
+		{
+			ApplyChargeVerticalPhysics(dt);
+			Velocity = new Vector3(0f, Velocity.Y, 0f);
+			return;
+		}
+
 		_chargeTimeLeft -= dt;
+
+		// MMA-potku kun ollaan tarpeeksi lähellä (kerran per syöksy)
+		if (!_kickTriggeredThisCharge
+			&& _player != null && GodotObject.IsInstanceValid(_player)
+			&& _animationPlayer != null
+			&& _animationPlayer.HasAnimation(MmaKickClipName))
+		{
+			var flat = _player.GlobalPosition - GlobalPosition;
+			flat.Y = 0f;
+			if (flat.Length() <= MmaKickTriggerDistanceM)
+			{
+				_kickTriggeredThisCharge = true;
+				_chargingKickActive = true;
+				_animationPlayer.Play(MmaKickClipName);
+				TryKickContactDamage();
+				ApplyChargeVerticalPhysics(dt);
+				Velocity = new Vector3(0f, Velocity.Y, 0f);
+				return;
+			}
+		}
 
 		// Seurataan pelaajaa reaaliajassa
 		if (_player != null && GodotObject.IsInstanceValid(_player))
@@ -756,11 +826,7 @@ public partial class BossLevel1 : CharacterBody3D
 			}
 		}
 
-		// Painovoima
-		if (!IsOnFloor())
-			Velocity = new Vector3(Velocity.X, Velocity.Y - 35f * dt, Velocity.Z);
-		else
-			Velocity = new Vector3(Velocity.X, 0f, Velocity.Z);
+		ApplyChargeVerticalPhysics(dt);
 
 		// Kontaktivahinko
 		TryChargeContactDamage();
@@ -772,11 +838,33 @@ public partial class BossLevel1 : CharacterBody3D
 			ReturnToDance();
 	}
 
+	private void ApplyChargeVerticalPhysics(float dt)
+	{
+		if (!IsOnFloor())
+			Velocity = new Vector3(Velocity.X, Velocity.Y - 35f * dt, Velocity.Z);
+		else
+			Velocity = new Vector3(Velocity.X, 0f, Velocity.Z);
+	}
+
+	/// <summary>Vahinko MMA-potkun käynnistyksessä (ei jatkuvaa törmäystä).</summary>
+	private void TryKickContactDamage()
+	{
+		if (_playerController == null || _isDead) return;
+		Vector3 threatFromBoss = GlobalPosition + Vector3.Up * HitCenterYOffset;
+		if (_playerController.IsBlockingEffectiveAgainst(threatFromBoss))
+			return;
+		var hc = _playerController.GetNodeOrNull<HealthComponent>("HealthComponent");
+		hc?.TakeDamage(Mathf.RoundToInt(ChargeContactDamage));
+		_chargeContactCd = ChargeContactCooldown;
+	}
+
 	/// <summary>Tarkistaa osuuko bossi pelaajaan ja vahingoittaa tarvittaessa.</summary>
 	private void TryChargeContactDamage()
 	{
 		// Vain syöksyvaiheessa — tanssi ei saa vahingoittaa (turva myös jos tila epäsynkassa).
 		if (_phase != BossPhase.Charging || _isDead)
+			return;
+		if (_chargingKickActive || _hitReactPlaying)
 			return;
 		if (_chargeContactCd > 0f || _playerController == null) return;
 
@@ -800,6 +888,7 @@ public partial class BossLevel1 : CharacterBody3D
 	/// <summary>Palaa tanssivaiheeseen: siirtyy kotipaikalle ja aloittaa tanssin.</summary>
 	private void ReturnToDance()
 	{
+		_chargingKickActive = false;
 		GlobalPosition = _standWorldPos;
 		Velocity = Vector3.Zero;
 		CollisionMask = _savedCollisionMask;
@@ -809,6 +898,27 @@ public partial class BossLevel1 : CharacterBody3D
 		_danceTimeLeft = (float)GD.RandRange(DanceDurationMin, DanceDurationMax);
 		if (_animationPlayer.HasAnimation(DanceClipName))
 			_animationPlayer.Play(DanceClipName);
+	}
+
+	private void OnBossAnimationFinished(StringName animName)
+	{
+		if (animName == HitClipName)
+		{
+			_hitReactPlaying = false;
+			if (_isDead) return;
+			if (!string.IsNullOrEmpty(_resumeClipAfterHit) && _animationPlayer != null
+				&& _animationPlayer.HasAnimation(_resumeClipAfterHit))
+				_animationPlayer.Play(_resumeClipAfterHit);
+			_resumeClipAfterHit = "";
+			return;
+		}
+
+		if (animName == MmaKickClipName && _chargingKickActive)
+		{
+			_chargingKickActive = false;
+			if (!_isDead)
+				ReturnToDance();
+		}
 	}
 
 	/// <summary>Valitsee satunnaisen spawnauspiste areenan reunalta.</summary>
@@ -893,13 +1003,13 @@ public partial class BossLevel1 : CharacterBody3D
 		_playerController.NotifyMeleeHitLanded();
 		_hasBeenHitThisSwing = true;
 		PlaySwordHitSfx();
-		OnSwordHitFeedback(_isDead); // _isDead = true jos tämä oli tappoisku
+		OnSwordHitFeedback(_isDead, dmg); // tappoisku / R1-vahinko (≥3) osuma-animaatiota varten
 	}
 
 	/// <summary>
 	/// Kaikki visuaalinen palaute miekkaosumahetkellä — shake, flash, hitstop, recoil, squash, spotlight.
 	/// </summary>
-	private void OnSwordHitFeedback(bool isKillingBlow)
+	private void OnSwordHitFeedback(bool isKillingBlow, int damageDealt)
 	{
 		// 1. Ruututärinä — voimistuu mitä vähemmän HP on jäljellä
 		float hpFrac = MaxBossHealth > 0 ? (float)_bossHealth / MaxBossHealth : 0f;
@@ -948,9 +1058,23 @@ public partial class BossLevel1 : CharacterBody3D
 		// Tappoiskussa jätetään recoil/squash/hitstop pois — kuolema-animaatio hoitaa draaman
 		if (isKillingBlow) return;
 
-		// 4. Boss AnimationPlayer hit-stop (80 ms)
-		if (_animationPlayer != null && GodotObject.IsInstanceValid(_animationPlayer))
+		// Vain R1-vahva isku (≥3) — sama kynnys kuin tanssivaiheessa
+		bool playHitAnim = damageDealt >= 3
+			&& _animationPlayer != null && GodotObject.IsInstanceValid(_animationPlayer)
+			&& _animationPlayer.HasAnimation(HitClipName);
+
+		if (playHitAnim)
 		{
+			_resumeClipAfterHit = _phase == BossPhase.Dancing ? DanceClipName : RunClipName;
+			_hitReactPlaying = true;
+			if (_chargingKickActive)
+				_chargingKickActive = false;
+			_animationPlayer.SpeedScale = 1f;
+			_animationPlayer.Play(HitClipName);
+		}
+		else if (_animationPlayer != null && GodotObject.IsInstanceValid(_animationPlayer))
+		{
+			// 4. Boss AnimationPlayer hit-stop (80 ms) — fallback jos osuma.fbx puuttuu
 			_animationPlayer.SpeedScale = 0f;
 			var animFreeze = CreateTween();
 			animFreeze.TweenInterval(0.08f);
@@ -962,7 +1086,7 @@ public partial class BossLevel1 : CharacterBody3D
 		}
 
 		var visual = GetNodeOrNull<Node3D>("BossVisual");
-		if (visual != null && GodotObject.IsInstanceValid(visual))
+		if (visual != null && GodotObject.IsInstanceValid(visual) && !playHitAnim)
 		{
 			// 5. Body recoil: BossVisual loikkaa poispäin pelaajasta, sitten palaa jousimaisesti
 			Vector3 awayDir = -GlobalTransform.Basis.Z;
@@ -1060,6 +1184,8 @@ public partial class BossLevel1 : CharacterBody3D
 	private void Die()
 	{
 		_isDead = true;
+		_hitReactPlaying = false;
+		_chargingKickActive = false;
 		Velocity = Vector3.Zero;
 		StopBossMusic();
 		UpdateDanceHighlightLight(false);
@@ -1149,6 +1275,7 @@ public partial class BossLevel1 : CharacterBody3D
 		if (anim == null) { GD.PrintErr($"BossLevel1: clip '{sourceName}' puuttuu: {path}"); return; }
 
 		if (loop) anim.LoopMode = Animation.LoopModeEnum.Linear;
+		else anim.LoopMode = Animation.LoopModeEnum.None;
 		var lib = _animationPlayer.GetAnimationLibrary("");
 		if (lib.HasAnimation(targetName)) lib.RemoveAnimation(targetName);
 		lib.AddAnimation(targetName, anim);

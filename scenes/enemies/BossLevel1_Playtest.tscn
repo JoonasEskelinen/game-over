@@ -1,4 +1,4 @@
-[gd_scene format=3 uid="uid://3rpemxd86d43"]
+[gd_scene format=3 uid="uid://bhlxs457iuwix"]
 
 [ext_resource type="PackedScene" uid="uid://8s0cyg2mwx3r" path="res://scenes/enemies/BossLevel1.tscn" id="1_boss"]
 [ext_resource type="Script" uid="uid://c5jfyronco280" path="res://scripts/enemies/BossLevel1PlaytestCamera.cs" id="2_cam"]

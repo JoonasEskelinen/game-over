@@ -5,11 +5,15 @@ public partial class EnemyLevel2 : CharacterBody3D
 {
 	[Export] public float Speed = 3.5f;
 	[Export] public float AttackRange = 1.2f;
+	/// <summary>R2 = 1 HP / isku × 2, R1 = 3 HP / isku → kaksi R2:tä tai yksi R1 tappaa.</summary>
 	[Export] public int Health = 2;
 
-	[Export] public string RunAnimPath    = "res://assets/models/animations/Running.fbx";
-	[Export] public string PunchAnimPath  = "res://assets/models/animations/Punching.fbx";
-	[Export] public string DeathAnimPath  = "res://assets/models/animations/Death.fbx";
+	[Export] public string RunAnimPath   = "res://assets/models/level2_lisko/Running.fbx";
+	[Export] public string PunchAnimPath = "res://assets/models/level2_lisko/Punching.fbx";
+	[Export] public string DeathAnimPath = "res://assets/models/level2_lisko/Death.fbx";
+
+	/// <summary>Mixamo/Godot -Z etusuunta ei aina täsmää — säädä (tyypillisesti 0 tai 180) jos hahmo juoksee väärinpäin.</summary>
+	[Export] public float FaceYawOffsetDegrees = 180f;
 
 	/// <summary>Ihmishahmon osumapisteet — hartia, vatsa, jalat.</summary>
 	[Export] public float[] SwordHitProbeHeights = { 0.3f, 0.9f, 1.4f };
@@ -61,9 +65,14 @@ public partial class EnemyLevel2 : CharacterBody3D
 			}
 		}
 
+		AddToGroup("enemy_level2");
+
 		// Vihollinen aina pelaajaa kohti — käännetään heti oikeaan suuntaan
 		FacePlayer();
 	}
+
+	/// <summary>Käytössä EnemyLevel2Spawner (max elossa kerrallaan).</summary>
+	public bool IsAliveForSpawner() => !_isDead && IsInsideTree();
 
 	public override void _PhysicsProcess(double delta)
 	{
@@ -89,10 +98,15 @@ public partial class EnemyLevel2 : CharacterBody3D
 
 		if (!inMeleeRange)
 		{
-			// Liikkuu VAIN X-akselilla — tulee suoraan edestäpäin putkessa
-			float dirX = Mathf.Sign(_player.GlobalPosition.X - GlobalPosition.X);
-			velocity.X = dirX * Speed;
-			velocity.Z = 0f;
+			// Liikkuu XZ-tasossa pelaajaa kohti (tukee satunnaisia Z-spawn-positioita)
+			var toPlayer = _player.GlobalPosition - GlobalPosition;
+			toPlayer.Y = 0f;
+			if (toPlayer.LengthSquared() > 0.01f)
+			{
+				var dir = toPlayer.Normalized();
+				velocity.X = dir.X * Speed;
+				velocity.Z = dir.Z * Speed;
+			}
 			FacePlayer();
 
 			if (_animationPlayer?.CurrentAnimation != "run")
@@ -153,9 +167,11 @@ public partial class EnemyLevel2 : CharacterBody3D
 	private void FacePlayer()
 	{
 		if (_player == null || !_player.IsInsideTree() || !IsInsideTree()) return;
-		// Putkessa riittää X-suunnan kääntö — ei tarvita LookAt-temppuja
-		float dirX = _player.GlobalPosition.X - GlobalPosition.X;
-		RotationDegrees = new Vector3(0f, dirX >= 0f ? 270f : 90f, 0f);
+		var to = _player.GlobalPosition - GlobalPosition;
+		to.Y = 0f;
+		if (to.LengthSquared() < 1e-6f) return;
+		LookAt(GlobalPosition + to.Normalized() * 3f, Vector3.Up);
+		RotateY(Mathf.DegToRad(FaceYawOffsetDegrees));
 	}
 
 	private bool CanPunchByAnimPhase()
@@ -340,6 +356,14 @@ public partial class EnemyLevel2 : CharacterBody3D
 		Animation anim = null;
 		foreach (var n in new[] { sourceName, sourceName.Replace("_", ".") })
 			if (ap.HasAnimation(n)) { anim = ap.GetAnimation(n); break; }
+
+		var animList = ap.GetAnimationList();
+		if (anim == null && animList.Length > 0)
+		{
+			var first = animList[0];
+			anim = ap.GetAnimation(first);
+			GD.Print($"EnemyLevel2: käytetään ensimmäistä animaatiota '{first}' tiedostossa {path} (ei löytynyt '{sourceName}')");
+		}
 
 		if (anim == null)
 		{

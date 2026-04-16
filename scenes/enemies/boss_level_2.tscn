@@ -1,0 +1,22 @@
+[gd_scene format=3 uid="uid://dp01ipoywksqf"]
+
+[ext_resource type="Script" uid="uid://yne2ia41dawy" path="res://scripts/enemies/BossLevel2.cs" id="1_2xxam"]
+[ext_resource type="PackedScene" uid="uid://b7wjlv2sbnyls" path="res://assets/models/level2_BossEnemy/Idle.fbx" id="1_351jg"]
+[ext_resource type="PackedScene" uid="uid://dgvbjyf1r61lp" path="res://assets/models/level2_BossEnemy/vasara.glb" id="3_hstew"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_miwct"]
+height = 1.3290039
+
+[node name="BossLevel2" type="CharacterBody3D" unique_id=1297307611]
+script = ExtResource("1_2xxam")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1426061929]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.66450197, 0)
+shape = SubResource("CapsuleShape3D_miwct")
+
+[node name="Model" type="Node3D" parent="." unique_id=444273856]
+
+[node name="Idle" parent="Model" unique_id=1177819681 instance=ExtResource("1_351jg")]
+
+[node name="vasara" parent="." unique_id=865043522 instance=ExtResource("3_hstew")]
+transform = Transform3D(-0.0006745567, 0.47781816, -0.8784585, 0.0003669102, 0.87845874, 0.477818, 0.9999997, 0, -0.00076788664, -0.6136572, 1.1449394, 0.05903876)

@@ -22,6 +22,7 @@
 [ext_resource type="Script" uid="uid://6ycjaijvsor1" path="res://scripts/levels/Level1BossDirector.cs" id="19_bossdir"]
 [ext_resource type="PackedScene" uid="uid://8s0cyg2mwx3r" path="res://scenes/enemies/BossLevel1.tscn" id="20_bossscn"]
 [ext_resource type="Script" uid="uid://2ktb8dsqvp8w" path="res://scripts/levels/Level1ExitHole.cs" id="21_exithole"]
+[ext_resource type="PackedScene" uid="uid://ba0ticp74r0qo" path="res://assets/models/joystick/joystick.glb" id="22_mqh5v"]
 [ext_resource type="Script" uid="uid://dpwtmiouoyjmt" path="res://scenes/levels/JoystickLever.cs" id="22_ndtll"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_7u6i3"]
@@ -92,16 +93,6 @@ size = Vector3(1, 4, 30)
 [sub_resource type="CylinderShape3D" id="CylinderShape3D_7h2jl"]
 height = 0.8145752
 radius = 0.6352539
-
-[sub_resource type="CylinderMesh" id="CylinderMesh_mqh5v"]
-top_radius = 0.4
-bottom_radius = 0.4
-height = 0.15
-
-[sub_resource type="CylinderMesh" id="CylinderMesh_7o3do"]
-top_radius = 0.07
-bottom_radius = 0.07
-height = 0.6
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_ndtll"]
 size = Vector3(0.9442383, 1, 0.67871094)
@@ -207,8 +198,9 @@ surface_material_override/0 = SubResource("StandardMaterial3D_nsrm0")
 shape = SubResource("BoxShape3D_s8va5")
 
 [node name="Player" parent="." unique_id=1514760592 instance=ExtResource("1_ksju7")]
-transform = Transform3D(1.1, 0, 0, 0, 1.1, 0, 0, 0, 1.1, 0, -0.073586024, 2.16)
-RunSpeed = 6.0
+transform = Transform3D(1.1, 0, 0, 0, 1.1, 0, 0, 0, 1.1, 0.014350295, -0.1449435, 1.0009072)
+RunSpeed = 5.5
+JumpVelocity = 7.0
 DepthClampMin = -14.0
 DepthClampMax = 14.0
 SwordHitReachExtraMeters = 0.05
@@ -296,23 +288,18 @@ transform = Transform3D(0.6, 0, 0, 0, 0.6, 0, 0, 0, 0.6, -4.621215, 0.39251682, 
 script = ExtResource("22_ndtll")
 EnemySpawnerPath = NodePath("../EnemySpawner")
 StickPivotPath = NodePath("StickPivot")
-StickMeshPath = NodePath("StickPivot/MeshInstance3D")
 
 [node name="SylinderShape" type="CollisionShape3D" parent="JoystickLever" unique_id=255329468]
-transform = Transform3D(0.99999976, 0, 0, 0, 0.99999976, 0, 0, 0, 0.99999976, 0, 0.4213254, 0)
+transform = Transform3D(0.99999976, 0, 0, 0, 0.99999976, 0, 0, 0, 0.99999976, 0, 0.4213254, -0.13041878)
 shape = SubResource("CylinderShape3D_7h2jl")
 
 [node name="Base" type="Node3D" parent="JoystickLever" unique_id=1477467996]
 
-[node name="MeshInstance3D" type="MeshInstance3D" parent="JoystickLever/Base" unique_id=2108402435]
-mesh = SubResource("CylinderMesh_mqh5v")
-
 [node name="StickPivot" type="Node3D" parent="JoystickLever" unique_id=654267058]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.15, 0)
 
-[node name="MeshInstance3D" type="MeshInstance3D" parent="JoystickLever/StickPivot" unique_id=261170576]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.008021474, 0.3, 0)
-mesh = SubResource("CylinderMesh_7o3do")
+[node name="StickPivot#joystick" parent="JoystickLever" unique_id=935058774 instance=ExtResource("22_mqh5v")]
+transform = Transform3D(-1.3312865, 0, 0.073847674, 0, 1.3333334, 0, -0.073847674, 0, -1.3312865, 0.09194946, -0.120244086, -0.27911854)
 
 [node name="air-hockey2" parent="." unique_id=242405273 groups=["grabbable"] instance=ExtResource("9_gmpev")]
 transform = Transform3D(2, 0, 0, 0, 2, 0, 0, 0, 2, 1.4441814, -0.16340801, -6.766844)

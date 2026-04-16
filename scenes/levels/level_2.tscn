@@ -3,12 +3,15 @@
 [ext_resource type="PackedScene" uid="uid://uh6pto3nrmqe" path="res://scenes/ui/hud.tscn" id="1_j2425"]
 [ext_resource type="Script" uid="uid://cdno0yakghq2r" path="res://scripts/CameraFollow.cs" id="2_ra442"]
 [ext_resource type="PackedScene" uid="uid://vbg00ynsdulu" path="res://scenes/characters/player.tscn" id="3_fiq81"]
+[ext_resource type="PackedScene" uid="uid://bay2jpuw67ub3" path="res://scenes/enemies/enemy_level_2.tscn" id="4_fiq81"]
+[ext_resource type="PackedScene" uid="uid://dp01ipoywksqf" path="res://scenes/enemies/boss_level_2.tscn" id="5_boss2"]
+[ext_resource type="Script" uid="uid://becw2b6po5be2" path="res://scripts/enemies/EnemyLevel2Spawner.cs" id="6_spawner"]
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_pipe_floor"]
-size = Vector3(60, 1, 8)
+size = Vector3(120, 1, 8)
 
 [sub_resource type="BoxMesh" id="BoxMesh_pipe_floor"]
-size = Vector3(60, 0.5, 8)
+size = Vector3(120, 0.5, 8)
 
 [sub_resource type="StandardMaterial3D" id="mat_pipe"]
 albedo_color = Color(0.13, 0.16, 0.13, 1)
@@ -16,10 +19,10 @@ metallic = 0.7
 roughness = 0.35
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_pipe_ceiling"]
-size = Vector3(60, 0.5, 8)
+size = Vector3(120, 0.5, 8)
 
 [sub_resource type="BoxMesh" id="BoxMesh_pipe_ceiling"]
-size = Vector3(60, 0.5, 8)
+size = Vector3(120, 0.5, 8)
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_pipe_end"]
 size = Vector3(0.5, 4, 8)
@@ -28,15 +31,15 @@ size = Vector3(0.5, 4, 8)
 size = Vector3(0.5, 4, 8)
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_pipe_side"]
-size = Vector3(60, 4, 0.5)
+size = Vector3(120, 4, 0.5)
 
 [sub_resource type="BoxMesh" id="BoxMesh_pipe_side"]
-size = Vector3(60, 4, 0.5)
+size = Vector3(120, 4, 0.5)
 
 [sub_resource type="CylinderMesh" id="CylinderMesh_corner"]
 top_radius = 0.9
 bottom_radius = 0.9
-height = 60.0
+height = 120.0
 
 [sub_resource type="StandardMaterial3D" id="mat_pipe_rim"]
 albedo_color = Color(0.22, 0.26, 0.22, 1)
@@ -50,7 +53,7 @@ size = Vector3(0.4, 0.35, 7.5)
 size = Vector3(0.4, 3.5, 0.35)
 
 [sub_resource type="BoxMesh" id="BoxMesh_glow_strip"]
-size = Vector3(58, 0.06, 0.4)
+size = Vector3(118, 0.06, 0.4)
 
 [sub_resource type="StandardMaterial3D" id="mat_glow"]
 albedo_color = Color(0, 0.04, 0, 1)
@@ -133,7 +136,7 @@ ambient_light_energy = 0.4
 [node name="PipeA" type="Node3D" parent="." unique_id=2100010001]
 
 [node name="Floor" type="StaticBody3D" parent="PipeA" unique_id=2100010010]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -30, 0, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -60, 0, 0)
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="PipeA/Floor" unique_id=2100010011]
 shape = SubResource("BoxShape3D_pipe_floor")
@@ -143,7 +146,7 @@ mesh = SubResource("BoxMesh_pipe_floor")
 surface_material_override/0 = SubResource("mat_pipe")
 
 [node name="Ceiling" type="StaticBody3D" parent="PipeA" unique_id=2100010020]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -30, 4, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -60, 4, 0)
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="PipeA/Ceiling" unique_id=2100010021]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.25, 0)
@@ -155,7 +158,7 @@ mesh = SubResource("BoxMesh_pipe_ceiling")
 surface_material_override/0 = SubResource("mat_pipe")
 
 [node name="Wall_Start" type="StaticBody3D" parent="PipeA" unique_id=2100010030]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -60, 2, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -120, 2, 0)
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="PipeA/Wall_Start" unique_id=2100010031]
 shape = SubResource("BoxShape3D_pipe_end")
@@ -165,7 +168,7 @@ mesh = SubResource("BoxMesh_pipe_end")
 surface_material_override/0 = SubResource("mat_pipe")
 
 [node name="Wall_ZNeg" type="StaticBody3D" parent="PipeA" unique_id=2100010040]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -30, 2, -4)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -60, 2, -4)
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="PipeA/Wall_ZNeg" unique_id=2100010041]
 shape = SubResource("BoxShape3D_pipe_side")
@@ -175,7 +178,7 @@ mesh = SubResource("BoxMesh_pipe_side")
 surface_material_override/0 = SubResource("mat_pipe")
 
 [node name="Wall_ZPos" type="StaticBody3D" parent="PipeA" unique_id=2100010050]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -30, 2, 4)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -60, 2, 4)
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="PipeA/Wall_ZPos" unique_id=2100010051]
 shape = SubResource("BoxShape3D_pipe_side")
@@ -187,95 +190,135 @@ surface_material_override/0 = SubResource("mat_pipe")
 [node name="Visuals" type="Node3D" parent="PipeA" unique_id=-1194957295]
 
 [node name="Corner_FloorBack" type="MeshInstance3D" parent="PipeA/Visuals" unique_id=-1194957286]
-transform = Transform3D(0, -1, 0, 1, 0, 0, 0, 0, 1, -30, 0, -4)
+transform = Transform3D(0, -1, 0, 1, 0, 0, 0, 0, 1, -60, 0, -4)
 mesh = SubResource("CylinderMesh_corner")
 surface_material_override/0 = SubResource("mat_pipe_rim")
 
 [node name="Corner_FloorFront" type="MeshInstance3D" parent="PipeA/Visuals" unique_id=-1194957285]
-transform = Transform3D(0, -1, 0, 1, 0, 0, 0, 0, 1, -30, 0, 4)
+transform = Transform3D(0, -1, 0, 1, 0, 0, 0, 0, 1, -60, 0, 4)
 mesh = SubResource("CylinderMesh_corner")
 surface_material_override/0 = SubResource("mat_pipe_rim")
 
 [node name="Corner_CeilBack" type="MeshInstance3D" parent="PipeA/Visuals" unique_id=-1194957284]
-transform = Transform3D(0, -1, 0, 1, 0, 0, 0, 0, 1, -30, 4, -4)
+transform = Transform3D(0, -1, 0, 1, 0, 0, 0, 0, 1, -60, 4, -4)
 mesh = SubResource("CylinderMesh_corner")
 surface_material_override/0 = SubResource("mat_pipe_rim")
 
 [node name="Corner_CeilFront" type="MeshInstance3D" parent="PipeA/Visuals" unique_id=-1194957283]
-transform = Transform3D(0, -1, 0, 1, 0, 0, 0, 0, 1, -30, 4, 4)
+transform = Transform3D(0, -1, 0, 1, 0, 0, 0, 0, 1, -60, 4, 4)
 mesh = SubResource("CylinderMesh_corner")
 surface_material_override/0 = SubResource("mat_pipe_rim")
 
 [node name="Rib1_Bot" type="MeshInstance3D" parent="PipeA/Visuals" unique_id=-1193957196]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -45, 0.17, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -108, 0.17, 0)
 mesh = SubResource("BoxMesh_rib_horiz")
 surface_material_override/0 = SubResource("mat_pipe_rim")
 
 [node name="Rib1_Top" type="MeshInstance3D" parent="PipeA/Visuals" unique_id=-1193957195]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -45, 3.83, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -108, 3.83, 0)
 mesh = SubResource("BoxMesh_rib_horiz")
 surface_material_override/0 = SubResource("mat_pipe_rim")
 
 [node name="Rib1_ZNeg" type="MeshInstance3D" parent="PipeA/Visuals" unique_id=-1193957194]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -45, 2, -3.82)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -108, 2, -3.82)
 mesh = SubResource("BoxMesh_rib_vert")
 surface_material_override/0 = SubResource("mat_pipe_rim")
 
 [node name="Rib1_ZPos" type="MeshInstance3D" parent="PipeA/Visuals" unique_id=-1193957193]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -45, 2, 3.82)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -108, 2, 3.82)
 mesh = SubResource("BoxMesh_rib_vert")
 surface_material_override/0 = SubResource("mat_pipe_rim")
 
 [node name="Rib2_Bot" type="MeshInstance3D" parent="PipeA/Visuals" unique_id=-1193957186]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -30, 0.17, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -84, 0.17, 0)
 mesh = SubResource("BoxMesh_rib_horiz")
 surface_material_override/0 = SubResource("mat_pipe_rim")
 
 [node name="Rib2_Top" type="MeshInstance3D" parent="PipeA/Visuals" unique_id=-1193957185]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -30, 3.83, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -84, 3.83, 0)
 mesh = SubResource("BoxMesh_rib_horiz")
 surface_material_override/0 = SubResource("mat_pipe_rim")
 
 [node name="Rib2_ZNeg" type="MeshInstance3D" parent="PipeA/Visuals" unique_id=-1193957184]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -30, 2, -3.82)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -84, 2, -3.82)
 mesh = SubResource("BoxMesh_rib_vert")
 surface_material_override/0 = SubResource("mat_pipe_rim")
 
 [node name="Rib2_ZPos" type="MeshInstance3D" parent="PipeA/Visuals" unique_id=-1193957183]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -30, 2, 3.82)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -84, 2, 3.82)
 mesh = SubResource("BoxMesh_rib_vert")
 surface_material_override/0 = SubResource("mat_pipe_rim")
 
 [node name="Rib3_Bot" type="MeshInstance3D" parent="PipeA/Visuals" unique_id=-1193957176]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -15, 0.17, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -60, 0.17, 0)
 mesh = SubResource("BoxMesh_rib_horiz")
 surface_material_override/0 = SubResource("mat_pipe_rim")
 
 [node name="Rib3_Top" type="MeshInstance3D" parent="PipeA/Visuals" unique_id=-1193957175]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -15, 3.83, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -60, 3.83, 0)
 mesh = SubResource("BoxMesh_rib_horiz")
 surface_material_override/0 = SubResource("mat_pipe_rim")
 
 [node name="Rib3_ZNeg" type="MeshInstance3D" parent="PipeA/Visuals" unique_id=-1193957174]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -15, 2, -3.82)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -60, 2, -3.82)
 mesh = SubResource("BoxMesh_rib_vert")
 surface_material_override/0 = SubResource("mat_pipe_rim")
 
 [node name="Rib3_ZPos" type="MeshInstance3D" parent="PipeA/Visuals" unique_id=-1193957173]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -15, 2, 3.82)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -60, 2, 3.82)
+mesh = SubResource("BoxMesh_rib_vert")
+surface_material_override/0 = SubResource("mat_pipe_rim")
+
+[node name="Rib4_Bot" type="MeshInstance3D" parent="PipeA/Visuals" unique_id=-1193957096]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -36, 0.17, 0)
+mesh = SubResource("BoxMesh_rib_horiz")
+surface_material_override/0 = SubResource("mat_pipe_rim")
+
+[node name="Rib4_Top" type="MeshInstance3D" parent="PipeA/Visuals" unique_id=-1193957095]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -36, 3.83, 0)
+mesh = SubResource("BoxMesh_rib_horiz")
+surface_material_override/0 = SubResource("mat_pipe_rim")
+
+[node name="Rib4_ZNeg" type="MeshInstance3D" parent="PipeA/Visuals" unique_id=-1193957094]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -36, 2, -3.82)
+mesh = SubResource("BoxMesh_rib_vert")
+surface_material_override/0 = SubResource("mat_pipe_rim")
+
+[node name="Rib4_ZPos" type="MeshInstance3D" parent="PipeA/Visuals" unique_id=-1193957093]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -36, 2, 3.82)
+mesh = SubResource("BoxMesh_rib_vert")
+surface_material_override/0 = SubResource("mat_pipe_rim")
+
+[node name="Rib5_Bot" type="MeshInstance3D" parent="PipeA/Visuals" unique_id=-1193957086]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -12, 0.17, 0)
+mesh = SubResource("BoxMesh_rib_horiz")
+surface_material_override/0 = SubResource("mat_pipe_rim")
+
+[node name="Rib5_Top" type="MeshInstance3D" parent="PipeA/Visuals" unique_id=-1193957085]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -12, 3.83, 0)
+mesh = SubResource("BoxMesh_rib_horiz")
+surface_material_override/0 = SubResource("mat_pipe_rim")
+
+[node name="Rib5_ZNeg" type="MeshInstance3D" parent="PipeA/Visuals" unique_id=-1193957084]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -12, 2, -3.82)
+mesh = SubResource("BoxMesh_rib_vert")
+surface_material_override/0 = SubResource("mat_pipe_rim")
+
+[node name="Rib5_ZPos" type="MeshInstance3D" parent="PipeA/Visuals" unique_id=-1193957083]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -12, 2, 3.82)
 mesh = SubResource("BoxMesh_rib_vert")
 surface_material_override/0 = SubResource("mat_pipe_rim")
 
 [node name="GlowStrip" type="MeshInstance3D" parent="PipeA/Visuals" unique_id=-1194957266]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -30, 3.95, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -60, 3.95, 0)
 mesh = SubResource("BoxMesh_glow_strip")
 surface_material_override/0 = SubResource("mat_glow")
 
 [node name="Light" type="OmniLight3D" parent="PipeA/Visuals" unique_id=-1194957256]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -30, 3.5, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -60, 3.5, 0)
 light_color = Color(0.22, 1, 0.38, 1)
 light_energy = 1.5
-omni_range = 14.0
+omni_range = 22.0
 
 [node name="Cave" type="Node3D" parent="." unique_id=2100020001]
 
@@ -394,7 +437,7 @@ omni_range = 16.0
 [node name="PipeB" type="Node3D" parent="." unique_id=2100030001]
 
 [node name="Floor" type="StaticBody3D" parent="PipeB" unique_id=2100030010]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 90, 0, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 120, 0, 0)
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="PipeB/Floor" unique_id=2100030011]
 shape = SubResource("BoxShape3D_pipe_floor")
@@ -404,7 +447,7 @@ mesh = SubResource("BoxMesh_pipe_floor")
 surface_material_override/0 = SubResource("mat_pipe")
 
 [node name="Ceiling" type="StaticBody3D" parent="PipeB" unique_id=2100030020]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 90, 4, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 120, 4, 0)
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="PipeB/Ceiling" unique_id=2100030021]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.25, 0)
@@ -416,7 +459,7 @@ mesh = SubResource("BoxMesh_pipe_ceiling")
 surface_material_override/0 = SubResource("mat_pipe")
 
 [node name="Wall_End" type="StaticBody3D" parent="PipeB" unique_id=2100030030]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 120, 2, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 180, 2, 0)
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="PipeB/Wall_End" unique_id=2100030031]
 shape = SubResource("BoxShape3D_pipe_end")
@@ -426,7 +469,7 @@ mesh = SubResource("BoxMesh_pipe_end")
 surface_material_override/0 = SubResource("mat_pipe")
 
 [node name="Wall_ZNeg" type="StaticBody3D" parent="PipeB" unique_id=2100030040]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 90, 2, -4)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 120, 2, -4)
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="PipeB/Wall_ZNeg" unique_id=2100030041]
 shape = SubResource("BoxShape3D_pipe_side")
@@ -436,7 +479,7 @@ mesh = SubResource("BoxMesh_pipe_side")
 surface_material_override/0 = SubResource("mat_pipe")
 
 [node name="Wall_ZPos" type="StaticBody3D" parent="PipeB" unique_id=2100030050]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 90, 2, 4)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 120, 2, 4)
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="PipeB/Wall_ZPos" unique_id=2100030051]
 shape = SubResource("BoxShape3D_pipe_side")
@@ -448,95 +491,135 @@ surface_material_override/0 = SubResource("mat_pipe")
 [node name="Visuals" type="Node3D" parent="PipeB" unique_id=-1194937295]
 
 [node name="Corner_FloorBack" type="MeshInstance3D" parent="PipeB/Visuals" unique_id=-1194937286]
-transform = Transform3D(0, -1, 0, 1, 0, 0, 0, 0, 1, 90, 0, -4)
+transform = Transform3D(0, -1, 0, 1, 0, 0, 0, 0, 1, 120, 0, -4)
 mesh = SubResource("CylinderMesh_corner")
 surface_material_override/0 = SubResource("mat_pipe_rim")
 
 [node name="Corner_FloorFront" type="MeshInstance3D" parent="PipeB/Visuals" unique_id=-1194937285]
-transform = Transform3D(0, -1, 0, 1, 0, 0, 0, 0, 1, 90, 0, 4)
+transform = Transform3D(0, -1, 0, 1, 0, 0, 0, 0, 1, 120, 0, 4)
 mesh = SubResource("CylinderMesh_corner")
 surface_material_override/0 = SubResource("mat_pipe_rim")
 
 [node name="Corner_CeilBack" type="MeshInstance3D" parent="PipeB/Visuals" unique_id=-1194937284]
-transform = Transform3D(0, -1, 0, 1, 0, 0, 0, 0, 1, 90, 4, -4)
+transform = Transform3D(0, -1, 0, 1, 0, 0, 0, 0, 1, 120, 4, -4)
 mesh = SubResource("CylinderMesh_corner")
 surface_material_override/0 = SubResource("mat_pipe_rim")
 
 [node name="Corner_CeilFront" type="MeshInstance3D" parent="PipeB/Visuals" unique_id=-1194937283]
-transform = Transform3D(0, -1, 0, 1, 0, 0, 0, 0, 1, 90, 4, 4)
+transform = Transform3D(0, -1, 0, 1, 0, 0, 0, 0, 1, 120, 4, 4)
 mesh = SubResource("CylinderMesh_corner")
 surface_material_override/0 = SubResource("mat_pipe_rim")
 
 [node name="Rib1_Bot" type="MeshInstance3D" parent="PipeB/Visuals" unique_id=-1193937196]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 75, 0.17, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 72, 0.17, 0)
 mesh = SubResource("BoxMesh_rib_horiz")
 surface_material_override/0 = SubResource("mat_pipe_rim")
 
 [node name="Rib1_Top" type="MeshInstance3D" parent="PipeB/Visuals" unique_id=-1193937195]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 75, 3.83, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 72, 3.83, 0)
 mesh = SubResource("BoxMesh_rib_horiz")
 surface_material_override/0 = SubResource("mat_pipe_rim")
 
 [node name="Rib1_ZNeg" type="MeshInstance3D" parent="PipeB/Visuals" unique_id=-1193937194]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 75, 2, -3.82)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 72, 2, -3.82)
 mesh = SubResource("BoxMesh_rib_vert")
 surface_material_override/0 = SubResource("mat_pipe_rim")
 
 [node name="Rib1_ZPos" type="MeshInstance3D" parent="PipeB/Visuals" unique_id=-1193937193]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 75, 2, 3.82)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 72, 2, 3.82)
 mesh = SubResource("BoxMesh_rib_vert")
 surface_material_override/0 = SubResource("mat_pipe_rim")
 
 [node name="Rib2_Bot" type="MeshInstance3D" parent="PipeB/Visuals" unique_id=-1193937186]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 90, 0.17, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 96, 0.17, 0)
 mesh = SubResource("BoxMesh_rib_horiz")
 surface_material_override/0 = SubResource("mat_pipe_rim")
 
 [node name="Rib2_Top" type="MeshInstance3D" parent="PipeB/Visuals" unique_id=-1193937185]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 90, 3.83, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 96, 3.83, 0)
 mesh = SubResource("BoxMesh_rib_horiz")
 surface_material_override/0 = SubResource("mat_pipe_rim")
 
 [node name="Rib2_ZNeg" type="MeshInstance3D" parent="PipeB/Visuals" unique_id=-1193937184]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 90, 2, -3.82)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 96, 2, -3.82)
 mesh = SubResource("BoxMesh_rib_vert")
 surface_material_override/0 = SubResource("mat_pipe_rim")
 
 [node name="Rib2_ZPos" type="MeshInstance3D" parent="PipeB/Visuals" unique_id=-1193937183]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 90, 2, 3.82)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 96, 2, 3.82)
 mesh = SubResource("BoxMesh_rib_vert")
 surface_material_override/0 = SubResource("mat_pipe_rim")
 
 [node name="Rib3_Bot" type="MeshInstance3D" parent="PipeB/Visuals" unique_id=-1193937176]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 105, 0.17, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 120, 0.17, 0)
 mesh = SubResource("BoxMesh_rib_horiz")
 surface_material_override/0 = SubResource("mat_pipe_rim")
 
 [node name="Rib3_Top" type="MeshInstance3D" parent="PipeB/Visuals" unique_id=-1193937175]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 105, 3.83, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 120, 3.83, 0)
 mesh = SubResource("BoxMesh_rib_horiz")
 surface_material_override/0 = SubResource("mat_pipe_rim")
 
 [node name="Rib3_ZNeg" type="MeshInstance3D" parent="PipeB/Visuals" unique_id=-1193937174]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 105, 2, -3.82)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 120, 2, -3.82)
 mesh = SubResource("BoxMesh_rib_vert")
 surface_material_override/0 = SubResource("mat_pipe_rim")
 
 [node name="Rib3_ZPos" type="MeshInstance3D" parent="PipeB/Visuals" unique_id=-1193937173]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 105, 2, 3.82)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 120, 2, 3.82)
+mesh = SubResource("BoxMesh_rib_vert")
+surface_material_override/0 = SubResource("mat_pipe_rim")
+
+[node name="Rib4_Bot" type="MeshInstance3D" parent="PipeB/Visuals" unique_id=-1193937096]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 144, 0.17, 0)
+mesh = SubResource("BoxMesh_rib_horiz")
+surface_material_override/0 = SubResource("mat_pipe_rim")
+
+[node name="Rib4_Top" type="MeshInstance3D" parent="PipeB/Visuals" unique_id=-1193937095]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 144, 3.83, 0)
+mesh = SubResource("BoxMesh_rib_horiz")
+surface_material_override/0 = SubResource("mat_pipe_rim")
+
+[node name="Rib4_ZNeg" type="MeshInstance3D" parent="PipeB/Visuals" unique_id=-1193937094]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 144, 2, -3.82)
+mesh = SubResource("BoxMesh_rib_vert")
+surface_material_override/0 = SubResource("mat_pipe_rim")
+
+[node name="Rib4_ZPos" type="MeshInstance3D" parent="PipeB/Visuals" unique_id=-1193937093]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 144, 2, 3.82)
+mesh = SubResource("BoxMesh_rib_vert")
+surface_material_override/0 = SubResource("mat_pipe_rim")
+
+[node name="Rib5_Bot" type="MeshInstance3D" parent="PipeB/Visuals" unique_id=-1193937086]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 168, 0.17, 0)
+mesh = SubResource("BoxMesh_rib_horiz")
+surface_material_override/0 = SubResource("mat_pipe_rim")
+
+[node name="Rib5_Top" type="MeshInstance3D" parent="PipeB/Visuals" unique_id=-1193937085]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 168, 3.83, 0)
+mesh = SubResource("BoxMesh_rib_horiz")
+surface_material_override/0 = SubResource("mat_pipe_rim")
+
+[node name="Rib5_ZNeg" type="MeshInstance3D" parent="PipeB/Visuals" unique_id=-1193937084]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 168, 2, -3.82)
+mesh = SubResource("BoxMesh_rib_vert")
+surface_material_override/0 = SubResource("mat_pipe_rim")
+
+[node name="Rib5_ZPos" type="MeshInstance3D" parent="PipeB/Visuals" unique_id=-1193937083]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 168, 2, 3.82)
 mesh = SubResource("BoxMesh_rib_vert")
 surface_material_override/0 = SubResource("mat_pipe_rim")
 
 [node name="GlowStrip" type="MeshInstance3D" parent="PipeB/Visuals" unique_id=-1194937266]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 90, 3.95, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 120, 3.95, 0)
 mesh = SubResource("BoxMesh_glow_strip")
 surface_material_override/0 = SubResource("mat_glow")
 
 [node name="Light" type="OmniLight3D" parent="PipeB/Visuals" unique_id=-1194937256]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 90, 3.5, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 120, 3.5, 0)
 light_color = Color(0.22, 1, 0.38, 1)
 light_energy = 1.5
-omni_range = 14.0
+omni_range = 22.0
 
 [node name="Transitions" type="Node3D" parent="." unique_id=2100040001]
 
@@ -644,24 +727,33 @@ surface_material_override/0 = SubResource("mat_cave")
 
 [node name="Camera3D" type="Camera3D" parent="." unique_id=1832840748]
 transform = Transform3D(1, 0, 0, 0, 0.9848158, 0.17360279, 0, -0.17360279, 0.9848158, 0, 3, 12)
-far = 120.0
+far = 260.0
 script = ExtResource("2_ra442")
 PlayerPath = NodePath("../Player")
 FollowSpeed = 12.0
-Offset = Vector3(2, 2, 4)
-MinPitchDeg = -45.0
-MaxPitchDeg = 45.0
+Offset = Vector3(0, 3.2, 24)
+PivotHeight = 1.2
+MinPitchDeg = -55.0
+MaxPitchDeg = 55.0
+ClampCameraAboveGround = false
+MouseLookEnabled = false
+SideScrollerLock = true
+SideScrollerPitchDeg = 11.0
+SideScrollerSkipWallRayAndSnap = true
+EnableBossDanceCamera = false
 BossDanceLookAtYOffset = 1.0
 BossDanceCamDistance = 9.0
 BossDanceCamFrontHeightM = 2.5
 BossDanceCamFollowSpeed = 2.0
 
 [node name="Player" parent="." unique_id=1514760592 instance=ExtResource("3_fiq81")]
-transform = Transform3D(1.1, 0, 0, 0, 1.1, 0, 0, 0, 1.1, -55, -0.073586024, 0)
+transform = Transform3D(1.1, 0, 0, 0, 1.1, 0, 0, 0, 1.1, -105, -0.073586024, 0)
 RunSpeed = 6.0
 DepthClampMin = -14.0
 DepthClampMax = 14.0
 SwordHitReachExtraMeters = 0.05
+HeavySwordHitReachExtraMeters = 0.1
+HeavyMeleeBladeArcHalfAngleDeg = 42.0
 LightMeleeProximityMax = 0.85
 HeavyMeleeProximityMax = 0.9
 
@@ -670,3 +762,10 @@ transform = Transform3D(0.70710677, 0.49999997, -0.49999997, 0, 0.70710677, 0.70
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1572847104]
 environment = SubResource("Environment_ra442")
+
+[node name="EnemyLevel2Spawner" type="Node3D" parent="." unique_id=2100043000]
+script = ExtResource("6_spawner")
+EnemyScene = ExtResource("4_fiq81")
+
+[node name="BossLevel2" parent="." unique_id=2100042000 instance=ExtResource("5_boss2")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 175, -0.073586024, 0)

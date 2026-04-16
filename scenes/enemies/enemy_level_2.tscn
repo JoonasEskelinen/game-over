@@ -1,3 +1,19 @@
 [gd_scene format=3 uid="uid://bay2jpuw67ub3"]
 
+[ext_resource type="Script" uid="uid://bacechtr5s2bq" path="res://scenes/enemies/EnemyLevel2.cs" id="1_ej5xk"]
+[ext_resource type="PackedScene" uid="uid://cdmugdo3ketoo" path="res://assets/models/level2_lisko/Running.fbx" id="2_c4re6"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_0twod"]
+radius = 0.35
+height = 1.6
+
 [node name="EnemyLevel2" type="CharacterBody3D" unique_id=925950860]
+script = ExtResource("1_ej5xk")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=370758772]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("CapsuleShape3D_0twod")
+
+[node name="Run" type="Node3D" parent="." unique_id=2023343813]
+
+[node name="Running" parent="Run" unique_id=232104824 instance=ExtResource("2_c4re6")]

@@ -47,19 +47,27 @@ public partial class HUDController : CanvasLayer
 
 	public override void _Process(double delta)
 	{
-		var boss = GetTree().GetFirstNodeInGroup("level1_boss") as BossLevel1;
+		var boss1 = GetTree().GetFirstNodeInGroup("level1_boss") as BossLevel1;
+		var boss2 = GetTree().GetFirstNodeInGroup("level2_boss") as BossLevel2;
 
 		if (_bossR1Hint != null)
-			_bossR1Hint.Visible = boss != null && GodotObject.IsInstanceValid(boss) && boss.IsInsideTree() && boss.IsDanceVulnerable;
+			_bossR1Hint.Visible = boss1 != null && GodotObject.IsInstanceValid(boss1) && boss1.IsInsideTree() && boss1.IsDanceVulnerable;
 
 		if (_bossHealthBar != null)
 		{
-			if (boss != null && GodotObject.IsInstanceValid(boss) && boss.IsInsideTree() && !boss.IsBossDead)
+			if (boss1 != null && GodotObject.IsInstanceValid(boss1) && boss1.IsInsideTree() && !boss1.IsBossDead)
 			{
 				_bossHealthBar.Visible = true;
-				int maxHp = Mathf.Max(1, boss.GetBossMaxHealth());
+				int maxHp = Mathf.Max(1, boss1.GetBossMaxHealth());
 				_bossHealthBar.MaxValue = maxHp;
-				_bossHealthBar.Value = Mathf.Clamp(boss.GetBossCurrentHealth(), 0, maxHp);
+				_bossHealthBar.Value = Mathf.Clamp(boss1.GetBossCurrentHealth(), 0, maxHp);
+			}
+			else if (boss2 != null && GodotObject.IsInstanceValid(boss2) && boss2.IsInsideTree() && !boss2.IsBossDead)
+			{
+				_bossHealthBar.Visible = true;
+				int maxHp = Mathf.Max(1, boss2.GetBossMaxHealth());
+				_bossHealthBar.MaxValue = maxHp;
+				_bossHealthBar.Value = Mathf.Clamp(boss2.GetBossCurrentHealth(), 0, maxHp);
 			}
 			else
 				_bossHealthBar.Visible = false;

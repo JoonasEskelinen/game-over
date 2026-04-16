@@ -212,7 +212,7 @@ public partial class PlayerController : CharacterBody3D
 	[Export] public float SwordHitReachExtraMeters = 0.13f;
 
 	/// <summary>R1: lyhyempi “löysä” teränjatke — estää puolen kentän osumat.</summary>
-	[Export] public float HeavySwordHitReachExtraMeters = 0.05f;
+	[Export] public float HeavySwordHitReachExtraMeters = 0.1f;
 
 	/// <summary>
 	/// R2 (mixamo_com_005): kuinka paljon aikaisemmin osumaikkuna avautuu (vähennetään ikkunan alusta sekunteina).
@@ -227,14 +227,14 @@ public partial class PlayerController : CharacterBody3D
 	/// <summary>R2-iskun teräkartion puolikulma (asteita). R1 käyttää <see cref="HeavyMeleeBladeArcHalfAngleDeg"/>.</summary>
 	[Export] public float MeleeBladeArcHalfAngleDeg = 56f;
 
-	/// <summary>R1: vain teräkartio, kapea — ei “teleporttivahinkoa”.</summary>
-	[Export] public float HeavyMeleeBladeArcHalfAngleDeg = 34f;
+	/// <summary>R1: vain teräkartio — hieman leveämpi kuin ennen (edessä oleva vihollinen rekisteröityy luotettavammin).</summary>
+	[Export] public float HeavyMeleeBladeArcHalfAngleDeg = 42f;
 
 	/// <summary>Max etäisyys osumapisteestä iskulinjaan (metriä), R2.</summary>
 	[Export] public float LightMeleeProximityMax = 0.92f;
 
-	/// <summary>Max etäisyys iskulinjaan, R1 (kapea).</summary>
-	[Export] public float HeavyMeleeProximityMax = 0.5f;
+	/// <summary>Max etäisyys iskulinjaan, R1.</summary>
+	[Export] public float HeavyMeleeProximityMax = 0.58f;
 
 	/// <summary>Facing-kartion origo: rintakorkeus hahmomallista (ei CharacterBody3D jalkojen juurta).</summary>
 	[Export] public float MeleeFacingTorsoHeightWorld = 0.88f;
@@ -436,6 +436,21 @@ public partial class PlayerController : CharacterBody3D
 	/// <summary>Kutsutaan EnemyLevel1:stä kun hyökkäys on ohi — nollaa swingivaraus.</summary>
 	public void ClearEnemyHitThisSwing() => _enemyHitThisSwing = false;
 
+	/// <summary>
+	/// L2-blokkaus keskeyttää lyöntianimaation (<c>PlayAnim(006)</c>) ilman että <c>OnAnimationFinished</c> laukeaa —
+	/// muuten <c>_isAttacking</c> jäisi päälle eikä seuraava isku rekisteröityisi vihollisille.
+	/// </summary>
+	private void EndMeleeAttackIfInterruptedByBlock()
+	{
+		if (!_isAttacking) return;
+		_isAttacking = false;
+		_meleeStrikeClip = default;
+		_meleeHitStopTimer = 0f;
+		ClearEnemyHitThisSwing();
+		if (_animationPlayer != null)
+			_animationPlayer.SpeedScale = 1f;
+	}
+
 	/// <summary>Kutsutaan kun miekka osuu viholliseen — lyhyt freeze osumakuvaan.</summary>
 	public void NotifyMeleeHitLanded()
 	{
@@ -483,6 +498,16 @@ public partial class PlayerController : CharacterBody3D
 	}
 
 	public bool ShouldShowHeavyCooldownBar() => _heavyCooldownBarUnlocked;
+
+	/// <summary>
+	/// Lisää R1-jäähdytyspalkin odotusaikaa (esim. tulevia haasteita varten). BossLevel2 käyttää HP-vahinkoa.
+	/// </summary>
+	public void ApplyHeavyAttackCooldownPenalty(float seconds)
+	{
+		if (seconds <= 0f || HeavyAttackCooldownSeconds <= 0.01f) return;
+		_heavyCooldownBarUnlocked = true;
+		_heavyAttackCooldown = Mathf.Clamp(_heavyAttackCooldown + seconds, 0f, HeavyAttackCooldownSeconds);
+	}
 
 	private static float DistancePointToSegment3D(Vector3 p, Vector3 a, Vector3 b)
 	{
@@ -748,7 +773,11 @@ public partial class PlayerController : CharacterBody3D
 		if (_isBlocking && Input.IsActionJustPressed("block"))
 			Vibrate(0.2f, 0.1f, 0.1f);
 		if (_isBlocking)
+		{
+			// Estää jumin: blokki korvaa lyönticlipin → AnimationFinished ei tule → nollataan hyökkäystila.
+			EndMeleeAttackIfInterruptedByBlock();
 			PlayAnim("mixamo_com_006");
+		}
 
 		// ── Hyökkäys R2 (normaali isku, vahinko 1) ──
 		// 1) Näppäin JustPressed  2) Latch + kynnys  3) Nopea veto (delta), jos liipasin ei ehdi "aseutua"
