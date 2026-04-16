@@ -13,53 +13,53 @@ public partial class PlayerController : CharacterBody3D
 	// ─────────────────────────────────────────────
 
 	/// <summary>Kävelynopeus miekka+kilpi-tilassa.</summary>
-	[Export] public float Speed = 3.0f;
+	[Export] public float Kävelynopeus = 3.0f;
 
 	/// <summary>Juoksunopeus normaalitilassa (ilman asetta).</summary>
-	[Export] public float RunSpeed = 8.0f;
+	[Export] public float Juoksunopeus = 8.0f;
 
 	/// <summary>Hypyn alkuvauhti ylöspäin.</summary>
-	[Export] public float JumpVelocity = 10.0f;
+	[Export] public float HypynAlkuvauhti = 10.0f;
 
 	/// <summary>Painovoiman voimakkuus — isompi arvo = nopeampi putoaminen.</summary>
-	[Export] public float Gravity = 28.0f;
+	[Export] public float Painovoima = 28.0f;
 
 	/// <summary>
 	/// Kun true, pelaaja voi liikkua myös Z-akselilla (syvyys).
 	/// False = vain sivuttaisliike (2.5D-tyyli).
 	/// Tätä voi vaihtaa per-kenttä Inspectorissa.
 	/// </summary>
-	[Export] public bool DepthMovementEnabled = true;
+	[Export] public bool SyvyysliikeKäytössä = true;
 
 	/// <summary>Z-akselin liikkeen minimi (kauimmainen piste kamerasta).</summary>
-	[Export] public float DepthClampMin = -1.75f;
+	[Export] public float SyvyysAlaraja = -1.75f;
 
 	/// <summary>Z-akselin liikkeen maksimi (lähimpänä kamera).</summary>
-	[Export] public float DepthClampMax = 1.75f;
+	[Export] public float SyvyysYläraja = 1.75f;
 
 	/// <summary>
 	/// Ohjaa miten syvyysliike tulkitaan.
 	/// -1 = eteenpäin tatista menee kauemmas, 1 = päinvastoin.
 	/// </summary>
-	[Export] public float DepthInputSign = -1f;
+	[Export] public float SyvyysSyötteenEtumerkki = -1f;
 
 	/// <summary>
 	/// Hahmon kääntymisen pehmeys.
 	/// 0 = välitön kääntyminen, suurempi arvo = pehmeämpi.
 	/// </summary>
-	[Export] public float FacingSmoothing { get; set; } = 18f;
+	[Export] public float SuunnanPehmennys { get; set; } = 18f;
 
 	/// <summary>
 	/// Viive hypyn painalluksesta ponnistukseen (sekunteina).
 	/// Säädä kunnes sopii animaation kanssa yhteen.
 	/// </summary>
-	[Export] public float JumpWindupTime = 0.35f;
+	[Export] public float HypynLämmittelyviive = 0.35f;
 
 	/// <summary>
 	/// Siirtää gameover_character-mallia paikallisesti Y-suunnassa (metriä). Negatiivinen = jalat lähemmäs maata.
 	/// Kapseli (CollisionShape3D) ja FBX:n origo eivät usein täsmää; säädä tästä ennen kuin muokkaat sceneä uudestaan.
 	/// </summary>
-	[Export] public float CharacterVisualGroundOffsetY = 0f;
+	[Export] public float HahmonPohjanOffsetY = 0f;
 
 	// ─────────────────────────────────────────────
 	// ASE-TILA
@@ -181,7 +181,7 @@ public partial class PlayerController : CharacterBody3D
 		if (!IsBlocking()) return false;
 		if (_characterModel == null || !_characterModel.IsInsideTree() || !IsInsideTree())
 			return false;
-		return IsShieldBlockFacingArc(GlobalPosition, threatWorldPosition, ShieldBlockThreatHalfAngleDeg);
+		return IsShieldBlockFacingArc(GlobalPosition, threatWorldPosition, KilpiTorjuntaPuolikulma);
 	}
 
 	/// <summary>
@@ -204,78 +204,78 @@ public partial class PlayerController : CharacterBody3D
 	/// <summary>
 	/// Terän suunta paikallisissa koordinaateissa (Mixamo-miekka: usein -Z on terän suunta).
 	/// </summary>
-	[Export] public Vector3 SwordHitTipLocalOffset = new Vector3(0f, 0f, -0.62f);
+	[Export] public Vector3 MiekkaTeräPaikallinenOffset = new Vector3(0f, 0f, -0.62f);
 
 	/// <summary>
 	/// Pidentää iskusegmenttiä terän kärjestä eteenpäin (metriä). Säädä kantamaa ilman että muutat offset-vektoria.
 	/// </summary>
-	[Export] public float SwordHitReachExtraMeters = 0.13f;
+	[Export] public float MiekkaIskuKantamaLisä = 0.13f;
 
 	/// <summary>R1: lyhyempi “löysä” teränjatke — estää puolen kentän osumat.</summary>
-	[Export] public float HeavySwordHitReachExtraMeters = 0.1f;
+	[Export] public float RaskasIskuKantamaLisä = 0.1f;
 
 	/// <summary>
 	/// R2 (mixamo_com_005): kuinka paljon aikaisemmin osumaikkuna avautuu (vähennetään ikkunan alusta sekunteina).
 	/// </summary>
-	[Export] public float LightMeleeStrikeWindowAdvanceSeconds = 0.05f;
+	[Export] public float KevytIskuOsumaikkunaAikaistus = 0.05f;
 
 	/// <summary>
 	/// Maksimikulma (astetta) hahmon etusuunnasta: osuma rekisteröityy vain tämän kartion sisällä.
 	/// </summary>
-	[Export] public float SwordHitFacingHalfAngleDeg = 72f;
+	[Export] public float MiekkaIskuSuuntaPuolikulma = 72f;
 
-	/// <summary>R2-iskun teräkartion puolikulma (asteita). R1 käyttää <see cref="HeavyMeleeBladeArcHalfAngleDeg"/>.</summary>
-	[Export] public float MeleeBladeArcHalfAngleDeg = 56f;
+	/// <summary>R2-iskun teräkartion puolikulma (asteita). R1 käyttää <see cref="TeräkaariPuolikulmaRaskas"/>.</summary>
+	[Export] public float TeräkaariPuolikulmaKevyt = 56f;
 
 	/// <summary>R1: vain teräkartio — hieman leveämpi kuin ennen (edessä oleva vihollinen rekisteröityy luotettavammin).</summary>
-	[Export] public float HeavyMeleeBladeArcHalfAngleDeg = 42f;
+	[Export] public float TeräkaariPuolikulmaRaskas = 42f;
 
 	/// <summary>Max etäisyys osumapisteestä iskulinjaan (metriä), R2.</summary>
-	[Export] public float LightMeleeProximityMax = 0.92f;
+	[Export] public float KevytIskuLäheisyysMaksimi = 0.92f;
 
 	/// <summary>Max etäisyys iskulinjaan, R1.</summary>
-	[Export] public float HeavyMeleeProximityMax = 0.58f;
+	[Export] public float RaskasIskuLäheisyysMaksimi = 0.58f;
 
 	/// <summary>Facing-kartion origo: rintakorkeus hahmomallista (ei CharacterBody3D jalkojen juurta).</summary>
-	[Export] public float MeleeFacingTorsoHeightWorld = 0.88f;
+	[Export] public float IskunRintaKorkeus = 0.88f;
 
 	/// <summary>Sekunteina: miekan osuttua lyönti pysähtyy tähän animaatioasentoon (hit-stop).</summary>
-	[Export] public float MeleeHitStopSeconds = 0.09f;
+	[Export] public float IskuJähmetysSekuntia = 0.09f;
 
 	/// <summary>
 	/// Kilpi torjuu vain uhat tämän puolikulman sisällä (asteita). Kapeampi kuin miekan kaari.
 	/// </summary>
-	[Export] public float ShieldBlockThreatHalfAngleDeg = 52f;
+	[Export] public float KilpiTorjuntaPuolikulma = 52f;
 
 	/// <summary>Ryhmä <c>grabbable</c> RigidBody3D — neliö + pitää pohjassa (level_1 air-hockey).</summary>
-	[Export] public float GrabInteractRange = 2.5f;
+	[Export] public float TartuntaEtäisyys = 2.5f;
 
-	/// <summary>Työntötilassa hahmon käännös kohti kohdetta: kerroin <see cref="FacingSmoothing"/>-arvoon (isompi = napakampi).</summary>
-	[Export] public float GrabFaceTowardObjectSmoothingScale = 2.2f;
+	/// <summary>Työntötilassa hahmon käännös kohti kohdetta: kerroin <see cref="SuunnanPehmennys"/>-arvoon (isompi = napakampi).</summary>
+	[Export] public float TartuntaKääntöPehmennysKerroin = 2.2f;
 
-	[Export] public float GrabHoldDistance = 1.15f;
+	[Export] public float TartuntaPitoEtäisyys = 1.15f;
 
-	[Export] public float GrabPullGain = 7f;
+	[Export] public float TartuntaVetoVahvistus = 7f;
 	
-	[Export] public float GrabMaxHorizontalSpeed = 1.1f;
+	[Export] public float TartuntaLiikeMaxNopeus = 1.1f;
 
 	/// <summary>R2: latch-polku: analogi ≥ tämä laukaisee (kun aseistettu).</summary>
-	[Export] public float AttackTriggerPressThreshold = 0.4f;
+	[Export] public float HyökkäysLiipaisinLaukaisu = 0.4f;
 
 	/// <summary>R2: latch aseutuu kun analogi &lt; tämä (nostettu: PS5 ei aina laske nollaan).</summary>
-	[Export] public float AttackTriggerRearmBelow = 0.26f;
+	[Export] public float HyökkäysLiipaisinPalautus = 0.26f;
 
-	[Export] public float LightAttackDebounceSeconds = 0.1f;
+	[Export] public float KevytIskuPainallustenSuodatus = 0.1f;
 
 	/// <summary>R2: minimiaika sekunteina kahden iskun välillä (esim. 1 s).</summary>
-	[Export] public float LightMeleeRepeatCooldownSeconds = 0.6f;
+	[Export] public float KevytIskuToistojäähdytys = 0.6f;
 
 	/// <summary>R2: pikaveto — analogi ≥ tämä ja nousu ≥ SharpPullDelta (latch ohitetaan).</summary>
-	[Export] public float LightAttackSharpPullMin = 0.38f;
+	[Export] public float KevytIskuPikaVetoMinimi = 0.38f;
 
-	[Export] public float LightAttackSharpPullDelta = 0.12f;
+	[Export] public float KevytIskuPikaVetoNousu = 0.12f;
 
-	[Export] public float HeavyAttackCooldownSeconds = 10f;
+	[Export] public float RaskasHyökkäysJäähdytys = 10f;
 
 	public float GetAttackAnimationTime()
 	{
@@ -310,7 +310,7 @@ public partial class PlayerController : CharacterBody3D
 		if (clip == "mixamo_com_005")
 		{
 			float start = Mathf.Clamp(len * 0.048f, 0.01f, 0.14f);
-			return Mathf.Max(0f, start - LightMeleeStrikeWindowAdvanceSeconds);
+			return Mathf.Max(0f, start - KevytIskuOsumaikkunaAikaistus);
 		}
 		if (clip == "mixamo_com_010")
 			return Mathf.Clamp(len * 0.2f, 0.06f, 0.4f);
@@ -331,9 +331,9 @@ public partial class PlayerController : CharacterBody3D
 
 		if (IsSwordWeaponMode() && _sword != null && GodotObject.IsInstanceValid(_sword) && _sword.IsInsideTree())
 		{
-			float reachExtra = _attackDamage >= 3 ? HeavySwordHitReachExtraMeters : SwordHitReachExtraMeters;
+			float reachExtra = _attackDamage >= 3 ? RaskasIskuKantamaLisä : MiekkaIskuKantamaLisä;
 			segmentStart = _sword.GlobalPosition;
-			Vector3 tipWorld = _sword.GlobalTransform.Basis * SwordHitTipLocalOffset;
+			Vector3 tipWorld = _sword.GlobalTransform.Basis * MiekkaTeräPaikallinenOffset;
 			float tipLen = tipWorld.Length();
 			if (tipLen > 1e-5f && reachExtra > 0f)
 				segmentEnd = segmentStart + tipWorld + (tipWorld / tipLen) * reachExtra;
@@ -364,7 +364,7 @@ public partial class PlayerController : CharacterBody3D
 	{
 		if (_characterModel == null || !_characterModel.IsInsideTree() || !IsInsideTree())
 			return true;
-		return IsWithinFacingArcFromOrigin(MeleeArcOriginWorld(), worldPoint, SwordHitFacingHalfAngleDeg);
+		return IsWithinFacingArcFromOrigin(MeleeArcOriginWorld(), worldPoint, MiekkaIskuSuuntaPuolikulma);
 	}
 
 	/// <summary>Onko piste terän iskulinjan suuntaisessa kartiossa (XZ), kahvasta mitattuna.</summary>
@@ -374,7 +374,7 @@ public partial class PlayerController : CharacterBody3D
 	}
 
 	private float GetCurrentBladeArcHalfAngleDeg()
-		=> _attackDamage >= 3 ? HeavyMeleeBladeArcHalfAngleDeg : MeleeBladeArcHalfAngleDeg;
+		=> _attackDamage >= 3 ? TeräkaariPuolikulmaRaskas : TeräkaariPuolikulmaKevyt;
 
 	private bool IsPointInMeleeHitBladeArcWithHalfAngle(Vector3 worldPoint, float halfAngleDeg)
 	{
@@ -412,12 +412,12 @@ public partial class PlayerController : CharacterBody3D
 	}
 
 	public float GetMeleeHitProximityMax()
-		=> _attackDamage >= 3 ? HeavyMeleeProximityMax : LightMeleeProximityMax;
+		=> _attackDamage >= 3 ? RaskasIskuLäheisyysMaksimi : KevytIskuLäheisyysMaksimi;
 
 	private Vector3 MeleeArcOriginWorld()
 	{
 		if (_characterModel != null && _characterModel.IsInsideTree())
-			return _characterModel.GlobalPosition + Vector3.Up * MeleeFacingTorsoHeightWorld;
+			return _characterModel.GlobalPosition + Vector3.Up * IskunRintaKorkeus;
 		return GlobalPosition + Vector3.Up * 0.9f;
 	}
 
@@ -458,7 +458,7 @@ public partial class PlayerController : CharacterBody3D
 			return;
 		if (_meleeHitStopTimer <= 0f)
 			_meleeHitStopSeekPos = _animationPlayer.CurrentAnimationPosition;
-		_meleeHitStopTimer = MeleeHitStopSeconds;
+		_meleeHitStopTimer = IskuJähmetysSekuntia;
 	}
 
 	/// <summary>XZ-kartio kilven torjuntaan: origo pelaajan juuresta.</summary>
@@ -493,8 +493,8 @@ public partial class PlayerController : CharacterBody3D
 	/// <summary>1 = isku valmis, 0 = juuri käytetty. HUD täyttää palkin tällä.</summary>
 	public float GetHeavyAttackCooldownFill01()
 	{
-		if (_heavyAttackCooldown <= 0f || HeavyAttackCooldownSeconds <= 0.01f) return 1f;
-		return Mathf.Clamp(1f - _heavyAttackCooldown / HeavyAttackCooldownSeconds, 0f, 1f);
+		if (_heavyAttackCooldown <= 0f || RaskasHyökkäysJäähdytys <= 0.01f) return 1f;
+		return Mathf.Clamp(1f - _heavyAttackCooldown / RaskasHyökkäysJäähdytys, 0f, 1f);
 	}
 
 	public bool ShouldShowHeavyCooldownBar() => _heavyCooldownBarUnlocked;
@@ -504,9 +504,9 @@ public partial class PlayerController : CharacterBody3D
 	/// </summary>
 	public void ApplyHeavyAttackCooldownPenalty(float seconds)
 	{
-		if (seconds <= 0f || HeavyAttackCooldownSeconds <= 0.01f) return;
+		if (seconds <= 0f || RaskasHyökkäysJäähdytys <= 0.01f) return;
 		_heavyCooldownBarUnlocked = true;
-		_heavyAttackCooldown = Mathf.Clamp(_heavyAttackCooldown + seconds, 0f, HeavyAttackCooldownSeconds);
+		_heavyAttackCooldown = Mathf.Clamp(_heavyAttackCooldown + seconds, 0f, RaskasHyökkäysJäähdytys);
 	}
 
 	private static float DistancePointToSegment3D(Vector3 p, Vector3 a, Vector3 b)
@@ -566,8 +566,8 @@ public partial class PlayerController : CharacterBody3D
 		// Haetaan tarvittavat nodet scene-puusta
 		_mesh = GetNode<MeshInstance3D>("MeshInstance3D");
 		_characterModel = GetNode<Node3D>("gameover_character");
-		if (!Mathf.IsZeroApprox(CharacterVisualGroundOffsetY))
-			_characterModel.Position += new Vector3(0f, CharacterVisualGroundOffsetY, 0f);
+		if (!Mathf.IsZeroApprox(HahmonPohjanOffsetY))
+			_characterModel.Position += new Vector3(0f, HahmonPohjanOffsetY, 0f);
 		_healthComponent = GetNode<HealthComponent>("HealthComponent");
 		_swordSFX = GetNodeOrNull<AudioStreamPlayer>("SwordSFX");
 		_damageSFX = GetNodeOrNull<AudioStreamPlayer>("DamageSFX");
@@ -678,13 +678,13 @@ public partial class PlayerController : CharacterBody3D
 			_lightMeleeCooldown = Mathf.Max(0f, _lightMeleeCooldown - dt);
 
 		float lightAnalog = ReadAggregatedLightAttackAnalog();
-		if (lightAnalog < AttackTriggerRearmBelow)
+		if (lightAnalog < HyökkäysLiipaisinPalautus)
 			_lightTriggerArmed = true;
 
 		// ── Painovoima ──
 		// Lisätään painovoimaa kun pelaaja on ilmassa
 		if (!IsOnFloor())
-			velocity.Y -= Gravity * (float)delta;
+			velocity.Y -= Painovoima * (float)delta;
 
 		// ── Hyppy ──
 		// Hyppy on sallittu vain Normal- ja SwordShield-tiloissa (ei Sitting)
@@ -697,7 +697,7 @@ public partial class PlayerController : CharacterBody3D
 			if (_jumpTimer <= 0f)
 			{
 				_isWindingUp = false;
-				velocity.Y = JumpVelocity; // Ponnistus!
+				velocity.Y = HypynAlkuvauhti; // Ponnistus!
 			}
 		}
 
@@ -706,7 +706,7 @@ public partial class PlayerController : CharacterBody3D
 		{
 			PlayAnim("mixamo_com_001");
 			_isWindingUp = true;
-			_jumpTimer = JumpWindupTime;
+			_jumpTimer = HypynLämmittelyviive;
 		}
 
 		// ── Istuminen (sit) — erillinen syöte; joystick voidaan sitoa tähän myöhemmin
@@ -783,9 +783,9 @@ public partial class PlayerController : CharacterBody3D
 		// 1) Näppäin JustPressed  2) Latch + kynnys  3) Nopea veto (delta), jos liipasin ei ehdi "aseutua"
 		bool r2KeyJust = Input.IsActionJustPressed("attack");
 		bool r2LatchFire = _lightTriggerArmed
-			&& lightAnalog >= AttackTriggerPressThreshold;
-		bool r2SharpPull = lightAnalog >= LightAttackSharpPullMin
-			&& (lightAnalog - _lightAnalogPreviousFrame) >= LightAttackSharpPullDelta;
+			&& lightAnalog >= HyökkäysLiipaisinLaukaisu;
+		bool r2SharpPull = lightAnalog >= KevytIskuPikaVetoMinimi
+			&& (lightAnalog - _lightAnalogPreviousFrame) >= KevytIskuPikaVetoNousu;
 		bool r2AnalogFire = r2LatchFire || r2SharpPull;
 		bool r2Pressed = (r2KeyJust || r2AnalogFire)
 			&& _lightAttackDebounce <= 0f
@@ -800,8 +800,8 @@ public partial class PlayerController : CharacterBody3D
 			Vibrate(0.3f, 0.5f, 0.15f);
 			_swordSFX?.Play();
 			_lightTriggerArmed = false;
-			_lightAttackDebounce = LightAttackDebounceSeconds;
-			_lightMeleeCooldown = Mathf.Max(0f, LightMeleeRepeatCooldownSeconds);
+			_lightAttackDebounce = KevytIskuPainallustenSuodatus;
+			_lightMeleeCooldown = Mathf.Max(0f, KevytIskuToistojäähdytys);
 		}
 
 		// ── Hyökkäys R1 (vahva isku, vahinko 3) + cooldown ──
@@ -817,7 +817,7 @@ public partial class PlayerController : CharacterBody3D
 			Vibrate(0.6f, 1.0f, 0.25f);
 			_swordSFX?.Play();
 			_heavyCooldownBarUnlocked = true;
-			_heavyAttackCooldown = HeavyAttackCooldownSeconds;
+			_heavyAttackCooldown = RaskasHyökkäysJäähdytys;
 		}
 
 		// ── Tarttuminen (neliö / grab) — RigidBody3D ryhmässä "grabbable" ──
@@ -839,16 +839,16 @@ public partial class PlayerController : CharacterBody3D
 		float dirX = canMove ? Input.GetAxis("move_left", "move_right") : 0f;
 		float dirZ = 0f;
 
-		// Z-liike (syvyys) — vain jos DepthMovementEnabled on päällä
-		if (canMove && DepthMovementEnabled)
-			dirZ = DepthInputSign * Input.GetAxis("move_back", "move_forward");
+		// Z-liike (syvyys) — vain jos SyvyysliikeKäytössä on päällä
+		if (canMove && SyvyysliikeKäytössä)
+			dirZ = SyvyysSyötteenEtumerkki * Input.GetAxis("move_back", "move_forward");
 
 		Vector2 planarInput = new(dirX, dirZ);
 
 		// Normal-tilassa juostaan, SwordShield-tilassa kävellään
-		float moveSpeed = Speed;
+		float moveSpeed = Kävelynopeus;
 		if (canMove && planarInput.LengthSquared() > 1e-6f && _weaponMode == WeaponMode.Normal)
-			moveSpeed = RunSpeed;
+			moveSpeed = Juoksunopeus;
 
 		Vector3 wish = Vector3.Zero;
 		if (planarInput.LengthSquared() > 1e-6f)
@@ -907,7 +907,7 @@ public partial class PlayerController : CharacterBody3D
 
 		velocity.X = wish.X;
 		velocity.Z = wish.Z;
-		if (IsOnFloor() && !_isWindingUp && velocity.Y < JumpVelocity * 0.25f)
+		if (IsOnFloor() && !_isWindingUp && velocity.Y < HypynAlkuvauhti * 0.25f)
 			velocity.Y = wish.Y;
 
 		// ── Hahmon kääntyminen ──
@@ -923,7 +923,7 @@ public partial class PlayerController : CharacterBody3D
 			{
 				var dirObj = toObj.Normalized();
 				var targetYaw = Basis.LookingAt(-dirObj, Vector3.Up).GetEuler(EulerOrder.Yxz).Y;
-				float s = FacingSmoothing * Mathf.Max(0.01f, GrabFaceTowardObjectSmoothingScale);
+				float s = SuunnanPehmennys * Mathf.Max(0.01f, TartuntaKääntöPehmennysKerroin);
 				if (s <= 0.01f)
 					_facingYaw = targetYaw;
 				else
@@ -935,10 +935,10 @@ public partial class PlayerController : CharacterBody3D
 		{
 			var dir = wishHorizontal.Normalized();
 			var targetYaw = Basis.LookingAt(-dir, Vector3.Up).GetEuler(EulerOrder.Yxz).Y;
-			if (FacingSmoothing <= 0.01f)
+			if (SuunnanPehmennys <= 0.01f)
 				_facingYaw = targetYaw;
 			else
-				_facingYaw = Mathf.LerpAngle(_facingYaw, targetYaw, 1f - Mathf.Exp(-FacingSmoothing * dt));
+				_facingYaw = Mathf.LerpAngle(_facingYaw, targetYaw, 1f - Mathf.Exp(-SuunnanPehmennys * dt));
 
 			_characterModel.Rotation = new Vector3(0f, _facingYaw, 0f);
 		}
@@ -971,12 +971,12 @@ public partial class PlayerController : CharacterBody3D
 		MoveAndSlide();
 
 		// ── Z-akselin rajaus ──
-		// Rajoittaa pelaajan Z-liikettä kun DepthMovementEnabled on päällä
-		// Muuta DepthClampMin/Max Inspectorissa kentän koon mukaan
-		if (DepthMovementEnabled)
+		// Rajoittaa pelaajan Z-liikettä kun SyvyysliikeKäytössä on päällä
+		// Muuta SyvyysAlaraja / SyvyysYläraja Inspectorissa kentän koon mukaan
+		if (SyvyysliikeKäytössä)
 		{
 			Vector3 p = GlobalPosition;
-			p.Z = Mathf.Clamp(p.Z, DepthClampMin, DepthClampMax);
+			p.Z = Mathf.Clamp(p.Z, SyvyysAlaraja, SyvyysYläraja);
 			GlobalPosition = p;
 		}
 
@@ -1289,7 +1289,7 @@ public partial class PlayerController : CharacterBody3D
 			to.Y = 0f;
 			float dSq = to.LengthSquared();
 			float d = Mathf.Sqrt(dSq);
-			if (d > GrabInteractRange || d < 0.06f)
+			if (d > TartuntaEtäisyys || d < 0.06f)
 				continue;
 			if (dSq < bestDistSq)
 			{
@@ -1317,7 +1317,7 @@ public partial class PlayerController : CharacterBody3D
 
 		var toRb = _grabbedBody.GlobalPosition - GlobalPosition;
 		toRb.Y = 0f;
-		if (toRb.Length() > GrabInteractRange * 1.35f)
+		if (toRb.Length() > TartuntaEtäisyys * 1.35f)
 		{
 			_grabbedBody = null;
 			return;
@@ -1328,7 +1328,7 @@ public partial class PlayerController : CharacterBody3D
 		// Työntövoima = pelaajan liikevektorin projektio kohti pöytää.
 		// Paikallaan seisominen ei liikuta pöytää; kävely kohti pöytää siirtää sitä.
 		// Negatiivinen projektio (pelaaja kävelee poispäin) nollataan — ei vedetä takaisin.
-		float speed = Mathf.Clamp(playerWishXZ.Dot(pushDir), 0f, GrabMaxHorizontalSpeed);
+		float speed = Mathf.Clamp(playerWishXZ.Dot(pushDir), 0f, TartuntaLiikeMaxNopeus);
 
 		var lv = _grabbedBody.LinearVelocity;
 		_grabbedBody.LinearVelocity = new Vector3(

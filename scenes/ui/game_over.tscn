@@ -9,6 +9,9 @@ font_color = Color(1, 0.19, 0.19, 1)
 [sub_resource type="LabelSettings" id="LabelSettings_x6o8e"]
 font_size = 28
 
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_60xr3"]
+load_path = "res://.godot/imported/IMG-20260319-WA0014.jpg-f51dad00567bde3ea0f07292a38e2f74.ctex"
+
 [node name="GameOver" type="Control" unique_id=852999063]
 layout_mode = 3
 anchors_preset = 15
@@ -55,3 +58,9 @@ text = "Retry"
 [node name="MainMenuButton" type="Button" parent="CenterContainer/VBoxContainer" unique_id=1956606536]
 layout_mode = 2
 text = "Main Menu"
+
+[node name="TextureRect" type="TextureRect" parent="." unique_id=891256856]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+texture = SubResource("CompressedTexture2D_60xr3")

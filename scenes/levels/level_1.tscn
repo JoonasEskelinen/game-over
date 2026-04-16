@@ -199,13 +199,13 @@ shape = SubResource("BoxShape3D_s8va5")
 
 [node name="Player" parent="." unique_id=1514760592 instance=ExtResource("1_ksju7")]
 transform = Transform3D(1.1, 0, 0, 0, 1.1, 0, 0, 0, 1.1, 0.014350295, -0.1449435, 1.0009072)
-RunSpeed = 5.5
-JumpVelocity = 7.0
-DepthClampMin = -14.0
-DepthClampMax = 14.0
-SwordHitReachExtraMeters = 0.05
-LightMeleeProximityMax = 0.85
-HeavyMeleeProximityMax = 0.9
+Juoksunopeus = 5.5
+HypynAlkuvauhti = 7.0
+SyvyysAlaraja = -14.0
+SyvyysYläraja = 14.0
+MiekkaIskuKantamaLisä = 0.05
+KevytIskuLäheisyysMaksimi = 0.85
+RaskasIskuLäheisyysMaksimi = 0.9
 
 [node name="Camera3D" type="Camera3D" parent="." unique_id=1312101267]
 transform = Transform3D(1, 0, 0, 0, 0.9848158, 0.17360279, 0, -0.17360279, 0.9848158, 0, 3, 12)
@@ -213,7 +213,7 @@ far = 50.0
 script = ExtResource("2_6iamk")
 PlayerPath = NodePath("../Player")
 FollowSpeed = 12.0
-Offset = Vector3(2, 2, 4)
+Offset = Vector3(2, 2, 3)
 MinPitchDeg = -45.0
 MaxPitchDeg = 45.0
 BossDanceLookAtYOffset = 1.0

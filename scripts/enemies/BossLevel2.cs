@@ -27,14 +27,14 @@ public partial class BossLevel2 : CharacterBody3D
 	// ─── Inspector: perus ─────────────────────────────────────────────────────
 
 	/// <summary>Bossin jäljellä oleva elämäpisteet (vähenee TakeDamage-kutsuilla).</summary>
-	[Export] public int Health = 10;
+	[Export] public int BossTerveys = 10;
 
 	/// <summary>Mixamo-idle FBX — lähde clipille "idle" (loop).</summary>
-	[Export] public string IdleAnimPath   = "res://assets/models/level2_BossEnemy/Idle.fbx";
+	[Export] public string OdotusAnimaatioPolku   = "res://assets/models/level2_BossEnemy/Idle.fbx";
 	/// <summary>Hammer-animaatio — lähde clipille "hammer" (kertatoisto).</summary>
-	[Export] public string HammerAnimPath = "res://assets/models/level2_BossEnemy/hammer.fbx";
+	[Export] public string VasaraAnimaatioPolku = "res://assets/models/level2_BossEnemy/hammer.fbx";
 	/// <summary>Kuolema-animaatio — lähde clipille "death".</summary>
-	[Export] public string DeathAnimPath  = "res://assets/models/level2_BossEnemy/death.fbx";
+	[Export] public string KuolemaAnimaatioPolku  = "res://assets/models/level2_BossEnemy/death.fbx";
 
 	// ─── Inspector: pelaajan miekan osumat bossiin ─────────────────────────────
 
@@ -42,50 +42,50 @@ public partial class BossLevel2 : CharacterBody3D
 	/// Maailmanpisteiden korkeudet (metriä bossin juuresta ylös) joissa testataan miekan osumaa.
 	/// Korkea hahmo → useampi piste välttää "väliin jääviä" osumia.
 	/// </summary>
-	[Export] public float[] SwordHitProbeHeights = { 0.4f, 1.0f, 1.6f };
+	[Export] public float[] MiekkaIskuKoetuskorkeudet = { 0.4f, 1.0f, 1.6f };
 
 	/// <summary>Lisäviive sekunteina lyönnin osumaikkunan alkuun (PlayerControllerin ikkunaan).</summary>
-	[Export] public float   SwordHitActivationTime = 0f;
+	[Export] public float   MiekkaIskuAktivoitumisaika = 0f;
 
 	// ─── Inspector: kuolema ─────────────────────────────────────────────────────
 
 	/// <summary>Kuoleman jälkeen tween: skaala nollaan tämän ajan kuluessa (sekunteina).</summary>
-	[Export] public float DeathShrinkDuration = 0.8f;
+	[Export] public float KuolemanKutistumisenKesto = 0.8f;
 
 	// ─── Inspector: vasara (satunnainen ajastin + osumavaihe) ───────────────────
 
 	/// <summary>Uusi satunnainen väli arvotaan hammerin päättymisen jälkeen — sekuntia.</summary>
-	[Export] public float HammerIntervalMin = 1.8f;
-	[Export] public float HammerIntervalMax = 5.5f;
+	[Export] public float VasaraVäliMinSekuntia = 1.8f;
+	[Export] public float VasaraVäliMaxSekuntia = 5.5f;
 
 	/// <summary>Maksimietäisyys XZ-tasossa: pelaajan on oltava tämän sisällä, jotta vasara voi osua.</summary>
-	[Export] public float HammerHitRangePlanar = 2.85f;
+	[Export] public float VasaraIskuKantamaTasossa = 2.85f;
 	/// <summary>Pystysuuntainen toleranssi pelaajan ja bossin välillä (metriä).</summary>
-	[Export] public float HammerHitHeightMax = 1.95f;
+	[Export] public float VasaraIskuMaksimiKorkeus = 1.95f;
 
 	/// <summary>
 	/// HP-vahinko per osuma. Jos 0, käytetään pelaajan MaxHealth/3 (sama tyyli kuin liskon isku).
 	/// </summary>
-	[Export] public int HammerHPDamage = 0;
+	[Export] public int VasaraTerveysvahinko = 0;
 
 	/// <summary>
 	/// Hammer-clipin normalisoitu aika 0…1 jolloin "isku" rekisteröityy (Mixamo-aikajänne).
 	/// Säädä jos osuma tuntuu liian aikaisin/myöhään.
 	/// </summary>
-	[Export] public float HammerHitPhaseMin = 0.38f;
-	[Export] public float HammerHitPhaseMax = 0.55f;
+	[Export] public float VasaraOsumaVaiheMin = 0.38f;
+	[Export] public float VasaraOsumaVaiheMax = 0.55f;
 
 	// ─── Inspector: hahmon suunta ───────────────────────────────────────────────
 
 	/// <summary>
 	/// Mixamon malli voi olla väärinpäin suhteessa LookAt:iin — käännä 180° tarvittaessa.
 	/// </summary>
-	[Export] public float FaceYawOffsetDegrees = 180f;
+	[Export] public float KatseenKiertoAstetta = 180f;
 
 	/// <summary>
 	/// Pakota luun nimi (esim. "mixamorig:RightHand"). Tyhjä = automaattihaku "RightHand" / Right+Hand.
 	/// </summary>
-	[Export] public string HammerHandBoneNameOverride = "";
+	[Export] public string VasaraKäsiLuunimiYlikirjoitus = "";
 
 	// ─── Tila (ei export) ─────────────────────────────────────────────────────────
 
@@ -118,7 +118,7 @@ public partial class BossLevel2 : CharacterBody3D
 	// ─── Julkinen API (HUD / muut skriptit) ─────────────────────────────────────
 
 	public bool IsBossDead => _isDead;
-	public int  GetBossCurrentHealth() => Health;
+	public int  GetBossCurrentHealth() => BossTerveys;
 	public int  GetBossMaxHealth()     => _maxBossHealth;
 
 	public override void _Ready()
@@ -127,7 +127,7 @@ public partial class BossLevel2 : CharacterBody3D
 		FloorSnapLength = 0.18f;
 		FloorMaxAngle   = Mathf.DegToRad(50f);
 
-		_maxBossHealth    = Mathf.Max(1, Health);
+		_maxBossHealth    = Mathf.Max(1, BossTerveys);
 		_player           = GetTree().GetFirstNodeInGroup("player") as Node3D;
 		_playerController = _player as PlayerController;
 		// Tärkeää: AnimationPlayer Idle-FBX:n sisällä (ei juuren tyhjää), jotta jäljet osuvat luurankoon
@@ -136,9 +136,9 @@ public partial class BossLevel2 : CharacterBody3D
 		if (_animationPlayer != null)
 		{
 			// mixamo_com = tyypillinen Mixamo-clipin nimi Godot-importissa
-			LoadAnim(IdleAnimPath,   "mixamo_com", "idle",   loop: true);
-			LoadAnim(DeathAnimPath,  "mixamo_com", "death",  loop: false);
-			LoadAnim(HammerAnimPath, "mixamo_com", "hammer", loop: false);
+			LoadAnim(OdotusAnimaatioPolku,   "mixamo_com", "idle",   loop: true);
+			LoadAnim(KuolemaAnimaatioPolku,  "mixamo_com", "death",  loop: false);
+			LoadAnim(VasaraAnimaatioPolku, "mixamo_com", "hammer", loop: false);
 			_animationPlayer.AnimationFinished += OnAnimationFinished;
 			// Yksi frame myöhemmin: kirjasto valmis, luuranko instassoitu
 			Callable.From(DeferredBossVisualSetup).CallDeferred();
@@ -171,7 +171,7 @@ public partial class BossLevel2 : CharacterBody3D
 			return;
 		}
 
-		string bone = HammerHandBoneNameOverride;
+		string bone = VasaraKäsiLuunimiYlikirjoitus;
 		if (string.IsNullOrEmpty(bone))
 			bone = FindRightHandBoneName(skel);
 		if (string.IsNullOrEmpty(bone))
@@ -258,11 +258,11 @@ public partial class BossLevel2 : CharacterBody3D
 		if (_playerController != null && _playerController.IsMeleeAttackActive())
 		{
 			float animTime = _playerController.GetAttackAnimationTime();
-			float hitFrom  = _playerController.GetMeleeStrikeWindowStart() + SwordHitActivationTime;
+			float hitFrom  = _playerController.GetMeleeStrikeWindowStart() + MiekkaIskuAktivoitumisaika;
 
 			if (animTime >= hitFrom && !_hasBeenHitThisSwing)
 			{
-				var probes = SwordHitProbeHeights ?? new float[] { 1.0f };
+				var probes = MiekkaIskuKoetuskorkeudet ?? new float[] { 1.0f };
 				foreach (float h in probes)
 				{
 					Vector3 p = GlobalPosition + Vector3.Up * h;
@@ -314,11 +314,11 @@ public partial class BossLevel2 : CharacterBody3D
 		double len = _animationPlayer.CurrentAnimationLength;
 		if (len <= 0.02) return;
 		float phase = (float)(_animationPlayer.CurrentAnimationPosition / len);
-		if (phase < HammerHitPhaseMin || phase > HammerHitPhaseMax) return;
+		if (phase < VasaraOsumaVaiheMin || phase > VasaraOsumaVaiheMax) return;
 
 		float planarDist = PlanarDistTo(_player.GlobalPosition);
 		float heightDiff = Mathf.Abs(_player.GlobalPosition.Y - GlobalPosition.Y);
-		if (planarDist > HammerHitRangePlanar || heightDiff > HammerHitHeightMax) return;
+		if (planarDist > VasaraIskuKantamaTasossa || heightDiff > VasaraIskuMaksimiKorkeus) return;
 
 		if (_playerController != null && _playerController.IsBlockingEffectiveAgainst(GlobalPosition))
 		{
@@ -330,7 +330,7 @@ public partial class BossLevel2 : CharacterBody3D
 		var health = _player.GetNodeOrNull<HealthComponent>("HealthComponent");
 		if (health == null) return;
 
-		int dmg = HammerHPDamage > 0 ? HammerHPDamage : Mathf.Max(1, health.MaxHealth / 3);
+		int dmg = VasaraTerveysvahinko > 0 ? VasaraTerveysvahinko : Mathf.Max(1, health.MaxHealth / 3);
 		health.TakeDamage(dmg);
 		_hammerHitApplied = true;
 
@@ -340,7 +340,7 @@ public partial class BossLevel2 : CharacterBody3D
 	}
 
 	private float NextHammerInterval() =>
-		(float)GD.RandRange(HammerIntervalMin, HammerIntervalMax);
+		(float)GD.RandRange(VasaraVäliMinSekuntia, VasaraVäliMaxSekuntia);
 
 	// ═══════════════════════════════════════════════════════════════════════════
 	// Animaatiot: idle, hammer loppui
@@ -374,10 +374,10 @@ public partial class BossLevel2 : CharacterBody3D
 	public void TakeDamage(int amount)
 	{
 		if (_isDead) return;
-		Health -= amount;
-		GD.Print($"BossLevel2 HP: {Health}");
+		BossTerveys -= amount;
+		GD.Print($"BossLevel2 HP: {BossTerveys}");
 		OnHitFeedback();
-		if (Health <= 0) Die();
+		if (BossTerveys <= 0) Die();
 	}
 
 	/// <summary>Punaflash meshiin + lyhyt hit-stop animaatiossa (SpeedScale 0).</summary>
@@ -447,7 +447,7 @@ public partial class BossLevel2 : CharacterBody3D
 
 		var tween = CreateTween();
 		tween.TweenInterval(1.2f);
-		tween.TweenProperty(this, "scale", Vector3.Zero, DeathShrinkDuration)
+		tween.TweenProperty(this, "scale", Vector3.Zero, KuolemanKutistumisenKesto)
 			.SetTrans(Tween.TransitionType.Cubic).SetEase(Tween.EaseType.In);
 		tween.TweenCallback(Callable.From(() => QueueFree()));
 	}
@@ -463,7 +463,7 @@ public partial class BossLevel2 : CharacterBody3D
 		to.Y = 0f;
 		if (to.LengthSquared() < 1e-6f) return;
 		LookAt(GlobalPosition + to.Normalized() * 3f, Vector3.Up);
-		RotateY(Mathf.DegToRad(FaceYawOffsetDegrees));
+		RotateY(Mathf.DegToRad(KatseenKiertoAstetta));
 	}
 
 	private float PlanarDistTo(Vector3 target)

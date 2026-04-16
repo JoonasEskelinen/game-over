@@ -40,6 +40,12 @@ public partial class CameraFollow : Camera3D
 	/// </summary>
 	[Export] public bool SideScrollerSkipWallRayAndSnap = true;
 
+	/// <summary>
+	/// Side-scroller: seinä-ray pakotettuna päälle — kamera ei mene seinän läpi (esim. putken +Z-reuna).
+	/// Toimii yhdessä <see cref="SideScrollerSkipWallRayAndSnap"/>-kanssa: snap säilyy, vain ray otetaan käyttöön.
+	/// </summary>
+	[Export] public bool SideScrollerWallClamp = false;
+
 	[ExportGroup("Level 1 boss — tanssikamera")]
 	[Export] public bool EnableBossDanceCamera = true;
 	[Export] public float BossDanceLookAtYOffset = 1.35f;
@@ -110,6 +116,8 @@ public partial class CameraFollow : Camera3D
 	public override void _Ready()
 	{
 		_player = GetNodeOrNull<Node3D>(PlayerPath);
+		if (_player == null && GetParent() is Node3D)
+			_player = GetParent().GetNodeOrNull<Node3D>("Player");
 		_minPitchRad = Mathf.DegToRad(MinPitchDeg);
 		_maxPitchRad = Mathf.DegToRad(MaxPitchDeg);
 		var o = Offset;
@@ -130,6 +138,46 @@ public partial class CameraFollow : Camera3D
 			_pitch = Mathf.Asin(Mathf.Clamp(nd.Y, -1f, 1f));
 			_yaw = Mathf.Atan2(nd.X, nd.Z);
 		}
+
+		if (_player != null && SideScrollerLock)
+			CallDeferred(nameof(DeferredSnapSideScrollerToPlayer));
+	}
+
+	/// <summary>
+	/// Ensimmäinen frame voi piirtää ennen ensimmäistä _PhysicsProcess-kutsua — snapataan sivunäkymä heti pelaajan kohdalle.
+	/// </summary>
+	private void DeferredSnapSideScrollerToPlayer()
+	{
+		if (_player == null || !_player.IsInsideTree() || !SideScrollerLock)
+			return;
+		var pivotFollow = _player.GlobalPosition + new Vector3(0f, PivotHeight, 0f);
+		float cp = Mathf.Cos(_pitch);
+		var dir = new Vector3(Mathf.Sin(_yaw) * cp, Mathf.Sin(_pitch), Mathf.Cos(_yaw) * cp);
+		if (dir.LengthSquared() < 1e-6f)
+			dir = Vector3.Back;
+		else
+			dir = dir.Normalized();
+		GlobalPosition = pivotFollow + dir * _distance;
+		if (SideScrollerWallClamp)
+			GlobalPosition = ShortenCameraTargetAgainstWalls(pivotFollow, GlobalPosition, dir);
+		if (pivotFollow.DistanceSquaredTo(GlobalPosition) > 1e-6f)
+			LookAt(pivotFollow, Vector3.Up);
+	}
+
+	/// <summary>Raycast pivot→target: jos välissä on staattinen kollisio, kamera jää osuman sisäpuolelle.</summary>
+	private Vector3 ShortenCameraTargetAgainstWalls(Vector3 pivotFollow, Vector3 targetPos, Vector3 dir)
+	{
+		var spaceState = GetWorld3D()?.DirectSpaceState;
+		if (spaceState == null)
+			return targetPos;
+		var wallQuery = PhysicsRayQueryParameters3D.Create(pivotFollow, targetPos);
+		wallQuery.CollideWithAreas = false;
+		if (_player is CollisionObject3D playerCol)
+			wallQuery.Exclude = new Godot.Collections.Array<Rid> { playerCol.GetRid() };
+		var wallHit = spaceState.IntersectRay(wallQuery);
+		if (wallHit.Count > 0 && wallHit.ContainsKey("position"))
+			return (Vector3)wallHit["position"] + dir * -0.2f;
+		return targetPos;
 	}
 
 	/// <summary>Lyhyt intro: siirtyy kohteeseen, pysähtyy, palaa seurantaan.</summary>
@@ -224,17 +272,9 @@ public partial class CameraFollow : Camera3D
 
 		var world = GetWorld3D();
 		var spaceState = world?.DirectSpaceState;
-		bool skipWallForSide = SideScrollerLock && SideScrollerSkipWallRayAndSnap;
-		if (spaceState != null && !skipWallForSide)
-		{
-			var wallQuery = PhysicsRayQueryParameters3D.Create(pivotFollow, targetPos);
-			wallQuery.CollideWithAreas = false;
-			if (_player is CollisionObject3D playerCol)
-				wallQuery.Exclude = new Godot.Collections.Array<Rid> { playerCol.GetRid() };
-			var wallHit = spaceState.IntersectRay(wallQuery);
-			if (wallHit.Count > 0 && wallHit.ContainsKey("position"))
-				targetPos = (Vector3)wallHit["position"] + dir * -0.2f;
-		}
+		bool skipWallRay = SideScrollerLock && SideScrollerSkipWallRayAndSnap && !SideScrollerWallClamp;
+		if (spaceState != null && !skipWallRay)
+			targetPos = ShortenCameraTargetAgainstWalls(pivotFollow, targetPos, dir);
 
 		if (_cinemaPhase >= 0)
 		{
@@ -321,7 +361,8 @@ public partial class CameraFollow : Camera3D
 			}
 		}
 
-		float t = skipWallForSide
+		bool sideScrollerSnap = SideScrollerLock && SideScrollerSkipWallRayAndSnap;
+		float t = sideScrollerSnap
 			? 1f
 			: Mathf.Clamp(FollowSpeed * dt, 0f, 1f);
 		GlobalPosition = GlobalPosition.Lerp(targetPos, t);
