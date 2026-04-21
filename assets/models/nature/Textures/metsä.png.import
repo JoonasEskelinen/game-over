@@ -2,9 +2,9 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dw72bm55lhtf2"
-path.s3tc="res://.godot/imported/IMG-20260319-WA0014.jpg-f51dad00567bde3ea0f07292a38e2f74.s3tc.ctex"
-path.etc2="res://.godot/imported/IMG-20260319-WA0014.jpg-f51dad00567bde3ea0f07292a38e2f74.etc2.ctex"
+uid="uid://uxh35gnbtdb0"
+path.s3tc="res://.godot/imported/metsä.png-938fb5bc07d5b94014a4a619a922d215.s3tc.ctex"
+path.etc2="res://.godot/imported/metsä.png-938fb5bc07d5b94014a4a619a922d215.etc2.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
@@ -12,8 +12,8 @@ metadata={
 
 [deps]
 
-source_file="res://assets/textures/IMG-20260319-WA0014.jpg"
-dest_files=["res://.godot/imported/IMG-20260319-WA0014.jpg-f51dad00567bde3ea0f07292a38e2f74.s3tc.ctex", "res://.godot/imported/IMG-20260319-WA0014.jpg-f51dad00567bde3ea0f07292a38e2f74.etc2.ctex"]
+source_file="res://assets/models/nature/Textures/metsä.png"
+dest_files=["res://.godot/imported/metsä.png-938fb5bc07d5b94014a4a619a922d215.s3tc.ctex", "res://.godot/imported/metsä.png-938fb5bc07d5b94014a4a619a922d215.etc2.ctex"]
 
 [params]
 

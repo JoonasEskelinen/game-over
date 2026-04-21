@@ -1,19 +1,101 @@
-[gd_scene format=3 uid="uid://b6c07560dtcfa"]
+[gd_scene format=3 uid="uid://bt4bt6tx7cq1i"]
 
-[sub_resource type="BoxShape3D" id="BoxShape3D_4tk1o"]
-size = Vector3(80, 0.5, 20)
+[ext_resource type="PackedScene" uid="uid://vbg00ynsdulu" path="res://scenes/characters/player.tscn" id="1_o8c3j"]
+[ext_resource type="PackedScene" uid="uid://uh6pto3nrmqe" path="res://scenes/ui/hud.tscn" id="2_0ljxa"]
+[ext_resource type="Script" uid="uid://cdno0yakghq2r" path="res://scripts/CameraFollow.cs" id="3_0qepi"]
+[ext_resource type="Texture2D" uid="uid://uxh35gnbtdb0" path="res://assets/models/nature/Textures/metsä.png" id="4_0qepi"]
 
-[sub_resource type="BoxMesh" id="BoxMesh_j2425"]
-size = Vector3(80, 0.5, 20)
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_0ljxa"]
 
-[node name="Level_2" type="Node3D" unique_id=1699732010]
+[sub_resource type="Sky" id="Sky_0qepi"]
+sky_material = SubResource("ProceduralSkyMaterial_0ljxa")
 
-[node name="Floor" type="StaticBody3D" parent="." unique_id=1888468108]
+[sub_resource type="Environment" id="Environment_0ljxa"]
+background_mode = 2
+sky = SubResource("Sky_0qepi")
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="Floor" unique_id=264860104]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.25, 0)
-shape = SubResource("BoxShape3D_4tk1o")
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_fmg3e"]
+albedo_texture = ExtResource("4_0qepi")
 
-[node name="MeshInstance3D" type="MeshInstance3D" parent="Floor" unique_id=116353911]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.25, 0)
-mesh = SubResource("BoxMesh_j2425")
+[sub_resource type="BoxShape3D" id="BoxShape3D_0ljxa"]
+size = Vector3(200, 20, 0.5)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_0qepi"]
+size = Vector3(200, 20, 0.5)
+
+[sub_resource type="CylinderShape3D" id="CylinderShape3D_ftfob"]
+height = 3.0
+radius = 19.0
+
+[node name="Level3" type="Node3D" unique_id=2065126888]
+
+[node name="Player" parent="." unique_id=1514760592 instance=ExtResource("1_o8c3j")]
+transform = Transform3D(1.1, 0, 0, 0, 1.1, 0, 0, 0, 1.1, -28.05812, -9.86072, 0)
+Juoksunopeus = 6.0
+SyvyysAlaraja = -14.0
+
+[node name="HUD" parent="." unique_id=499664610 instance=ExtResource("2_0ljxa")]
+
+[node name="Camera3D" type="Camera3D" parent="." unique_id=674800906]
+transform = Transform3D(1, 0, 0, 0, 0.9848158, 0.17360279, 0, -0.17360279, 0.9848158, -25.764109, -4.7413635, 13.5)
+current = true
+far = 279.6
+script = ExtResource("3_0qepi")
+PlayerPath = NodePath("../Player")
+Offset = Vector3(0, 1.8, 3.5)
+PivotHeight = 1.2
+MinPitchDeg = -55.0
+MaxPitchDeg = 55.0
+ClampCameraAboveGround = false
+MouseLookEnabled = false
+SideScrollerLock = true
+SideScrollerPitchDeg = 10.0
+SideScrollerWallClamp = true
+EnableBossDanceCamera = false
+BossDanceLookAtYOffset = 1.0
+BossDanceCamDistance = 9.0
+BossDanceCamFrontHeightM = 2.5
+BossDanceCamFollowSpeed = 2.0
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=448343644]
+transform = Transform3D(0.8660254, 0.35355338, -0.35355338, 0, 0.70710677, 0.70710677, 0.5, -0.6123724, 0.6123724, 0, 0, 0)
+shadow_enabled = true
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=695517407]
+environment = SubResource("Environment_0ljxa")
+
+[node name="World" type="Node3D" parent="." unique_id=1066280580]
+
+[node name="UphillRoad" type="CSGBox3D" parent="World" unique_id=1449639768]
+transform = Transform3D(0.9396926, -0.34202012, 0, 0.34202012, 0.9396926, 0, 0, 0, 1, 0, 0, 0)
+use_collision = true
+size = Vector3(70, 0.3, 8)
+
+[node name="Platform" type="CSGCylinder3D" parent="World" unique_id=974303120]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 50.43185, 11.988517, 0.13919735)
+radius = 18.0
+height = 0.3
+sides = 32
+
+[node name="CSGBox3D" type="CSGBox3D" parent="World" unique_id=524539407]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 19, 7.2, -19.330986)
+material_override = SubResource("StandardMaterial3D_fmg3e")
+size = Vector3(120, 40, 0.5)
+
+[node name="FrotWall" type="StaticBody3D" parent="World" unique_id=2017344346]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="World/FrotWall" unique_id=718982458]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 4)
+shape = SubResource("BoxShape3D_0ljxa")
+
+[node name="BackWall" type="StaticBody3D" parent="World" unique_id=980283006]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="World/BackWall" unique_id=873440687]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -4.337354)
+shape = SubResource("BoxShape3D_0qepi")
+
+[node name="PlatformEdge" type="CSGTorus3D" parent="World" unique_id=91404006]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="World/PlatformEdge" unique_id=1196936646]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 50.432, 13.646103, 0)
+shape = SubResource("CylinderShape3D_ftfob")
