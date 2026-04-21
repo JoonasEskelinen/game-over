@@ -17,15 +17,22 @@ public partial class MainMenu : Control
 
 	private void OnNewGamePressed()
 	{
-		// Nollataan elämät ja aloitetaan alusta
-		GetTree().ChangeSceneToFile("res://scenes/levels/level_1.tscn");
+		GD.Print("MainMenu: Uusi peli — latausruutu → level_1.tscn");
+		GameState.Instance.HasJoystick = false;
+		GameState.Instance.PendingLoadScenePath = "res://scenes/levels/level_1.tscn";
+		var err = GetTree().ChangeSceneToFile("res://scenes/ui/loading_screen.tscn");
+		if (err != Error.Ok)
+			GD.PrintErr($"MainMenu: loading_screen epäonnistui: {err}");
 	}
 
 	private void OnLoadGamePressed()
 	{
-		// Ladataan tallennus — jatkaa siitä mihin jäi
 		// TODO: tallenna myös viimeisin kenttä jotta voidaan ladata oikea kenttä
-		GetTree().ChangeSceneToFile("res://scenes/levels/level_1.tscn");
+		GD.Print("MainMenu: Lataa peli — latausruutu → level_1.tscn");
+		GameState.Instance.PendingLoadScenePath = "res://scenes/levels/level_1.tscn";
+		var err = GetTree().ChangeSceneToFile("res://scenes/ui/loading_screen.tscn");
+		if (err != Error.Ok)
+			GD.PrintErr($"MainMenu: loading_screen epäonnistui: {err}");
 	}
 
 	private void OnInstructionsPressed()

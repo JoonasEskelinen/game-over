@@ -4,8 +4,9 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://m3hc7da0wyhv"
 path.s3tc="res://.godot/imported/Offensive Idle_0.png-e25b0d3ef1be126d30fe26d3df437516.s3tc.ctex"
+path.etc2="res://.godot/imported/Offensive Idle_0.png-e25b0d3ef1be126d30fe26d3df437516.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 generator_parameters={
@@ -15,7 +16,7 @@ generator_parameters={
 [deps]
 
 source_file="res://assets/models/animations/Offensive Idle_0.png"
-dest_files=["res://.godot/imported/Offensive Idle_0.png-e25b0d3ef1be126d30fe26d3df437516.s3tc.ctex"]
+dest_files=["res://.godot/imported/Offensive Idle_0.png-e25b0d3ef1be126d30fe26d3df437516.s3tc.ctex", "res://.godot/imported/Offensive Idle_0.png-e25b0d3ef1be126d30fe26d3df437516.etc2.ctex"]
 
 [params]
 

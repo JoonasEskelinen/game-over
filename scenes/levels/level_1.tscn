@@ -95,7 +95,7 @@ height = 0.8145752
 radius = 0.6352539
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_ndtll"]
-size = Vector3(0.9442383, 1, 0.67871094)
+size = Vector3(0.9659363, 1, 0.6466675)
 
 [node name="Level 1" type="Node3D" unique_id=507213679]
 script = ExtResource("18_arcphys")
@@ -114,9 +114,10 @@ shadow_enabled = true
 sky_mode = 1
 
 [node name="Floor" type="StaticBody3D" parent="." unique_id=818305641]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.24640417)
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="Floor" unique_id=289122995]
-transform = Transform3D(0.99999636, 0, 0.0026878037, 0, 1, 0, -0.0026878037, 0, 0.99999636, 0.08376098, -0.17834654, -0.43763518)
+transform = Transform3D(0.99999636, 0, 0.0026878037, 0, 1, 0, -0.0026878037, 0, 0.99999636, 0.10478568, -0.2046279, -0.49882483)
 material_override = SubResource("StandardMaterial3D_gmpev")
 mesh = SubResource("PlaneMesh_6iamk")
 
@@ -124,34 +125,34 @@ mesh = SubResource("PlaneMesh_6iamk")
 shape = SubResource("BoxShape3D_nsrm0")
 
 [node name="gambling-machine2" parent="Floor" unique_id=1097199532 instance=ExtResource("2_wtwp4")]
-transform = Transform3D(1.5, 0, 0, 0, 1.5, 0, 0, 0, 1.5, -9.136473, -0.022335202, -1.5636635)
+transform = Transform3D(1.5, 0, 0, 0, 1.5, 0, 0, 0, 1.5, -9.136473, -0.16900674, -1.5636635)
 
 [node name="gambling-machine3" parent="Floor" unique_id=309646985 instance=ExtResource("2_wtwp4")]
-transform = Transform3D(1.5, 0, 0, 0, 1.5, 0, 0, 0, 1.5, -7.3587313, -0.05239111, -1.636693)
+transform = Transform3D(1.5, 0, 0, 0, 1.5, 0, 0, 0, 1.5, -7.3587313, -0.19653538, -1.636693)
 
 [node name="gambling-machine4" parent="Floor" unique_id=804911595 instance=ExtResource("2_wtwp4")]
-transform = Transform3D(1.5, 0, 0, 0, 1.5, 0, 0, 0, 1.5, -10.6519575, -0.026687175, -1.5631306)
+transform = Transform3D(1.5, 0, 0, 0, 1.5, 0, 0, 0, 1.5, -10.6519575, -0.19822656, -1.5631306)
 
 [node name="pinball2" parent="Floor" unique_id=1566738860 instance=ExtResource("3_iwr0g")]
 transform = Transform3D(-2.4993565, 0, -0.05671811, 0, 2.5, 0, 0.05671811, 0, -2.4993565, 9.330131, -0.13567322, 13.519054)
 
 [node name="pinball3" parent="Floor" unique_id=389439800 instance=ExtResource("3_iwr0g")]
-transform = Transform3D(-2.4993565, 0, -0.05671811, 0, 2.5, 0, 0.05671811, 0, -2.4993565, 5.586643, -0.0977326, 13.477146)
+transform = Transform3D(-2.4993565, 0, -0.05671811, 0, 2.5, 0, 0.05671811, 0, -2.4993565, 5.586643, -0.17059308, 13.477146)
 
 [node name="pinball4" parent="Floor" unique_id=1583446803 instance=ExtResource("3_iwr0g")]
-transform = Transform3D(-2.4993565, 0, -0.05671811, 0, 2.5, 0, 0.05671811, 0, -2.4993565, 1.8417411, -0.064050674, 13.5574)
+transform = Transform3D(-2.4993565, 0, -0.05671811, 0, 2.5, 0, 0.05671811, 0, -2.4993565, 1.8417411, -0.18600047, 13.5574)
 
 [node name="prize-wheel2" parent="Floor" unique_id=1555938896 instance=ExtResource("4_bahl2")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.4728622, -0.1543054, 0.45307732)
 
 [node name="ticket-machine2" parent="Floor" unique_id=1139679256 instance=ExtResource("5_np2pn")]
-transform = Transform3D(2, 0, 0, 0, 2, 0, 0, 0, 2, -8.691927, 0.04028687, -5.103322)
+transform = Transform3D(2, 0, 0, 0, 2, 0, 0, 0, 2, -8.691927, -0.15239647, -5.103322)
 
 [node name="wall2" parent="Floor" unique_id=2081416588 instance=ExtResource("6_v6ha0")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.7973862, -0.17449349, 5.9375954)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.7973862, -0.19098383, 6.1111293)
 
 [node name="wall3" parent="Floor" unique_id=1401809605 instance=ExtResource("6_v6ha0")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4.142742, -0.15828931, 6.0338316)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4.142742, -0.1893214, 6.0338316)
 
 [node name="wall-window2" parent="Floor" unique_id=741675250 instance=ExtResource("7_v6ha0")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.1287484, 1.8217595, 14.200001)
@@ -181,6 +182,7 @@ shape = SubResource("BoxShape3D_x42e6")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 15, 2, 0)
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="Wall_E" unique_id=682551642]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.3677177, 0.96006536, 1.7809362)
 mesh = SubResource("BoxMesh_6761a")
 surface_material_override/0 = SubResource("StandardMaterial3D_nsrm0")
 
@@ -202,10 +204,6 @@ transform = Transform3D(1.1, 0, 0, 0, 1.1, 0, 0, 0, 1.1, 0.014350295, -0.1449435
 Juoksunopeus = 5.5
 HypynAlkuvauhti = 7.0
 SyvyysAlaraja = -14.0
-SyvyysYläraja = 14.0
-MiekkaIskuKantamaLisä = 0.05
-KevytIskuLäheisyysMaksimi = 0.85
-RaskasIskuLäheisyysMaksimi = 0.9
 
 [node name="Camera3D" type="Camera3D" parent="." unique_id=1312101267]
 transform = Transform3D(1, 0, 0, 0, 0.9848158, 0.17360279, 0, -0.17360279, 0.9848158, 0, 3, 12)
@@ -255,19 +253,19 @@ transform = Transform3D(3, 0, 0, 0, 3, 0, 0, 0, 3, 7.284423, -0.18616152, -13.14
 transform = Transform3D(2, 0, 0, 0, 2, 0, 0, 0, 2, -4.062439, -0.15835112, -5.2910895)
 
 [node name="dance-machine2" parent="." unique_id=1831863263 instance=ExtResource("13_mqh5v")]
-transform = Transform3D(-2.4993565, 0, -0.05671827, 0, 2.5, 0, 0.05671827, 0, -2.4993565, -4.2619376, -0.066184044, 13.116182)
+transform = Transform3D(-2.4993565, 0, -0.05671827, 0, 2.5, 0, 0.05671827, 0, -2.4993565, -4.2619376, -0.17376547, 13.116182)
 
 [node name="floor2" parent="." unique_id=808562053 instance=ExtResource("14_7o3do")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7.5339622, 0.050000668, -5.5294065)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7.5339622, -0.14627612, -5.5294065)
 
 [node name="floor3" parent="." unique_id=1875538432 instance=ExtResource("14_7o3do")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -8.510528, 0.05000019, -5.535019)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -8.510528, -0.16509077, -5.535019)
 
 [node name="floor4" parent="." unique_id=941216791 instance=ExtResource("14_7o3do")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -8.535037, 0.05000019, -4.5249567)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -8.535037, -0.14532593, -4.5249567)
 
 [node name="floor5" parent="." unique_id=1758365075 instance=ExtResource("14_7o3do")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7.529998, 0.05000019, -4.5660887)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7.529998, -0.13904151, -4.5660887)
 
 [node name="EnemySpawner" type="Node3D" parent="." unique_id=899631862]
 script = ExtResource("15_wtwp4")
@@ -290,7 +288,7 @@ EnemySpawnerPath = NodePath("../EnemySpawner")
 StickPivotPath = NodePath("StickPivot")
 
 [node name="SylinderShape" type="CollisionShape3D" parent="JoystickLever" unique_id=255329468]
-transform = Transform3D(0.99999976, 0, 0, 0, 0.99999976, 0, 0, 0, 0.99999976, 0, 0.4213254, -0.13041878)
+transform = Transform3D(0.99999976, 0, 0, 0, 0.99999976, 0, 0, 0, 0.99999976, 0.078930855, 0.3686772, -0.08163452)
 shape = SubResource("CylinderShape3D_7h2jl")
 
 [node name="Base" type="Node3D" parent="JoystickLever" unique_id=1477467996]
@@ -299,16 +297,16 @@ shape = SubResource("CylinderShape3D_7h2jl")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.15, 0)
 
 [node name="StickPivot#joystick" parent="JoystickLever" unique_id=935058774 instance=ExtResource("22_mqh5v")]
-transform = Transform3D(-1.3312865, 0, 0.073847674, 0, 1.3333334, 0, -0.073847674, 0, -1.3312865, 0.09194946, -0.120244086, -0.27911854)
+transform = Transform3D(-1.3312865, 0, 0.073847674, 0, 1.3333334, 0, -0.073847674, 0, -1.3312865, 0.09194946, -0.120244086, -0.30288506)
 
 [node name="air-hockey2" parent="." unique_id=242405273 groups=["grabbable"] instance=ExtResource("9_gmpev")]
 transform = Transform3D(2, 0, 0, 0, 2, 0, 0, 0, 2, 1.4441814, -0.16340801, -6.766844)
 
 [node name="RigidBody3D" type="RigidBody3D" parent="air-hockey2" unique_id=1433117017]
-transform = Transform3D(0.5, 0, 0, 0, 0.5, 0, 0, 0, 0.5, 0.21429539, 0.081704006, -0.0045564175)
+transform = Transform3D(0.5, 0, 0, 0, 0.5, 0, 0, 0, 0.5, 0.0057348013, 0.081704006, -0.0045564175)
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="air-hockey2" unique_id=1897500254]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.0054198503, 0, -0.0063476563)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.013919055, 0, 0.011993408)
 shape = SubResource("BoxShape3D_ndtll")
 
 [node name="ExitHole" type="Node3D" parent="." unique_id=-1393629876]

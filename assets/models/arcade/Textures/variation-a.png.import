@@ -4,15 +4,16 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://c1v0i0o5rhg7u"
 path.s3tc="res://.godot/imported/variation-a.png-9effd66982311ab58245550b46f64307.s3tc.ctex"
+path.etc2="res://.godot/imported/variation-a.png-9effd66982311ab58245550b46f64307.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/models/arcade/Textures/variation-a.png"
-dest_files=["res://.godot/imported/variation-a.png-9effd66982311ab58245550b46f64307.s3tc.ctex"]
+dest_files=["res://.godot/imported/variation-a.png-9effd66982311ab58245550b46f64307.s3tc.ctex", "res://.godot/imported/variation-a.png-9effd66982311ab58245550b46f64307.etc2.ctex"]
 
 [params]
 

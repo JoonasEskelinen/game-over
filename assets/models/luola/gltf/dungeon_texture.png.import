@@ -4,15 +4,16 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://bm6okpldsxxbl"
 path.s3tc="res://.godot/imported/dungeon_texture.png-777301d0dc6b550f51e1616d172d5cf3.s3tc.ctex"
+path.etc2="res://.godot/imported/dungeon_texture.png-777301d0dc6b550f51e1616d172d5cf3.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/models/luola/gltf/dungeon_texture.png"
-dest_files=["res://.godot/imported/dungeon_texture.png-777301d0dc6b550f51e1616d172d5cf3.s3tc.ctex"]
+dest_files=["res://.godot/imported/dungeon_texture.png-777301d0dc6b550f51e1616d172d5cf3.s3tc.ctex", "res://.godot/imported/dungeon_texture.png-777301d0dc6b550f51e1616d172d5cf3.etc2.ctex"]
 
 [params]
 

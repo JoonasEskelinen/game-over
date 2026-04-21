@@ -4,8 +4,9 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://ctcwuuhf4bbg4"
 path.s3tc="res://.godot/imported/Zombie Neck Bite_3.png-5dcad87d5f49d29fc89c763b1e00b188.s3tc.ctex"
+path.etc2="res://.godot/imported/Zombie Neck Bite_3.png-5dcad87d5f49d29fc89c763b1e00b188.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 generator_parameters={
@@ -15,7 +16,7 @@ generator_parameters={
 [deps]
 
 source_file="res://assets/models/level1_susi/susiWithskin/Zombie Neck Bite_3.png"
-dest_files=["res://.godot/imported/Zombie Neck Bite_3.png-5dcad87d5f49d29fc89c763b1e00b188.s3tc.ctex"]
+dest_files=["res://.godot/imported/Zombie Neck Bite_3.png-5dcad87d5f49d29fc89c763b1e00b188.s3tc.ctex", "res://.godot/imported/Zombie Neck Bite_3.png-5dcad87d5f49d29fc89c763b1e00b188.etc2.ctex"]
 
 [params]
 

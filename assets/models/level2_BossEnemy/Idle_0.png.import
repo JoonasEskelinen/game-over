@@ -4,8 +4,9 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://dnirr81wuvm5f"
 path.s3tc="res://.godot/imported/Idle_0.png-d9d1d2245912d00dd7867c88cd3b1b50.s3tc.ctex"
+path.etc2="res://.godot/imported/Idle_0.png-d9d1d2245912d00dd7867c88cd3b1b50.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 generator_parameters={
@@ -15,7 +16,7 @@ generator_parameters={
 [deps]
 
 source_file="res://assets/models/level2_BossEnemy/Idle_0.png"
-dest_files=["res://.godot/imported/Idle_0.png-d9d1d2245912d00dd7867c88cd3b1b50.s3tc.ctex"]
+dest_files=["res://.godot/imported/Idle_0.png-d9d1d2245912d00dd7867c88cd3b1b50.s3tc.ctex", "res://.godot/imported/Idle_0.png-d9d1d2245912d00dd7867c88cd3b1b50.etc2.ctex"]
 
 [params]
 

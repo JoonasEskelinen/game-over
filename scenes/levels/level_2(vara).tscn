@@ -1,27 +1,15 @@
-[gd_scene format=3 uid="uid://v8c7snqxlmas"]
+[gd_scene format=3 uid="uid://b06u2rxnrt2x1"]
 
-[ext_resource type="PackedScene" uid="uid://g62p1cujaawy" path="res://assets/models/luola/gltf/pillar.gltf" id="1_1yj8c"]
 [ext_resource type="PackedScene" uid="uid://uh6pto3nrmqe" path="res://scenes/ui/hud.tscn" id="1_j2425"]
-[ext_resource type="Texture2D" uid="uid://b8rymuvwalnw8" path="res://assets/models/nature/Textures/PathRocks_Diffuse.png" id="1_sbygb"]
-[ext_resource type="PackedScene" uid="uid://dm1olmd8erxa5" path="res://assets/models/luola/gltf/banner_shield_brown.gltf" id="2_ndlae"]
 [ext_resource type="Script" uid="uid://cdno0yakghq2r" path="res://scripts/CameraFollow.cs" id="2_ra442"]
 [ext_resource type="PackedScene" uid="uid://vbg00ynsdulu" path="res://scenes/characters/player.tscn" id="3_fiq81"]
-[ext_resource type="PackedScene" uid="uid://o24mk4gku0qo" path="res://assets/models/luola/gltf/wall_corner.gltf" id="3_ndlae"]
 [ext_resource type="PackedScene" uid="uid://bay2jpuw67ub3" path="res://scenes/enemies/enemy_level_2.tscn" id="4_fiq81"]
-[ext_resource type="PackedScene" uid="uid://co8mhhxyq0i16" path="res://assets/models/luola/gltf/floor_wood_small_dark.gltf" id="4_gw1l3"]
 [ext_resource type="PackedScene" uid="uid://dp01ipoywksqf" path="res://scenes/enemies/boss_level_2.tscn" id="5_boss2"]
-[ext_resource type="Texture2D" uid="uid://c41yad2cemfjb" path="res://assets/models/nature/Textures/Rocks_Diffuse.png" id="6_5niy6"]
 [ext_resource type="Script" uid="uid://becw2b6po5be2" path="res://scripts/enemies/EnemyLevel2Spawner.cs" id="6_spawner"]
 [ext_resource type="PackedScene" uid="uid://2wvaqthpfvwe" path="res://assets/models/luola/gltf/floor_tile_extralarge_grates_open.gltf" id="7_qsp8v"]
-[ext_resource type="PackedScene" uid="uid://o0kcu0a50e35" path="res://assets/models/nature/glTF/RockPath_Round_Thin.gltf" id="7_wikm6"]
-[ext_resource type="PackedScene" uid="uid://0aem52h3rph" path="res://assets/models/nature/glTF/Rock_Medium_3.gltf" id="8_1c1qw"]
+[ext_resource type="PackedScene" uid="uid://ckllg5v0r0let" path="res://assets/models/luola/gltf/floor_tile_extralarge_grates.gltf" id="8_nt80m"]
 [ext_resource type="PackedScene" uid="uid://bbvroa3xbf3vo" path="res://assets/models/luola/gltf/floor_tile_grate.gltf" id="9_brxtv"]
 [ext_resource type="PackedScene" uid="uid://rchfsbgheocc" path="res://assets/models/luola/gltf/floor_tile_big_grate.gltf" id="10_tv7cl"]
-[ext_resource type="PackedScene" uid="uid://dxlcp1h4i1w7v" path="res://assets/models/luola/gltf/pillar_decorated.gltf" id="12_v8d84"]
-[ext_resource type="PackedScene" uid="uid://cl7s7768bnqv5" path="res://assets/models/luola/gltf/stairs.gltf" id="13_gw1l3"]
-[ext_resource type="PackedScene" uid="uid://bhu5kukhmbee5" path="res://assets/models/luola/gltf/floor_tile_big_grate_open.gltf" id="14_p4se4"]
-[ext_resource type="PackedScene" uid="uid://c2dvbmhhilimn" path="res://assets/models/luola/gltf/wall_corner_scaffold.gltf" id="15_sibr7"]
-[ext_resource type="PackedScene" uid="uid://bgxtpqca28ga8" path="res://assets/models/luola/gltf/sword_shield.gltf" id="18_p4se4"]
 
 [sub_resource type="PhysicsMaterial" id="PhysicsMaterial_qsp8v"]
 
@@ -88,25 +76,12 @@ emission_energy_multiplier = 3.5
 [sub_resource type="BoxShape3D" id="BoxShape3D_cave_floor"]
 size = Vector3(60, 1, 20)
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_1a10c"]
-albedo_texture = ExtResource("1_sbygb")
-
 [sub_resource type="BoxMesh" id="BoxMesh_cave_floor"]
 size = Vector3(60, 0.5, 20)
 
 [sub_resource type="StandardMaterial3D" id="mat_cave"]
 albedo_color = Color(0.27, 0.21, 0.15, 1)
-metallic = 0.08
-roughness = 0.94
-emission_enabled = true
-emission = Color(0.04, 0.07, 0.03, 1)
-emission_energy_multiplier = 0.6
-
-[sub_resource type="BoxShape3D" id="BoxShape3D_l2_pillar"]
-size = Vector3(1.5, 4, 1.5)
-
-[sub_resource type="BoxShape3D" id="BoxShape3D_l2_wall_corner"]
-size = Vector3(2.5, 4, 2.5)
+roughness = 0.97
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_cave_ceiling"]
 size = Vector3(60, 0.5, 20)
@@ -117,11 +92,31 @@ size = Vector3(60, 0.5, 20)
 [sub_resource type="BoxShape3D" id="BoxShape3D_cave_side"]
 size = Vector3(60, 8, 0.5)
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_mx6s3"]
-albedo_texture = ExtResource("6_5niy6")
-
 [sub_resource type="BoxMesh" id="BoxMesh_cave_side"]
 size = Vector3(60, 8, 0.5)
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_stalactite_lg"]
+top_radius = 0.35
+bottom_radius = 0.0
+height = 2.5
+
+[sub_resource type="StandardMaterial3D" id="mat_stalactite"]
+albedo_color = Color(0.33, 0.27, 0.2, 1)
+roughness = 0.92
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_stalactite_sm"]
+top_radius = 0.2
+bottom_radius = 0.0
+height = 1.5
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_stalagmite_lg"]
+top_radius = 0.0
+bottom_radius = 0.28
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_stalagmite_sm"]
+top_radius = 0.0
+bottom_radius = 0.18
+height = 1.2
 
 [sub_resource type="BoxMesh" id="BoxMesh_pipe_floor"]
 size = Vector3(120, 0.5, 8)
@@ -129,17 +124,11 @@ size = Vector3(120, 0.5, 8)
 [sub_resource type="BoxShape3D" id="BoxShape3D_trans_lintel"]
 size = Vector3(0.5, 4, 8)
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_7d3nu"]
-albedo_texture = ExtResource("6_5niy6")
-
 [sub_resource type="BoxMesh" id="BoxMesh_trans_lintel"]
 size = Vector3(0.5, 4, 8)
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_trans_side"]
 size = Vector3(0.5, 8, 6)
-
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_r6ket"]
-albedo_texture = ExtResource("6_5niy6")
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_nt80m"]
 albedo_color = Color(0.98234254, 0.9823423, 0.9823424, 1)
@@ -148,23 +137,11 @@ albedo_color = Color(0.98234254, 0.9823423, 0.9823424, 1)
 material = SubResource("StandardMaterial3D_nt80m")
 size = Vector3(0.5, 8, 6)
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_xworo"]
-albedo_texture = ExtResource("6_5niy6")
-
 [sub_resource type="BoxShape3D" id="BoxShape3D_trans_floor_bridge"]
 size = Vector3(2, 1, 6)
 
 [sub_resource type="BoxMesh" id="BoxMesh_trans_floor_bridge"]
 size = Vector3(2, 0.5, 6)
-
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_wwjag"]
-albedo_texture = ExtResource("6_5niy6")
-
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_rvwo1"]
-albedo_texture = ExtResource("6_5niy6")
-
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_yxkvy"]
-albedo_texture = ExtResource("6_5niy6")
 
 [sub_resource type="Environment" id="Environment_ra442"]
 background_mode = 1
@@ -172,12 +149,6 @@ background_color = Color(0.04, 0.04, 0.05, 1)
 ambient_light_source = 1
 ambient_light_color = Color(0.06, 0.08, 0.06, 1)
 ambient_light_energy = 0.4
-
-[sub_resource type="BoxShape3D" id="BoxShape3D_l2_pillar_decorated"]
-size = Vector3(2.25, 4, 1.71)
-
-[sub_resource type="BoxShape3D" id="BoxShape3D_l2_stairs"]
-size = Vector3(5, 5.1, 4)
 
 [node name="level_2" type="Node3D" unique_id=1064084596]
 
@@ -378,72 +349,8 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 30, 0, 0)
 shape = SubResource("BoxShape3D_cave_floor")
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="Cave/Floor" unique_id=2100020012]
-material_override = SubResource("StandardMaterial3D_1a10c")
 mesh = SubResource("BoxMesh_cave_floor")
 surface_material_override/0 = SubResource("mat_cave")
-
-[node name="pillar2" parent="Cave/Floor" unique_id=109637253 instance=ExtResource("1_1yj8c")]
-transform = Transform3D(1.5, 0, 0, 0, 1.5, 0, 0, 0, 1.5, -25.249096, 0.5, -5.712818)
-
-[node name="StaticBody3D" type="StaticBody3D" parent="Cave/Floor/pillar2" unique_id=94530589]
-
-[node name="CollisionShape3D" type="CollisionShape3D" parent="Cave/Floor/pillar2/StaticBody3D" unique_id=2022098957]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
-shape = SubResource("BoxShape3D_l2_pillar")
-
-[node name="pillar3" parent="Cave/Floor" unique_id=1475092937 instance=ExtResource("1_1yj8c")]
-transform = Transform3D(1.5, 0, 0, 0, 1.5, 0, 0, 0, 1.5, 16.079536, 0.50000024, -6.318472)
-
-[node name="StaticBody3D" type="StaticBody3D" parent="Cave/Floor/pillar3" unique_id=2134579053]
-
-[node name="CollisionShape3D" type="CollisionShape3D" parent="Cave/Floor/pillar3/StaticBody3D" unique_id=1522701238]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
-shape = SubResource("BoxShape3D_l2_pillar")
-
-[node name="banner_shield_brown2" parent="Cave/Floor" unique_id=1066910613 instance=ExtResource("2_ndlae")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -18.425455, 1.1635373, -10.035191)
-
-[node name="banner_shield_brown3" parent="Cave/Floor" unique_id=790468045 instance=ExtResource("2_ndlae")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.3092537, 0.62088656, -10.054504)
-
-[node name="wall_corner2" parent="Cave/Floor" unique_id=701631641 instance=ExtResource("3_ndlae")]
-transform = Transform3D(-3.8466023e-08, 0, 0.88, 0, 0.88, 0, -0.88, 0, -3.8466023e-08, 29.475445, 0.25403535, 3.497351)
-
-[node name="StaticBody3D" type="StaticBody3D" parent="Cave/Floor/wall_corner2" unique_id=226579058]
-
-[node name="CollisionShape3D" type="CollisionShape3D" parent="Cave/Floor/wall_corner2/StaticBody3D" unique_id=2476292]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.75, 2, 0.75)
-shape = SubResource("BoxShape3D_l2_wall_corner")
-
-[node name="floor_wood_small_dark2" parent="Cave/Floor" unique_id=1242371974 instance=ExtResource("4_gw1l3")]
-transform = Transform3D(3, 0, 0, 0, 3, 0, 0, 0, 3, 25.714043, 0.13582134, 0.060554624)
-
-[node name="floor_wood_small_dark3" parent="Cave/Floor" unique_id=1793846492 instance=ExtResource("4_gw1l3")]
-transform = Transform3D(3, 0, 0, 0, 3, 0, 0, 0, 3, 19.847404, 0.13582134, 0.060554624)
-
-[node name="floor_wood_small_dark4" parent="Cave/Floor" unique_id=394925741 instance=ExtResource("4_gw1l3")]
-transform = Transform3D(3, 0, 0, 0, 3, 0, 0, 0, 3, -3.6058846, 0.13582134, 0.060554624)
-
-[node name="floor_wood_small_dark5" parent="Cave/Floor" unique_id=145323681 instance=ExtResource("4_gw1l3")]
-transform = Transform3D(3, 0, 0, 0, 3, 0, 0, 0, 3, 8.119202, 0.13582134, 0.060554624)
-
-[node name="floor_wood_small_dark6" parent="Cave/Floor" unique_id=1772094223 instance=ExtResource("4_gw1l3")]
-transform = Transform3D(3, 0, 0, 0, 3, 0, 0, 0, 3, 2.2575302, 0.13582134, 0.060554624)
-
-[node name="floor_wood_small_dark7" parent="Cave/Floor" unique_id=282519829 instance=ExtResource("4_gw1l3")]
-transform = Transform3D(3, 0, 0, 0, 3, 0, 0, 0, 3, 13.979195, 0.13582134, 0.060554624)
-
-[node name="floor_wood_small_dark8" parent="Cave/Floor" unique_id=940503849 instance=ExtResource("4_gw1l3")]
-transform = Transform3D(3, 0, 0, 0, 3, 0, 0, 0, 3, -21.263626, 0.13582134, 0.060554624)
-
-[node name="floor_wood_small_dark9" parent="Cave/Floor" unique_id=1999672206 instance=ExtResource("4_gw1l3")]
-transform = Transform3D(3, 0, 0, 0, 3, 0, 0, 0, 3, -9.478701, 0.13582134, 0.060554624)
-
-[node name="floor_wood_small_dark10" parent="Cave/Floor" unique_id=1513099950 instance=ExtResource("4_gw1l3")]
-transform = Transform3D(3, 0, 0, 0, 3, 0, 0, 0, 3, -27.159632, 0.13582134, 0.060554624)
-
-[node name="floor_wood_small_dark11" parent="Cave/Floor" unique_id=1871609604 instance=ExtResource("4_gw1l3")]
-transform = Transform3D(3, 0, 0, 0, 3, 0, 0, 0, 3, -15.349442, 0.13582134, 0.060554624)
 
 [node name="Ceiling" type="StaticBody3D" parent="Cave" unique_id=2100020020]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 30, 8, 0)
@@ -464,28 +371,8 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 30, 4, -10)
 shape = SubResource("BoxShape3D_cave_side")
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="Cave/Wall_ZNeg" unique_id=2100020032]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.00017929077, -0.00017213821, -4.2915344e-05)
-material_override = SubResource("StandardMaterial3D_mx6s3")
 mesh = SubResource("BoxMesh_cave_side")
 surface_material_override/0 = SubResource("mat_cave")
-
-[node name="RockPath_Round_Thin2" parent="Cave/Wall_ZNeg" unique_id=1866167824 instance=ExtResource("7_wikm6")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 29.779026, -3.4911385, 8.205462)
-
-[node name="RockPath_Round_Thin3" parent="Cave/Wall_ZNeg" unique_id=1499348967 instance=ExtResource("7_wikm6")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 29.762981, -3.4911385, 10.093979)
-
-[node name="RockPath_Round_Thin4" parent="Cave/Wall_ZNeg" unique_id=953515492 instance=ExtResource("7_wikm6")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 29.828804, -3.491138, 11.984344)
-
-[node name="Rock_Medium_32" parent="Cave/Wall_ZNeg" unique_id=893396899 instance=ExtResource("8_1c1qw")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.5067196, -3.1843557, 5.9007616)
-
-[node name="Rock_Medium_33" parent="Cave/Wall_ZNeg" unique_id=2048070984 instance=ExtResource("8_1c1qw")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8.901821, -3.1843557, 7.7658167)
-
-[node name="Rock_Medium_34" parent="Cave/Wall_ZNeg" unique_id=2021025676 instance=ExtResource("8_1c1qw")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 26.177132, -3.1843557, 3.3116655)
 
 [node name="Wall_ZPos" type="StaticBody3D" parent="Cave" unique_id=2100020040]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 30, 4, 10)
@@ -498,6 +385,56 @@ mesh = SubResource("BoxMesh_cave_side")
 surface_material_override/0 = SubResource("mat_cave")
 
 [node name="Visuals" type="Node3D" parent="Cave" unique_id=-1194947295]
+
+[node name="Stalactite_1" type="MeshInstance3D" parent="Cave/Visuals" unique_id=-1194947286]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 6.75, -3)
+mesh = SubResource("CylinderMesh_stalactite_lg")
+surface_material_override/0 = SubResource("mat_stalactite")
+
+[node name="Stalactite_2" type="MeshInstance3D" parent="Cave/Visuals" unique_id=-1194947285]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 15, 7.25, 5)
+mesh = SubResource("CylinderMesh_stalactite_sm")
+surface_material_override/0 = SubResource("mat_stalactite")
+
+[node name="Stalactite_3" type="MeshInstance3D" parent="Cave/Visuals" unique_id=-1194947284]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 25, 6.75, -6)
+mesh = SubResource("CylinderMesh_stalactite_lg")
+surface_material_override/0 = SubResource("mat_stalactite")
+
+[node name="Stalactite_4" type="MeshInstance3D" parent="Cave/Visuals" unique_id=-1194947283]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 35, 7.25, 2)
+mesh = SubResource("CylinderMesh_stalactite_sm")
+surface_material_override/0 = SubResource("mat_stalactite")
+
+[node name="Stalactite_5" type="MeshInstance3D" parent="Cave/Visuals" unique_id=-1194947282]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 45, 6.75, -5)
+mesh = SubResource("CylinderMesh_stalactite_lg")
+surface_material_override/0 = SubResource("mat_stalactite")
+
+[node name="Stalactite_6" type="MeshInstance3D" parent="Cave/Visuals" unique_id=-1194947281]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 53, 7.25, 4)
+mesh = SubResource("CylinderMesh_stalactite_sm")
+surface_material_override/0 = SubResource("mat_stalactite")
+
+[node name="Stalagmite_1" type="MeshInstance3D" parent="Cave/Visuals" unique_id=-1194947276]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 1, -7)
+mesh = SubResource("CylinderMesh_stalagmite_lg")
+surface_material_override/0 = SubResource("mat_stalactite")
+
+[node name="Stalagmite_2" type="MeshInstance3D" parent="Cave/Visuals" unique_id=-1194947275]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 22, 0.6, 6)
+mesh = SubResource("CylinderMesh_stalagmite_sm")
+surface_material_override/0 = SubResource("mat_stalactite")
+
+[node name="Stalagmite_3" type="MeshInstance3D" parent="Cave/Visuals" unique_id=-1194947274]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 38, 1, -4)
+mesh = SubResource("CylinderMesh_stalagmite_lg")
+surface_material_override/0 = SubResource("mat_stalactite")
+
+[node name="Stalagmite_4" type="MeshInstance3D" parent="Cave/Visuals" unique_id=-1194947273]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 52, 0.6, 7)
+mesh = SubResource("CylinderMesh_stalagmite_sm")
+surface_material_override/0 = SubResource("mat_stalactite")
 
 [node name="Light_1" type="OmniLight3D" parent="Cave/Visuals" unique_id=-1194947266]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 3, 0)
@@ -725,7 +662,6 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 6, 0)
 shape = SubResource("BoxShape3D_trans_lintel")
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="Transitions/X0_Lintel" unique_id=2100040012]
-material_override = SubResource("StandardMaterial3D_7d3nu")
 mesh = SubResource("BoxMesh_trans_lintel")
 surface_material_override/0 = SubResource("mat_cave")
 
@@ -736,7 +672,6 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4, -7)
 shape = SubResource("BoxShape3D_trans_side")
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="Transitions/X0_WallWide_ZNeg" unique_id=2100040022]
-material_override = SubResource("StandardMaterial3D_r6ket")
 mesh = SubResource("BoxMesh_trans_side")
 surface_material_override/0 = SubResource("mat_cave")
 
@@ -747,7 +682,6 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4, 7)
 shape = SubResource("BoxShape3D_trans_side")
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="Transitions/X0_WallWide_ZPos" unique_id=2100040032]
-material_override = SubResource("StandardMaterial3D_xworo")
 mesh = SubResource("BoxMesh_trans_side")
 surface_material_override/0 = SubResource("mat_cave")
 
@@ -778,7 +712,6 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 60, 6, 0)
 shape = SubResource("BoxShape3D_trans_lintel")
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="Transitions/X60_Lintel" unique_id=2100040042]
-material_override = SubResource("StandardMaterial3D_wwjag")
 mesh = SubResource("BoxMesh_trans_lintel")
 surface_material_override/0 = SubResource("mat_cave")
 
@@ -789,7 +722,6 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 60, 4, -7)
 shape = SubResource("BoxShape3D_trans_side")
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="Transitions/X60_WallWide_ZNeg" unique_id=2100040052]
-material_override = SubResource("StandardMaterial3D_rvwo1")
 mesh = SubResource("BoxMesh_trans_side")
 surface_material_override/0 = SubResource("mat_cave")
 
@@ -800,7 +732,6 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 60, 4, 7)
 shape = SubResource("BoxShape3D_trans_side")
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="Transitions/X60_WallWide_ZPos" unique_id=2100040062]
-material_override = SubResource("StandardMaterial3D_yxkvy")
 mesh = SubResource("BoxMesh_trans_side")
 surface_material_override/0 = SubResource("mat_cave")
 
@@ -848,10 +779,9 @@ BossDanceCamFrontHeightM = 2.5
 BossDanceCamFollowSpeed = 2.0
 
 [node name="Player" parent="." unique_id=1514760592 instance=ExtResource("3_fiq81")]
-transform = Transform3D(1.1, 0, 0, 0, 1.1, 0, 0, 0, 1.1, -114.77098, -0.073586024, 0)
+transform = Transform3D(1.1, 0, 0, 0, 1.1, 0, 0, 0, 1.1, -105, -0.073586024, 0)
 Juoksunopeus = 6.0
 SyvyysAlaraja = -14.0
-SyvyysYläraja = 14.0
 
 [node name="Sun" type="DirectionalLight3D" parent="." unique_id=124042727]
 transform = Transform3D(0.70710677, 0.49999997, -0.49999997, 0, 0.70710677, 0.70710677, 0.70710677, -0.49999997, 0.49999997, 0, 0, 0)
@@ -862,77 +792,27 @@ environment = SubResource("Environment_ra442")
 [node name="EnemyLevel2Spawner" type="Node3D" parent="." unique_id=2100043000]
 script = ExtResource("6_spawner")
 EnemyScene = ExtResource("4_fiq81")
-FirstSpawnAtPlayerX = -60.0
-MaxConcurrentEnemies = 4
 
 [node name="BossLevel2" parent="." unique_id=2100042000 instance=ExtResource("5_boss2")]
-transform = Transform3D(1.5, 0, 0, 0, 1.5, 0, 0, 0, 1.5, 175, -0.073586024, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 175, -0.073586024, 0)
 
 [node name="floor_tile_extralarge_grates_open2" parent="." unique_id=2014157376 instance=ExtResource("7_qsp8v")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 175.40076, 0.35326958, 0.16292053)
+
+[node name="floor_tile_extralarge_grates2" parent="." unique_id=242331747 instance=ExtResource("8_nt80m")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -115.42957, 0.37338758, 0.12919128)
 
 [node name="floor_tile_grate2" parent="." unique_id=161293241 instance=ExtResource("9_brxtv")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -76.62707, 0.38618112, -0.033594728)
 
 [node name="floor_tile_big_grate2" parent="." unique_id=1051892862 instance=ExtResource("10_tv7cl")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -56.39731, 0.3603922, -0.23582685)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -56.39731, 0.3603922, -1.1643968)
 
 [node name="floor_tile_grate3" parent="." unique_id=1247230505 instance=ExtResource("9_brxtv")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -32.435547, 0.34010267, 1.7014873)
 
 [node name="floor_tile_grate4" parent="." unique_id=1223407630 instance=ExtResource("9_brxtv")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -32.44624, 0.35319388, -0.31079525)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -32.44624, 0.33351994, -0.31079525)
 
 [node name="floor_tile_grate5" parent="." unique_id=1358442456 instance=ExtResource("9_brxtv")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -32.455498, 0.3552786, -2.3183985)
-
-[node name="pillar_decorated2" parent="." unique_id=1126117933 instance=ExtResource("12_v8d84")]
-transform = Transform3D(1.5, 0, 0, 0, 1.5, 0, 0, 0, 1.5, 22.615688, 0.50000024, -6.6282454)
-
-[node name="StaticBody3D" type="StaticBody3D" parent="pillar_decorated2" unique_id=1772132536]
-
-[node name="CollisionShape3D" type="CollisionShape3D" parent="pillar_decorated2/StaticBody3D" unique_id=1681732817]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0.105)
-shape = SubResource("BoxShape3D_l2_pillar_decorated")
-
-[node name="stairs2" parent="." unique_id=1196095850 instance=ExtResource("13_gw1l3")]
-transform = Transform3D(0.038614523, 0, 0.99925417, 0, 1, 0, -0.99925417, 0, 0.038614523, -119.67793, 0.5, -0.25833976)
-
-[node name="StaticBody3D" type="StaticBody3D" parent="stairs2" unique_id=1778722180]
-
-[node name="CollisionShape3D" type="CollisionShape3D" parent="stairs2/StaticBody3D" unique_id=1100593804]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.55, 2)
-shape = SubResource("BoxShape3D_l2_stairs")
-
-[node name="floor_tile_big_grate_open2" parent="." unique_id=968684565 instance=ExtResource("14_p4se4")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -94.32796, 0.37850666, 0.13017444)
-
-[node name="wall_corner_scaffold2" parent="." unique_id=815814072 instance=ExtResource("15_sibr7")]
-transform = Transform3D(0.88, 0, 0, 0, 0.88, 0, 0, 0, 0.88, 0.55673397, 0.24759316, 3.45225)
-
-[node name="StaticBody3D" type="StaticBody3D" parent="wall_corner_scaffold2" unique_id=1804450152]
-
-[node name="CollisionShape3D" type="CollisionShape3D" parent="wall_corner_scaffold2/StaticBody3D" unique_id=1508473181]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.75, 2, 0.75)
-shape = SubResource("BoxShape3D_l2_wall_corner")
-
-[node name="wall_corner_scaffold3" parent="." unique_id=247421904 instance=ExtResource("15_sibr7")]
-transform = Transform3D(0.07802809, 0, -0.87653387, 0, 0.88, 0, 0.87653387, 0, 0.07802809, 1.0242194, 0.25834, -3.599832)
-
-[node name="StaticBody3D" type="StaticBody3D" parent="wall_corner_scaffold3" unique_id=226268700]
-
-[node name="CollisionShape3D" type="CollisionShape3D" parent="wall_corner_scaffold3/StaticBody3D" unique_id=1765807915]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.75, 2, 0.75)
-shape = SubResource("BoxShape3D_l2_wall_corner")
-
-[node name="wall_corner2" parent="." unique_id=1312496626 instance=ExtResource("3_ndlae")]
-transform = Transform3D(-0.88, 0, -1.3287631e-07, 0, 0.88, 0, 1.3287631e-07, 0, -0.88, 59.486313, 0.24025095, -3.353129)
-
-[node name="StaticBody3D" type="StaticBody3D" parent="wall_corner2" unique_id=360468649]
-
-[node name="CollisionShape3D" type="CollisionShape3D" parent="wall_corner2/StaticBody3D" unique_id=1460706046]
-transform = Transform3D(1, 0, -1.4210855e-14, 0, 1, 0, 1.4210855e-14, 0, 1, -0.75, 2.0000002, 0.75000024)
-shape = SubResource("BoxShape3D_l2_wall_corner")
-
-[node name="sword_shield2" parent="." unique_id=94244711 instance=ExtResource("18_p4se4")]
-transform = Transform3D(0.8, 0, 0, 0, 0.8, 0, 0, 0, 0.8, 0.6908689, 1.9609094, -2.944499)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -32.455498, 0.32546222, -2.3183985)

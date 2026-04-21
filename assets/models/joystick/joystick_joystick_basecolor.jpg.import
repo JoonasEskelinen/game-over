@@ -4,8 +4,9 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://is541sbul3c0"
 path.s3tc="res://.godot/imported/joystick_joystick_basecolor.jpg-4abc0ee68e1729e8e8258efe31ff31a4.s3tc.ctex"
+path.etc2="res://.godot/imported/joystick_joystick_basecolor.jpg-4abc0ee68e1729e8e8258efe31ff31a4.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 generator_parameters={
@@ -15,7 +16,7 @@ generator_parameters={
 [deps]
 
 source_file="res://assets/models/joystick/joystick_joystick_basecolor.jpg"
-dest_files=["res://.godot/imported/joystick_joystick_basecolor.jpg-4abc0ee68e1729e8e8258efe31ff31a4.s3tc.ctex"]
+dest_files=["res://.godot/imported/joystick_joystick_basecolor.jpg-4abc0ee68e1729e8e8258efe31ff31a4.s3tc.ctex", "res://.godot/imported/joystick_joystick_basecolor.jpg-4abc0ee68e1729e8e8258efe31ff31a4.etc2.ctex"]
 
 [params]
 

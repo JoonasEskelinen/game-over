@@ -152,10 +152,13 @@ public partial class PlayerController : CharacterBody3D
 	private AudioStreamPlayer _damageSFX;
 
 	/// <summary>
-	/// True kun jokin EnemyLevel1 on jo rekisteröinyt osuman tällä lyöntiswingillä.
-	/// Estää yhden swingin tappamasta useita vihollisia kerralla.
+	/// True kun jokin EnemyLevel1 on jo rekisteröinyt osuman tällä lyöntiswingillä (tai R2 yksi kohde).
+	/// Estää yhden swingin tappamasta useita vihollisia kerralla, ellei käytetä <see cref="TryClaimEnemyHeavyCleaveHit"/>.
 	/// </summary>
 	private bool _enemyHitThisSwing = false;
+
+	/// <summary>R1: rekisteröidyt cleave-osumat (EnemyLevel2), enintään 2 / swing.</summary>
+	private int _heavyMeleeCleaveHitsThisSwing;
 
 	// ─────────────────────────────────────────────
 	// JULKISET METODIT — vihollinen käyttää näitä
@@ -166,6 +169,9 @@ public partial class PlayerController : CharacterBody3D
 
 	/// <summary>Palauttaa nykyisen lyönnin vahingon (1 = normaali, 3 = vahva).</summary>
 	public int GetMeleeAttackDamage() => _attackDamage;
+
+	/// <summary>True jos aktiivinen miekkalyönti on R1 (raskas), ei R2.</summary>
+	public bool IsHeavyMeleeAttackActive() => _isAttacking && _meleeStrikeClip == "mixamo_com_010";
 
 	/// <summary>Palauttaa true jos pelaaja on SwordShield-tilassa.</summary>
 	public bool IsSwordWeaponMode() => !_isSitting && _weaponMode == WeaponMode.SwordShield;
@@ -433,8 +439,23 @@ public partial class PlayerController : CharacterBody3D
 		return true;
 	}
 
-	/// <summary>Kutsutaan EnemyLevel1:stä kun hyökkäys on ohi — nollaa swingivaraus.</summary>
-	public void ClearEnemyHitThisSwing() => _enemyHitThisSwing = false;
+	/// <summary>
+	/// R1: useampi osuma per swing (EnemyLevel2). Enintään <paramref name="maxHits"/> vihollista voi varata saman swingin aikana.
+	/// </summary>
+	public bool TryClaimEnemyHeavyCleaveHit(int maxHits = 2)
+	{
+		if (!IsHeavyMeleeAttackActive() || maxHits < 1) return false;
+		if (_heavyMeleeCleaveHitsThisSwing >= maxHits) return false;
+		_heavyMeleeCleaveHitsThisSwing++;
+		return true;
+	}
+
+	/// <summary>Kutsutaan kun hyökkäys on ohi — nollaa swingivaraus.</summary>
+	public void ClearEnemyHitThisSwing()
+	{
+		_enemyHitThisSwing = false;
+		_heavyMeleeCleaveHitsThisSwing = 0;
+	}
 
 	/// <summary>
 	/// L2-blokkaus keskeyttää lyöntianimaation (<c>PlayAnim(006)</c>) ilman että <c>OnAnimationFinished</c> laukeaa —
@@ -562,6 +583,11 @@ public partial class PlayerController : CharacterBody3D
 		// Lattian kiinnitysasetukset — estää hahmon "pomppaavan" portailta
 		FloorSnapLength = 0.18f;
 		FloorMaxAngle = Mathf.DegToRad(50f);
+
+		// Areena: jos scene asettaa vain leveän SyvyysAlarajan, älä jätä SyvyysYlärajaa oletukseen 1.75
+		// (muuten Z-clamp lukitsee koko +Z-puolen ~1.75 m asti.)
+		if (SyvyysliikeKäytössä && SyvyysAlaraja < -3f && SyvyysYläraja < 3f)
+			SyvyysYläraja = Mathf.Abs(SyvyysAlaraja);
 
 		// Haetaan tarvittavat nodet scene-puusta
 		_mesh = GetNode<MeshInstance3D>("MeshInstance3D");

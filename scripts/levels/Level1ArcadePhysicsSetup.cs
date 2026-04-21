@@ -4,6 +4,9 @@ using Godot;
 /// <summary>
 /// level_1: lisää propseille yhden BoxShape3D StaticBodyn (ei trimeshäjä — Pi-ystävällinen).
 /// air-hockey2 → RigidBody3D + ryhmä <c>grabbable</c> (PlayerController tarttuu).
+///
+/// GLB-instansseissa on usein oma StaticBody/CollisionShape — jos se jää päälle, pelaaja törmää
+/// sekä siihen että synteettiseen laatikkoon (väärät mitat → “näkymätön seinä” vain toisesta suunnasta).
 /// </summary>
 public partial class Level1ArcadePhysicsSetup : Node3D
 {
@@ -19,6 +22,12 @@ public partial class Level1ArcadePhysicsSetup : Node3D
 	/// Korkea arvo = pöytä pysähtyy nopeasti kun neliö päästetään irti → raskas tuntuma.
 	/// </summary>
 	[Export] public float AirHockeyLinearDamp = 7f;
+
+	/// <summary>
+	/// Floor-lapsia joiden kohdalla ei lisätä automaattista laatikko-fysiikkaa (koristeet, kapeat käytävät).
+	/// wall2/wall3: muuten koko AABB-laatikko tukkii tanssikoneen puolen ja jumittaa pelaajan + viholliset.
+	/// </summary>
+	[Export] public string[] FloorSkipAutoPhysicsNames = { "wall2", "wall3", "wall-window2" };
 
 	public override void _Ready()
 	{
@@ -36,10 +45,41 @@ public partial class Level1ArcadePhysicsSetup : Node3D
 				continue;
 			if (child is not Node3D nd)
 				continue;
+			if (ShouldSkipFloorAutoPhysics(nd.Name))
+			{
+				DisableAllCollision(nd);
+				continue;
+			}
 			if (nd.HasMeta("arcade_phys_done"))
 				continue;
 			AddStaticBoxForVisual(nd, floor, false);
 		}
+	}
+
+	private bool ShouldSkipFloorAutoPhysics(StringName nodeName)
+	{
+		if (FloorSkipAutoPhysicsNames == null || FloorSkipAutoPhysicsNames.Length == 0)
+			return false;
+		string n = nodeName.ToString();
+		foreach (string skip in FloorSkipAutoPhysicsNames)
+		{
+			if (string.IsNullOrEmpty(skip))
+				continue;
+			if (n == skip)
+				return true;
+		}
+		return false;
+	}
+
+	private static void DisableAllCollision(Node node)
+	{
+		if (node is CollisionObject3D co)
+		{
+			co.CollisionLayer = 0;
+			co.CollisionMask = 0;
+		}
+		foreach (Node c in node.GetChildren())
+			DisableAllCollision(c);
 	}
 
 	private void SetupRootProps()
@@ -53,6 +93,13 @@ public partial class Level1ArcadePhysicsSetup : Node3D
 				continue;
 			if (s.StartsWith("Wall_") || s.StartsWith("Neon_"))
 				continue;
+			// Ikkunaseinät: autop-laatikko voi olla ylimitallinen; poistetaan myös GLB:n oma törmäys.
+			if (s.StartsWith("wall-window", StringComparison.OrdinalIgnoreCase))
+			{
+				if (child is Node3D wnd)
+					DisableAllCollision(wnd);
+				continue;
+			}
 
 			if (child is not Node3D nd)
 				continue;
@@ -123,6 +170,7 @@ public partial class Level1ArcadePhysicsSetup : Node3D
 			Shape = new BoxShape3D { Size = worldAabb.Size * 1.02f }
 		};
 		rb.AddChild(col);
+		StripBuiltInCollisionUnder(airRoot);
 	}
 
 	private void AddStaticBoxForVisual(Node3D visualRoot, Node parent, bool useArcadePropLayer)
@@ -144,6 +192,21 @@ public partial class Level1ArcadePhysicsSetup : Node3D
 			Shape = new BoxShape3D { Size = worldAabb.Size * 1.02f }
 		};
 		sb.AddChild(col);
+		StripBuiltInCollisionUnder(visualRoot);
+	}
+
+	/// <summary>
+	/// Poistaa vain tämän visuaalipuun alta löytyvät törmäykset (ei koske juuri luotua *_Phys / RigidBodyä).
+	/// </summary>
+	private static void StripBuiltInCollisionUnder(Node node)
+	{
+		if (node is CollisionObject3D co)
+		{
+			co.CollisionLayer = 0;
+			co.CollisionMask = 0;
+		}
+		foreach (Node c in node.GetChildren())
+			StripBuiltInCollisionUnder(c);
 	}
 
 	private static bool TryUnionVisualAabb(Node root, out Aabb worldAabb)

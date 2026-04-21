@@ -3,16 +3,17 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://c41yad2cemfjb"
-path.s3tc="res://.godot/imported/Rocks_Diffuse.png-040e367ca0b80a53524460b2180720c9.s3tc.ctex"
+path.s3tc="res://.godot/imported/Rocks_Diffuse.png-4c17d574abf6b72aabccdd0ca9f45c29.s3tc.ctex"
+path.etc2="res://.godot/imported/Rocks_Diffuse.png-4c17d574abf6b72aabccdd0ca9f45c29.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 
 [deps]
 
-source_file="res://assets/models/nature/textures/Rocks_Diffuse.png"
-dest_files=["res://.godot/imported/Rocks_Diffuse.png-040e367ca0b80a53524460b2180720c9.s3tc.ctex"]
+source_file="res://assets/models/nature/Textures/Rocks_Diffuse.png"
+dest_files=["res://.godot/imported/Rocks_Diffuse.png-4c17d574abf6b72aabccdd0ca9f45c29.s3tc.ctex", "res://.godot/imported/Rocks_Diffuse.png-4c17d574abf6b72aabccdd0ca9f45c29.etc2.ctex"]
 
 [params]
 

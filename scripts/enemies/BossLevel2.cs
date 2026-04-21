@@ -6,8 +6,8 @@ using Godot;
 // ═══════════════════════════════════════════════════════════════════════════════
 // Pelisuunnittelu:
 //   • Boss ei liiku — haaste on ajallinen: satunnainen vasara voi laueta milloin tahansa.
-//   • Pelaaja lyö R1/R2-miekalla (PlayerController); osumat testataan useilla korkeuksilla.
-//   • Vasara vähentää HP:ta (HealthComponent), ei R1-latauspalkkia. Kilpi voi torjua.
+//   • Pelaaja vahingoittaa bossia vain R1-miekalla (R2 ei vaikuta).
+//   • Vasaran sähköalue vähentää HP:ta (HealthComponent), ei R1-latauspalkkia; kilpi ei torju tätä.
 //
 // Tekninen rakenne:
 //   • Animaatiot ladataan FBX-tiedostoista Idle/hammer/death ja kopioidaan yhden
@@ -75,6 +75,23 @@ public partial class BossLevel2 : CharacterBody3D
 	[Export] public float VasaraOsumaVaiheMin = 0.38f;
 	[Export] public float VasaraOsumaVaiheMax = 0.55f;
 
+	/// <summary>
+	/// Maan iskurenkaan säde (XZ). 0 = sama kuin <see cref="VasaraIskuKantamaTasossa"/>.
+	/// </summary>
+	[Export] public float VasaraIskuRenkaanSade = 0f;
+
+	/// <summary>Sekunteina: renkaan näkyvä "sähköisku" ja haalistuminen.</summary>
+	[Export] public float VasaraIskuVfxKesto = 0.5f;
+
+	/// <summary>Renkaan korkeus juuren Y:stä (metriä) — säädä jos levy kelluu maan yläpuolella.</summary>
+	[Export] public float VasaraIskuVfxKorkeus = 0.04f;
+
+	/// <summary>GPUParticles-särky (rengas); laske Pi:llä tarvittaessa 24–32:een.</summary>
+	[Export] public int VasaraIskuSahkoPartikkeliMaara = 52;
+
+	/// <summary>Lyhyt valopulssi (0 = pois päältä).</summary>
+	[Export] public float VasaraIskuValoEnergia = 3.2f;
+
 	// ─── Inspector: hahmon suunta ───────────────────────────────────────────────
 
 	/// <summary>
@@ -112,6 +129,9 @@ public partial class BossLevel2 : CharacterBody3D
 
 	/// <summary>True kun "hammer"-animaatio pyörii (estää ajastimen ja liikkumisen).</summary>
 	private bool  _hammerAnimActive;
+
+	/// <summary>Yksi iskurengas / swing — resetoidaan <see cref="TriggerHammer"/>:issa.</summary>
+	private bool _hammerShockVfxSpawned;
 
 	private const float Gravity = 20f;
 
@@ -250,12 +270,13 @@ public partial class BossLevel2 : CharacterBody3D
 				TriggerHammer();
 		}
 
-		// Osumahetki: vain hammer-clipin tietyssä vaiheessa ja jos ei jo annettu
+		// Osumahetki: iskurengas (VFX) + HP kerran per swing, kun clipin vaihe osuu iskuikkunaan
 		if (_hammerAnimActive && _animationPlayer?.CurrentAnimation == "hammer")
-			TryApplyHammerHPDamage();
+			ProcessHammerImpactWindow();
 
-		// Pelaaja lyö bossia: miekan ikkuna + probe-pisteet + yksi osuma per swing (TryClaim)
-		if (_playerController != null && _playerController.IsMeleeAttackActive())
+		// Pelaaja lyö bossia: vain R1 (raskas); miekan ikkuna + probe-pisteet + yksi osuma per swing (TryClaim)
+		if (_playerController != null && _playerController.IsMeleeAttackActive()
+			&& _playerController.IsHeavyMeleeAttackActive())
 		{
 			float animTime = _playerController.GetAttackAnimationTime();
 			float hitFrom  = _playerController.GetMeleeStrikeWindowStart() + MiekkaIskuAktivoitumisaika;
@@ -299,12 +320,34 @@ public partial class BossLevel2 : CharacterBody3D
 
 		_hammerAnimActive = true;
 		_hammerHitApplied = false;
+		_hammerShockVfxSpawned = false;
 		_animationPlayer.Play("hammer");
 	}
 
 	/// <summary>
-	/// Yksi HP-isku per hammer-swingi, kun animaation vaihe on [Min,Max] ja pelaaja alueella.
-	/// Kilpi voi torjua (IsBlockingEffectiveAgainst).
+	/// Iskuikkuna: kerran renkaan VFX (sähkö / isku maahan), sitten yksi HP-tarkistus jos ei vielä osunut.
+	/// </summary>
+	private void ProcessHammerImpactWindow()
+	{
+		if (_animationPlayer == null || _animationPlayer.CurrentAnimation != "hammer") return;
+
+		double len = _animationPlayer.CurrentAnimationLength;
+		if (len <= 0.02) return;
+		float phase = (float)(_animationPlayer.CurrentAnimationPosition / len);
+		if (phase < VasaraOsumaVaiheMin || phase > VasaraOsumaVaiheMax) return;
+
+		if (!_hammerShockVfxSpawned)
+		{
+			SpawnHammerShockGroundVfx();
+			_hammerShockVfxSpawned = true;
+		}
+
+		TryApplyHammerHPDamage();
+	}
+
+	/// <summary>
+	/// Yksi HP-isku per hammer-swingi, kun animaation vaihe on iskuikkunassa ja pelaaja sähköalueella.
+	/// Maan sähköisku ei ole kilvellä torjuttavissa (toisin kuin suora vasaraosuma voisi olla muissa peleissä).
 	/// </summary>
 	private void TryApplyHammerHPDamage()
 	{
@@ -316,16 +359,10 @@ public partial class BossLevel2 : CharacterBody3D
 		float phase = (float)(_animationPlayer.CurrentAnimationPosition / len);
 		if (phase < VasaraOsumaVaiheMin || phase > VasaraOsumaVaiheMax) return;
 
+		float shockRadius = VasaraIskuRenkaanSade > 0.01f ? VasaraIskuRenkaanSade : VasaraIskuKantamaTasossa;
 		float planarDist = PlanarDistTo(_player.GlobalPosition);
 		float heightDiff = Mathf.Abs(_player.GlobalPosition.Y - GlobalPosition.Y);
-		if (planarDist > VasaraIskuKantamaTasossa || heightDiff > VasaraIskuMaksimiKorkeus) return;
-
-		if (_playerController != null && _playerController.IsBlockingEffectiveAgainst(GlobalPosition))
-		{
-			GD.Print("BossLevel2 vasara torjuttu kilvellä!");
-			_hammerHitApplied = true;
-			return;
-		}
+		if (planarDist > shockRadius || heightDiff > VasaraIskuMaksimiKorkeus) return;
 
 		var health = _player.GetNodeOrNull<HealthComponent>("HealthComponent");
 		if (health == null) return;
@@ -337,6 +374,106 @@ public partial class BossLevel2 : CharacterBody3D
 		GD.Print($"BossLevel2 vasara osui! -{dmg} HP");
 		if (_camera == null) _camera = GetViewport()?.GetCamera3D() as CameraFollow;
 		_camera?.ShakeImpulse(0.2f, 0.22f);
+	}
+
+	/// <summary>
+	/// Maan sähköisku: shader-pohjainen rengas + kevyt GPUParticles-renkaan särky + valopulssi (Pi-säädöt exporteissa).
+	/// </summary>
+	private void SpawnHammerShockGroundVfx()
+	{
+		if (!IsInsideTree()) return;
+
+		float r = VasaraIskuRenkaanSade > 0.01f ? VasaraIskuRenkaanSade : VasaraIskuKantamaTasossa;
+		var root = new Node3D { Name = "HammerShockElectricVfx" };
+
+		Shader electricShader = GD.Load<Shader>("res://assets/shaders/hammer_shock_electric.gdshader");
+		if (electricShader == null)
+		{
+			GD.PrintErr("BossLevel2: hammer_shock_electric.gdshader puuttuu — ohitetaan VFX.");
+			return;
+		}
+
+		var shockMat = new ShaderMaterial { Shader = electricShader };
+		shockMat.SetShaderParameter("u_fade", 1f);
+
+		var plane = new MeshInstance3D();
+		plane.Mesh = new PlaneMesh
+		{
+			Size = new Vector2(r * 2f, r * 2f),
+			SubdivideWidth = 1,
+			SubdivideDepth = 1,
+		};
+		plane.MaterialOverride = shockMat;
+		plane.RotationDegrees = new Vector3(-90f, 0f, 0f);
+		plane.Position = Vector3.Up * VasaraIskuVfxKorkeus;
+		root.AddChild(plane);
+
+		// Rengaspartikkelit: sähkökipinät ylöspäin renkaan varrelta
+		var sparks = new GpuParticles3D { Name = "ShockSparks" };
+		int amt = Mathf.Clamp(VasaraIskuSahkoPartikkeliMaara, 16, 96);
+		sparks.Amount = amt;
+		sparks.Lifetime = 0.52f;
+		sparks.Explosiveness = 0.98f;
+		sparks.OneShot = true;
+		sparks.LocalCoords = true;
+		sparks.Position = new Vector3(0f, 0.06f, 0f);
+
+		var pm = new ParticleProcessMaterial
+		{
+			EmissionShape = ParticleProcessMaterial.EmissionShapeEnum.Ring,
+			EmissionRingRadius = r,
+			EmissionRingInnerRadius = Mathf.Max(0.1f, r * 0.58f),
+			EmissionRingHeight = 0.14f,
+			EmissionRingAxis = Vector3.Up,
+			Direction = Vector3.Up,
+			Spread = 32f,
+			InitialVelocityMin = 2f,
+			InitialVelocityMax = 6.2f,
+			Gravity = new Vector3(0f, -11f, 0f),
+			ScaleMin = 0.05f,
+			ScaleMax = 0.16f,
+		};
+		pm.Color = new Color(0.5f, 0.95f, 1f, 1f);
+		sparks.ProcessMaterial = pm;
+		root.AddChild(sparks);
+
+		OmniLight3D pulse = null;
+		if (VasaraIskuValoEnergia > 0.05f)
+		{
+			pulse = new OmniLight3D
+			{
+				LightColor = new Color(0.45f, 0.92f, 1f),
+				LightEnergy = VasaraIskuValoEnergia,
+				OmniRange = r * 1.2f,
+				ShadowEnabled = false,
+				Position = new Vector3(0f, 0.35f, 0f),
+			};
+			root.AddChild(pulse);
+		}
+
+		AddChild(root);
+		root.GlobalPosition = new Vector3(GlobalPosition.X, GlobalPosition.Y, GlobalPosition.Z);
+		root.Scale = new Vector3(0.08f, 1f, 0.08f);
+
+		float dur = Mathf.Max(0.15f, VasaraIskuVfxKesto);
+		var tw = CreateTween();
+		tw.SetParallel(true);
+		tw.TweenProperty(root, "scale", Vector3.One, Mathf.Min(0.14f, dur * 0.4f))
+			.SetTrans(Tween.TransitionType.Back).SetEase(Tween.EaseType.Out);
+		tw.TweenMethod(Callable.From<float>(fade =>
+		{
+			if (GodotObject.IsInstanceValid(shockMat))
+				shockMat.SetShaderParameter("u_fade", fade);
+			if (pulse != null && GodotObject.IsInstanceValid(pulse))
+				pulse.LightEnergy = VasaraIskuValoEnergia * fade;
+		}), 1f, 0f, dur).SetDelay(0.04f).SetTrans(Tween.TransitionType.Quad).SetEase(Tween.EaseType.In);
+
+		sparks.Emitting = true;
+
+		tw.Chain().TweenCallback(Callable.From(() =>
+		{
+			if (GodotObject.IsInstanceValid(root)) root.QueueFree();
+		}));
 	}
 
 	private float NextHammerInterval() =>

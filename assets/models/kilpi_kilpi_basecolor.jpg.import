@@ -4,8 +4,9 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://dqulj1dc1fnwq"
 path.s3tc="res://.godot/imported/kilpi_kilpi_basecolor.jpg-b8213fa088b47e430c1b143db8078465.s3tc.ctex"
+path.etc2="res://.godot/imported/kilpi_kilpi_basecolor.jpg-b8213fa088b47e430c1b143db8078465.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 generator_parameters={
@@ -15,7 +16,7 @@ generator_parameters={
 [deps]
 
 source_file="res://assets/models/kilpi_kilpi_basecolor.jpg"
-dest_files=["res://.godot/imported/kilpi_kilpi_basecolor.jpg-b8213fa088b47e430c1b143db8078465.s3tc.ctex"]
+dest_files=["res://.godot/imported/kilpi_kilpi_basecolor.jpg-b8213fa088b47e430c1b143db8078465.s3tc.ctex", "res://.godot/imported/kilpi_kilpi_basecolor.jpg-b8213fa088b47e430c1b143db8078465.etc2.ctex"]
 
 [params]
 

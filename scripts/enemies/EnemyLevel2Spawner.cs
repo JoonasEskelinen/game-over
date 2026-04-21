@@ -42,13 +42,13 @@ public partial class EnemyLevel2Spawner : Node3D
 	/// Jokaisen onnistuneen spawnin jälkeen kynnys kasvaa tämän verran (metriä).
 	/// Pienempi arvo = tiheämmin vihollisia, isompi = harvemmin.
 	/// </summary>
-	[Export] public float SpawnEveryPlayerXMeters = 15f;
+	[Export] public float SpawnEveryPlayerXMeters = 12f;
 
 	/// <summary>
 	/// Enintään näin monta EnemyLevel2:ta voi olla elossa yhtä aikaa.
 	/// Jos täynnä, spawner odottaa kuolemia — kynnys ei hyppää eteenpäin tyhjänä.
 	/// </summary>
-	[Export] public int MaxConcurrentEnemies = 2;
+	[Export] public int MaxConcurrentEnemies = 3;
 
 	/// <summary>Spawner ei tee mitään jos pelaajan X on tämän alapuolella (kentän alku).</summary>
 	[Export] public float MinPlayerX = -108f;

@@ -4,8 +4,9 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://5hbqwr4vh8dq"
 path.s3tc="res://.godot/imported/vasara_hammer_normal.jpg-d003d9bfaea7d5d2070eba04914c8b40.s3tc.ctex"
+path.etc2="res://.godot/imported/vasara_hammer_normal.jpg-d003d9bfaea7d5d2070eba04914c8b40.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 generator_parameters={
@@ -15,7 +16,7 @@ generator_parameters={
 [deps]
 
 source_file="res://assets/models/level2_BossEnemy/vasara_hammer_normal.jpg"
-dest_files=["res://.godot/imported/vasara_hammer_normal.jpg-d003d9bfaea7d5d2070eba04914c8b40.s3tc.ctex"]
+dest_files=["res://.godot/imported/vasara_hammer_normal.jpg-d003d9bfaea7d5d2070eba04914c8b40.s3tc.ctex", "res://.godot/imported/vasara_hammer_normal.jpg-d003d9bfaea7d5d2070eba04914c8b40.etc2.ctex"]
 
 [params]
 

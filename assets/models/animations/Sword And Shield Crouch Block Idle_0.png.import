@@ -4,8 +4,9 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://cwrpkcl3mm103"
 path.s3tc="res://.godot/imported/Sword And Shield Crouch Block Idle_0.png-57f991a9a42cfa714d3c28ee533c909e.s3tc.ctex"
+path.etc2="res://.godot/imported/Sword And Shield Crouch Block Idle_0.png-57f991a9a42cfa714d3c28ee533c909e.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 generator_parameters={
@@ -15,7 +16,7 @@ generator_parameters={
 [deps]
 
 source_file="res://assets/models/animations/Sword And Shield Crouch Block Idle_0.png"
-dest_files=["res://.godot/imported/Sword And Shield Crouch Block Idle_0.png-57f991a9a42cfa714d3c28ee533c909e.s3tc.ctex"]
+dest_files=["res://.godot/imported/Sword And Shield Crouch Block Idle_0.png-57f991a9a42cfa714d3c28ee533c909e.s3tc.ctex", "res://.godot/imported/Sword And Shield Crouch Block Idle_0.png-57f991a9a42cfa714d3c28ee533c909e.etc2.ctex"]
 
 [params]
 

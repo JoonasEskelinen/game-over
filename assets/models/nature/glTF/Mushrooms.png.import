@@ -4,15 +4,16 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://dwsyqam7p5buv"
 path.s3tc="res://.godot/imported/Mushrooms.png-ef78f4999f5c78e51d542f6dd0816d1f.s3tc.ctex"
+path.etc2="res://.godot/imported/Mushrooms.png-ef78f4999f5c78e51d542f6dd0816d1f.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/models/nature/glTF/Mushrooms.png"
-dest_files=["res://.godot/imported/Mushrooms.png-ef78f4999f5c78e51d542f6dd0816d1f.s3tc.ctex"]
+dest_files=["res://.godot/imported/Mushrooms.png-ef78f4999f5c78e51d542f6dd0816d1f.s3tc.ctex", "res://.godot/imported/Mushrooms.png-ef78f4999f5c78e51d542f6dd0816d1f.etc2.ctex"]
 
 [params]
 

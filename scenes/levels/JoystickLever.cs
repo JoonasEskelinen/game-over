@@ -87,6 +87,16 @@ public partial class JoystickLever : Area3D
 
 		TryReparentStrayJoystickFromLevelRoot();
 
+		// joystick.glb + normal map: varmista tangentit (vältä rendering-varoitus / mustat meshet).
+		try
+		{
+			MeshTangentFix.ApplyToSubtree(this);
+		}
+		catch (Exception ex)
+		{
+			GD.PrintErr("JoystickLever MeshTangentFix: " + ex.Message);
+		}
+
 		if (_stickPivot != null)
 			_floatBaseY = _stickPivot.Position.Y;
 

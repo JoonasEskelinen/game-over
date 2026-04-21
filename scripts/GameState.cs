@@ -20,6 +20,12 @@ public partial class GameState : Node
 	/// </summary>
 	public bool HasJoystick { get; set; } = false;
 
+	/// <summary>
+	/// Latausruudulle: kentän res://-polku, joka ladataan taustalla ennen scene-vaihtoa.
+	/// Tyhjennetään kun lataus on käynnistetty.
+	/// </summary>
+	public string PendingLoadScenePath { get; set; } = "";
+
 	// ─────────────────────────────────────────────
 
 	public override void _Ready()

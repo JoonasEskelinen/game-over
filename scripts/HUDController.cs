@@ -7,6 +7,7 @@ public partial class HUDController : CanvasLayer
 	private ProgressBar _bossHealthBar;
 	private Label _bossR1Hint;
 	private Label _r1Label;
+	private HBoxContainer _livesRow;
 	private PlayerController _player;
 
 	// Värit
@@ -19,6 +20,8 @@ public partial class HUDController : CanvasLayer
 	private static readonly Color _bossBg       = new(0.08f, 0.08f, 0.08f, 0.85f);
 	private static readonly Color _bossGold     = new(0.95f, 0.70f, 0.05f, 1f);
 	private static readonly Color _borderColor  = new(0.25f, 0.25f, 0.25f, 1f);
+	private static readonly Color _heartFull    = new(0.95f, 0.18f, 0.22f, 1f);
+	private static readonly Color _heartEmpty   = new(0.22f, 0.22f, 0.26f, 0.55f);
 
 	public override void _Ready()
 	{
@@ -26,6 +29,7 @@ public partial class HUDController : CanvasLayer
 		_heavyAttackBar = GetNodeOrNull<ProgressBar>("HeavyAttackCooldownBar");
 		_bossHealthBar  = GetNodeOrNull<ProgressBar>("BossHealthBar");
 		_bossR1Hint     = GetNodeOrNull<Label>("BossR1Hint");
+		_livesRow       = GetNodeOrNull<HBoxContainer>("LivesRow");
 
 		SetupLayout();
 		StyleHealthBar();
@@ -40,7 +44,43 @@ public partial class HUDController : CanvasLayer
 
 		var hc = _player.GetNode<HealthComponent>("HealthComponent");
 		hc.HealthChanged += UpdateHealthBar;
+		hc.LivesChanged += OnLivesChanged;
 		UpdateHealthBar(hc.GetCurrentHealth(), hc.MaxHealth);
+		UpdateLivesDisplay(hc.GetCurrentLives(), hc.MaxLives);
+	}
+
+	private void OnLivesChanged(int currentLives, int maxLives)
+	{
+		UpdateLivesDisplay(currentLives, maxLives);
+	}
+
+	/// <summary>
+	/// Näyttää elämät sydäminä (♥). Myöhemmin voi korvata TextureRect-kuvilla.
+	/// </summary>
+	private void UpdateLivesDisplay(int currentLives, int maxLives)
+	{
+		if (_livesRow == null) return;
+
+		while (_livesRow.GetChildCount() > 0)
+		{
+			Node c = _livesRow.GetChild(0);
+			_livesRow.RemoveChild(c);
+			c.Free();
+		}
+
+		maxLives = Mathf.Max(1, maxLives);
+		currentLives = Mathf.Clamp(currentLives, 0, maxLives);
+
+		for (int i = 0; i < maxLives; i++)
+		{
+			var heart = new Label
+			{
+				Text = "♥",
+			};
+			heart.AddThemeFontSizeOverride("font_size", 24);
+			heart.AddThemeColorOverride("font_color", i < currentLives ? _heartFull : _heartEmpty);
+			_livesRow.AddChild(heart);
+		}
 	}
 
 	// ─── Layout: sijainnit ruudulla ───────────────────────────────────────────
