@@ -29,6 +29,11 @@ public partial class JoystickLever : Area3D
 	[Export] public float ActivateTiltDeg  = 35f;
 	[Export] public float TiltDuration     = 0.4f;
 
+	/// <summary>Kuinka kauan vipu pysyy työnnettynä asentoon animaation jälkeen (sekuntia) ennen palautusta.</summary>
+	[Export] public float PushHoldDurationSec = 2f;
+
+	[Export] public float PushReleaseTiltDuration = 0.35f;
+
 	/// <summary>Hidastus kun vipu aktivoidaan (Engine.TimeScale). Palautetaan ajastimella (reaaliaika).</summary>
 	[Export] public float CinematicTimeScale   = 0.4f;
 	[Export] public float CinematicSlowSeconds = 0.36f;
@@ -226,6 +231,11 @@ public partial class JoystickLever : Area3D
 				new Vector3(-ActivateTiltDeg, 0f, 0f), TiltDuration)
 				.SetTrans(Tween.TransitionType.Back)
 				.SetEase(Tween.EaseType.Out);
+			tween.TweenInterval(Mathf.Max(0f, PushHoldDurationSec));
+			tween.TweenProperty(_stickPivot, "rotation_degrees",
+				Vector3.Zero, PushReleaseTiltDuration)
+				.SetTrans(Tween.TransitionType.Cubic)
+				.SetEase(Tween.EaseType.InOut);
 		}
 
 		PlayPushStartAnimation();

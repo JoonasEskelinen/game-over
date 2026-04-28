@@ -56,7 +56,7 @@ Keskeiset vastuut `PlayerController.cs`: liike (myös syvyysakseli kun käytöss
 ## 5. Viholliset ja boss
 
 - **`EnemyLevel1.cs`** / `EnemyLevel1.tscn` — tason vihollinen (esim. susi), purema, torjunta kilvellä (`PlayerController.IsBlockingEffectiveAgainst`).
-- **`BossLevel1.cs`** — level 1 -boss: tanssi-/syöksyfaset, kontaktivahinko, miekan osumat, tanssivalo (SpotLight3D), musiikki; ryhmä **`level1_boss`**.
+- **`BossLevel1.cs`** — level 1 -boss: tanssi-/syöksyfaset, MMA-potku (vahinko vain potkussa), miekan osumat, tanssivalo (SpotLight3D), musiikki; ryhmä **`level1_boss`**.
 - **`EnemySpawner.cs`** — spawnauslogiikka (ryhmä **`enemy`** spawneille).
 
 ---

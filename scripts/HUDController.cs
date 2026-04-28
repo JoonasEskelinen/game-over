@@ -5,6 +5,7 @@ public partial class HUDController : CanvasLayer
 	private ProgressBar _healthBar;
 	private ProgressBar _heavyAttackBar;
 	private ProgressBar _bossHealthBar;
+	private Label _bossBarTitle;
 	private Label _bossR1Hint;
 	private Label _r1Label;
 	private HBoxContainer _livesRow;
@@ -121,10 +122,25 @@ public partial class HUDController : CanvasLayer
 			_bossHealthBar.SetAnchorsPreset(Control.LayoutPreset.TopRight);
 			_bossHealthBar.AnchorLeft   = 1f;
 			_bossHealthBar.AnchorRight  = 1f;
-			_bossHealthBar.Position     = new Vector2(-320, 20);
+			_bossHealthBar.Position     = new Vector2(-320, 36);
 			_bossHealthBar.Size         = new Vector2(300, 26);
 			_bossHealthBar.ShowPercentage = false;
 		}
+
+		_bossBarTitle = new Label
+		{
+			Text = "Boss",
+			Visible = false,
+		};
+		_bossBarTitle.SetAnchorsPreset(Control.LayoutPreset.TopRight);
+		_bossBarTitle.AnchorLeft = 1f;
+		_bossBarTitle.AnchorRight = 1f;
+		_bossBarTitle.Position = new Vector2(-320, 14);
+		_bossBarTitle.Size = new Vector2(300, 20);
+		_bossBarTitle.HorizontalAlignment = HorizontalAlignment.Right;
+		_bossBarTitle.AddThemeFontSizeOverride("font_size", 13);
+		_bossBarTitle.AddThemeColorOverride("font_color", _bossGold);
+		AddChild(_bossBarTitle);
 	}
 
 	// ─── Tyylittelyt ─────────────────────────────────────────────────────────
@@ -209,6 +225,11 @@ public partial class HUDController : CanvasLayer
 			&& boss1.IsInsideTree() && !boss1.IsBossDead)
 		{
 			_bossHealthBar.Visible = true;
+			if (_bossBarTitle != null)
+			{
+				_bossBarTitle.Text = "Boss — Level 1";
+				_bossBarTitle.Visible = true;
+			}
 			int maxHp = Mathf.Max(1, boss1.GetBossMaxHealth());
 			_bossHealthBar.MaxValue = maxHp;
 			_bossHealthBar.Value    = Mathf.Clamp(boss1.GetBossCurrentHealth(), 0, maxHp);
@@ -217,6 +238,11 @@ public partial class HUDController : CanvasLayer
 			&& boss2.IsInsideTree() && !boss2.IsBossDead)
 		{
 			_bossHealthBar.Visible = true;
+			if (_bossBarTitle != null)
+			{
+				_bossBarTitle.Text = "Boss — Level 2";
+				_bossBarTitle.Visible = true;
+			}
 			int maxHp = Mathf.Max(1, boss2.GetBossMaxHealth());
 			_bossHealthBar.MaxValue = maxHp;
 			_bossHealthBar.Value    = Mathf.Clamp(boss2.GetBossCurrentHealth(), 0, maxHp);
@@ -224,6 +250,8 @@ public partial class HUDController : CanvasLayer
 		else
 		{
 			_bossHealthBar.Visible = false;
+			if (_bossBarTitle != null)
+				_bossBarTitle.Visible = false;
 		}
 	}
 

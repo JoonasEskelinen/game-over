@@ -3,7 +3,8 @@ using Godot;
 
 /// <summary>
 /// level_1: lisää propseille yhden BoxShape3D StaticBodyn (ei trimeshäjä — Pi-ystävällinen).
-/// air-hockey2 → RigidBody3D + ryhmä <c>grabbable</c> (PlayerController tarttuu).
+/// air-hockey2: älä lisää editorissa RigidBody3D / CollisionShape3D -lapsia instanssin alle — fysiikka
+/// rakennetaan täällä (AirHockeyRigid + yksi laatikko AABB:sta). Väärä hierarkia = varoitus + päällekkäiset törmäykset.
 ///
 /// GLB-instansseissa on usein oma StaticBody/CollisionShape — jos se jää päälle, pelaaja törmää
 /// sekä siihen että synteettiseen laatikkoon (väärät mitat → “näkymätön seinä” vain toisesta suunnasta).
@@ -24,10 +25,15 @@ public partial class Level1ArcadePhysicsSetup : Node3D
 	[Export] public float AirHockeyLinearDamp = 7f;
 
 	/// <summary>
-	/// Floor-lapsia joiden kohdalla ei lisätä automaattista laatikko-fysiikkaa (koristeet, kapeat käytävät).
-	/// wall2/wall3: muuten koko AABB-laatikko tukkii tanssikoneen puolen ja jumittaa pelaajan + viholliset.
+	/// Air-hockey AABB-laatikon maksimikoko (m) per aksele — jos GLB:ssä on ylimääräinen mesh, AABB voi paisua.
 	/// </summary>
-	[Export] public string[] FloorSkipAutoPhysicsNames = { "wall2", "wall3", "wall-window2" };
+	[Export] public Vector3 AirHockeyCollisionSizeMax = new(3.2f, 0.75f, 1.9f);
+
+	/// <summary>
+	/// Floor-lapsia joiden kohdalla ei lisätä automaattista laatikko-fysiikkaa (koristeet, kapeat käytävät).
+	/// wall2/wall3: nyt normaali AABB-<c>_Phys</c> (layer 1) — läpikävely estetään; bossi väistää kerroksella 16.
+	/// </summary>
+	[Export] public string[] FloorSkipAutoPhysicsNames = { "wall-window2" };
 
 	public override void _Ready()
 	{
@@ -88,6 +94,9 @@ public partial class Level1ArcadePhysicsSetup : Node3D
 		{
 			if (child is MeshInstance3D or CollisionShape3D)
 				continue;
+			// Area3D (esim. JoystickLever): autop-fysiikka kutsuu StripBuiltInCollisionUnder → törmäys nollaan → BodyEntered ei koskaan laukea.
+			if (child is Area3D)
+				continue;
 			var s = child.Name.ToString();
 			if (s is "Player" or "Camera3D" or "WorldEnvironment" or "Sun" or "EnemySpawner" or "HUD" or "Floor")
 				continue;
@@ -147,7 +156,7 @@ public partial class Level1ArcadePhysicsSetup : Node3D
 		rb.AddToGroup("grabbable");
 		parent.AddChild(rb);
 		parent.MoveChild(rb, idx);
-		rb.GlobalTransform = gt;
+		ApplyRigidBodyWithoutInheritedScale(rb, gt);
 		rb.CollisionLayer = ArcadePropCollisionLayer;
 		// Mask = 0: pöytä ei reagoi fysiikalla kenenkään törmäykseen (ei pelaajan eikä muidenkaan).
 		// AxisLockLinearY pitää pöydän korkeudella ilman lattiakollisiota.
@@ -156,6 +165,10 @@ public partial class Level1ArcadePhysicsSetup : Node3D
 		rb.AddChild(airRoot);
 		airRoot.Transform = Transform3D.Identity;
 
+		Vector3 inheritedScale = gt.Basis.Scale;
+		if (inheritedScale.LengthSquared() > 1e-8f)
+			airRoot.Scale = inheritedScale;
+
 		if (!TryUnionVisualAabb(airRoot, out Aabb worldAabb))
 		{
 			var fsz = new Vector3(2.2f, 0.45f, 1.25f);
@@ -163,14 +176,48 @@ public partial class Level1ArcadePhysicsSetup : Node3D
 			worldAabb = new Aabb(fctr - fsz * 0.5f, fsz);
 		}
 
-		var centerW = worldAabb.GetCenter();
+		Vector3 unionFull = worldAabb.Size * 1.02f;
+
+		Vector3 sz = unionFull;
+		sz.X = Mathf.Min(sz.X, Mathf.Max(0.05f, AirHockeyCollisionSizeMax.X));
+		sz.Y = Mathf.Min(sz.Y, Mathf.Max(0.05f, AirHockeyCollisionSizeMax.Y));
+		sz.Z = Mathf.Min(sz.Z, Mathf.Max(0.05f, AirHockeyCollisionSizeMax.Z));
+
+		Vector3 centerW = worldAabb.GetCenter();
+		bool shrankXZ = sz.X + 1e-4f < unionFull.X || sz.Z + 1e-4f < unionFull.Z;
+		if (shrankXZ)
+		{
+			centerW.X = rb.GlobalPosition.X;
+			centerW.Z = rb.GlobalPosition.Z;
+		}
+
 		var col = new CollisionShape3D
 		{
 			Position = rb.ToLocal(centerW),
-			Shape = new BoxShape3D { Size = worldAabb.Size * 1.02f }
+			Shape = new BoxShape3D { Size = sz }
 		};
 		rb.AddChild(col);
 		StripBuiltInCollisionUnder(airRoot);
+	}
+
+	/// <summary>
+	/// Godot skaalaa törmäysmuotoja RigidBodyn transformilla — iso editor-skaala (esim. 2×) tuplaa BoxShapen maailmakoon.
+	/// Puretaan rotaatio + positio RB:lle ja siirretään mittakaava vain visuaalin juureen.
+	/// </summary>
+	private static void ApplyRigidBodyWithoutInheritedScale(RigidBody3D rb, Transform3D globalWithScale)
+	{
+		Vector3 origin = globalWithScale.Origin;
+		Basis b = globalWithScale.Basis;
+		Vector3 sc = b.Scale;
+
+		Basis rotationOnly = Mathf.Max(Mathf.Max(Mathf.Abs(sc.X), Mathf.Abs(sc.Y)), Mathf.Abs(sc.Z)) > 1e-8f
+			? b.Scaled(new Vector3(
+				1f / Mathf.Max(Mathf.Abs(sc.X), 1e-8f),
+				1f / Mathf.Max(Mathf.Abs(sc.Y), 1e-8f),
+				1f / Mathf.Max(Mathf.Abs(sc.Z), 1e-8f)))
+			: Basis.Identity;
+
+		rb.GlobalTransform = new Transform3D(rotationOnly, origin);
 	}
 
 	private void AddStaticBoxForVisual(Node3D visualRoot, Node parent, bool useArcadePropLayer)

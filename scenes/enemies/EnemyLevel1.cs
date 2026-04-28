@@ -18,6 +18,15 @@ public partial class EnemyLevel1 : CharacterBody3D
 	/// <summary>Lisäviive sekunteina GetMeleeStrikeWindowStart()-ajan päälle (säätö).</summary>
 	[Export] public float SwordHitActivationTime = 0f;
 
+	/// <summary>Vain R1: lisäviive osumaikkunan alkuun (esim. 0.06–0.12). R2 käyttää vain SwordHitActivationTime.</summary>
+	[Export] public float RaskasIskuAktivoitumisenLisäviive = 0f;
+
+	/// <summary>R1: max etäisyys teräviivaan (m); laajentaa cleave-rekisteröintiä. 0 = pelaajan oletus.</summary>
+	[Export] public float RaskasIskuLäheisyysYlikirjoitus = 0.72f;
+
+	/// <summary>R1: montako EnemyLevel1:ää voi osua samaan swingiin.</summary>
+	[Export] public int RaskasIskuCleaveKohteet = 2;
+
 	[Export] public float DeathTiltDuration = 0.32f;
 	[Export] public float DeathSlideDuration = 0.24f;
 	[Export] public float DeathShrinkDuration = 0.52f;
@@ -46,8 +55,11 @@ public partial class EnemyLevel1 : CharacterBody3D
 
 	public override void _Ready()
 	{
-		FloorSnapLength = 0.18f;
+		FloorSnapLength = 0.22f;
 		FloorMaxAngle = Mathf.DegToRad(50f);
+		SafeMargin = 0.11f;
+		// Level1ArcadePhysicsSetup: arcade-prop kerros (bitmask 16) + pelaaja + maailma
+		CollisionMask |= 16u;
 
 		_player = GetTree().GetFirstNodeInGroup("player") as Node3D;
 		_playerController = _player as PlayerController;
@@ -121,11 +133,15 @@ public partial class EnemyLevel1 : CharacterBody3D
 			}
 		}
 
-		// Miekan osuman tarkistus (R2 = lyhyt animaatio → ikkuna suhteessa pituuteen; R2-liipasin = reunatunnistus PlayerControllerissa)
+		// Miekan osuma: R2 yksi kohde/swing; R1 cleave — PlayerController.TryClaimEnemyHeavyCleaveHit (max 2)
 		if (_playerController != null && _playerController.IsMeleeAttackActive())
 		{
 			float animTime = _playerController.GetAttackAnimationTime();
 			float hitFrom = _playerController.GetMeleeStrikeWindowStart() + SwordHitActivationTime;
+			bool heavy = _playerController.IsHeavyMeleeAttackActive();
+			if (heavy && RaskasIskuAktivoitumisenLisäviive > 0f)
+				hitFrom += RaskasIskuAktivoitumisenLisäviive;
+
 			if (animTime >= hitFrom && !_hasBeenHitThisSwing)
 			{
 				Vector3 bodyBase = GlobalPosition;
@@ -133,17 +149,29 @@ public partial class EnemyLevel1 : CharacterBody3D
 				if (probes == null || probes.Length == 0)
 					probes = new[] { HitCenterYOffset };
 
+				float proxOverride = heavy && RaskasIskuLäheisyysYlikirjoitus > 0f
+					? RaskasIskuLäheisyysYlikirjoitus
+					: -1f;
+
 				for (int i = 0; i < probes.Length; i++)
 				{
 					Vector3 p = bodyBase + Vector3.Up * probes[i];
-					if (_playerController.CanApplyMeleeHitAtWorldPoint(p)
-						&& _playerController.TryClaimEnemyMeleeHit())
-					{
-						TakeDamage(_playerController.GetMeleeAttackDamage());
-						_playerController.NotifyMeleeHitLanded();
-						_hasBeenHitThisSwing = true;
+					bool can = proxOverride >= 0f
+						? _playerController.CanApplyMeleeHitAtWorldPoint(p, proxOverride)
+						: _playerController.CanApplyMeleeHitAtWorldPoint(p);
+					if (!can)
+						continue;
+
+					bool claimed = heavy
+						? _playerController.TryClaimEnemyHeavyCleaveHit(Mathf.Max(1, RaskasIskuCleaveKohteet))
+						: _playerController.TryClaimEnemyMeleeHit();
+					if (!claimed)
 						break;
-					}
+
+					TakeDamage(_playerController.GetMeleeAttackDamage());
+					_playerController.NotifyMeleeHitLanded();
+					_hasBeenHitThisSwing = true;
+					break;
 				}
 			}
 		}

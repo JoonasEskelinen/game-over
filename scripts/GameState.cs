@@ -15,8 +15,8 @@ public partial class GameState : Node
 	// ─────────────────────────────────────────────
 
 	/// <summary>
-	/// True kun pelaaja on poiminut joystickin level_1:ssä.
-	/// Level 2:sta eteenpäin aktivoi drone-moodin kolmio-painikkeella.
+	/// True kun pelaaja on poiminut joystickin level_1:ssä (tarina / drone level_1:ssä).
+	/// Kolmio → drone vain level_1-scenessä; muilla kentillä kolmio = miekka/kilpi (<see cref="PlayerController"/>).
 	/// </summary>
 	public bool HasJoystick { get; set; } = false;
 

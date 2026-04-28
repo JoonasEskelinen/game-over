@@ -2,9 +2,9 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dsrobhjmikiig"
-path.s3tc="res://.godot/imported/Leaves_GiantPine_C.png-26fe0fb7d10550c1f13f48b1ce59cc29.s3tc.ctex"
-path.etc2="res://.godot/imported/Leaves_GiantPine_C.png-26fe0fb7d10550c1f13f48b1ce59cc29.etc2.ctex"
+uid="uid://by5y0ncuh2o5e"
+path.s3tc="res://.godot/imported/level1_lattia.png-99cb00036d890af556f3bb97a617fee8.s3tc.ctex"
+path.etc2="res://.godot/imported/level1_lattia.png-99cb00036d890af556f3bb97a617fee8.etc2.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
@@ -12,8 +12,8 @@ metadata={
 
 [deps]
 
-source_file="res://assets/models/nature/Textures/Leaves_GiantPine_C.png"
-dest_files=["res://.godot/imported/Leaves_GiantPine_C.png-26fe0fb7d10550c1f13f48b1ce59cc29.s3tc.ctex", "res://.godot/imported/Leaves_GiantPine_C.png-26fe0fb7d10550c1f13f48b1ce59cc29.etc2.ctex"]
+source_file="res://assets/textures/level1_lattia.png"
+dest_files=["res://.godot/imported/level1_lattia.png-99cb00036d890af556f3bb97a617fee8.s3tc.ctex", "res://.godot/imported/level1_lattia.png-99cb00036d890af556f3bb97a617fee8.etc2.ctex"]
 
 [params]
 

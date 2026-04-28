@@ -5,20 +5,23 @@
 [ext_resource type="AudioStream" uid="uid://tu4dplrfkskl" path="res://assets/audio/sfx/puraisu.mp3" id="3_bite_sfx"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_en"]
-radius = 0.38
-height = 1.0449219
+radius = 0.425
+height = 1.17
 
 [node name="EnemyLevel1Susi" type="CharacterBody3D" unique_id=201369442]
 collision_layer = 2
-collision_mask = 3
+collision_mask = 19
 script = ExtResource("1_euuwm")
+AttackRange = 1.2
+HitCenterYOffset = 0.58
+SwordHitActivationTime = 0.1
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1311952832]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.505, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.685, 0)
 shape = SubResource("CapsuleShape3D_en")
 
 [node name="Run" parent="." unique_id=913195360 instance=ExtResource("2_euuwm")]
-transform = Transform3D(1.5, 0, 0, 0, 1.5, 0, 0, 0, 1.5, 0, 0.88, 0)
+transform = Transform3D(1.68, 0, 0, 0, 1.68, 0, 0, 0, 1.68, 0, 0.88, 0)
 
-[node name="BiteSFX" type="AudioStreamPlayer" parent="."]
+[node name="BiteSFX" type="AudioStreamPlayer" parent="." unique_id=62915200]
 stream = ExtResource("3_bite_sfx")

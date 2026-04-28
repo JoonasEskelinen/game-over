@@ -9,15 +9,18 @@ using Godot;
 ///  2. Kun IsBossDead = true, ActivateHole() käynnistyy.
 ///  3. Lattian yhtenäinen BoxShape poistetaan käytöstä.
 ///  4. Tilalle luodaan 4 StaticBody3D-palaa reiän ympärille.
-///  5. Pelaaja voi kävellä reikään → putoaa → Area3D laukaisee scene-vaihdon.
+///  5. Pelaaja voi kävellä reikään → putoaa → Area3D laukaisee latausruudun (spinner + palkki) ja kentän latauksen.
 /// </summary>
 public partial class Level1ExitHole : Node3D
 {
 	/// <summary>Seuraava kenttä — aseta Inspectorista.</summary>
 	[Export] public string NextScene = "res://scenes/levels/level_2.tscn";
 
-	/// <summary>Reiän keskipiste maailmakoordinaateissa (XZ = sijainti, Y = lattian pinta).</summary>
-	[Export] public Vector3 HoleCenter = new(1.44f, 0f, -6.77f);
+	/// <summary>
+	/// Reiän keskipiste <b>ExitHole-noden paikallisissa</b> koordinaateissa (XZ, Y usein 0).
+	/// ExitHole sijoitetaan editorissa reikään — oletus (0,0,0) = noden origo = oikea paikka.
+	/// </summary>
+	[Export] public Vector3 HoleCenter = Vector3.Zero;
 
 	/// <summary>Reiän puolileveys X-suunnassa (metreissä).</summary>
 	[Export] public float HoleHalfX = 1.1f;
@@ -28,6 +31,8 @@ public partial class Level1ExitHole : Node3D
 	// Lattian mitat level_1:ssä (30×30 taso, puolet = 15)
 	private const float FloorHalf = 15f;
 	private const float FloorThick = 0.1f;
+
+	private const string LoadingScreenPath = "res://scenes/ui/loading_screen.tscn";
 
 	private bool _activated;
 	private bool _bossSeenAlive;
@@ -58,14 +63,19 @@ public partial class Level1ExitHole : Node3D
 	// SETUP
 	// ─────────────────────────────────────────────
 
+	private Vector3 GetHoleCenterWorld()
+		=> ToGlobal(HoleCenter);
+
 	private void SetupVisualAndTrigger()
 	{
+		Vector3 holeLocal = HoleCenter;
+
 		// Pimeä "reikä"-mesh lattiatasolla (piilotettu, kunnes aktivoituu)
 		_holeMesh = new MeshInstance3D
 		{
 			Name      = "HoleMesh",
 			Visible   = false,
-			Position  = HoleCenter + Vector3.Up * 0.02f,
+			Position  = holeLocal + Vector3.Up * 0.02f,
 			// QuadMesh on oletuksena XY-tasossa — käännetään XZ-tasoon (näkyy ylhäältä)
 			Rotation  = new Vector3(-Mathf.Pi / 2f, 0f, 0f),
 		};
@@ -87,7 +97,9 @@ public partial class Level1ExitHole : Node3D
 			Name        = "ExitArea",
 			Monitoring  = false,
 			Monitorable = false,
-			Position    = HoleCenter + Vector3.Down * 2f,
+			Position    = holeLocal + Vector3.Down * 2f,
+			// Kaikki fysiikkakerrokset (varmistaa BodyEntered vaikka kerroksia muutetaan)
+			CollisionMask = uint.MaxValue,
 		};
 		_exitArea.BodyEntered += OnBodyEntered;
 		AddChild(_exitArea);
@@ -131,10 +143,11 @@ public partial class Level1ExitHole : Node3D
 		var oldCol = floor.GetNodeOrNull<CollisionShape3D>("CollisionShape3D");
 		if (oldCol != null) oldCol.Disabled = true;
 
-		float hx1 = HoleCenter.X - HoleHalfX;
-		float hx2 = HoleCenter.X + HoleHalfX;
-		float hz1 = HoleCenter.Z - HoleHalfZ;
-		float hz2 = HoleCenter.Z + HoleHalfZ;
+		Vector3 w = GetHoleCenterWorld();
+		float hx1 = w.X - HoleHalfX;
+		float hx2 = w.X + HoleHalfX;
+		float hz1 = w.Z - HoleHalfZ;
+		float hz2 = w.Z + HoleHalfZ;
 		float f   = FloorHalf;
 
 		// Neljä lattiapalaa reiän ympärille (xMin, zMin, leveys, syvyys)
@@ -168,7 +181,25 @@ public partial class Level1ExitHole : Node3D
 	{
 		if (_exiting || body is not PlayerController) return;
 		_exiting = true;
-		GD.Print($"Level1ExitHole: pelaaja putosi reikään → {NextScene}");
-		GetTree().ChangeSceneToFile(NextScene);
+		if (!ResourceLoader.Exists(NextScene))
+		{
+			GD.PrintErr($"Level1ExitHole: seuraavaa kenttää ei löydy: {NextScene}");
+			_exiting = false;
+			return;
+		}
+		GD.Print($"Level1ExitHole: pelaaja putosi reikään → latausruutu → {NextScene}");
+		GameState.Instance.PendingLoadScenePath = NextScene;
+		Error err = GetTree().ChangeSceneToFile(LoadingScreenPath);
+		if (err != Error.Ok)
+		{
+			GD.PrintErr($"Level1ExitHole: loading_screen epäonnistui ({err}) — synkroninen fallback.");
+			GameState.Instance.PendingLoadScenePath = "";
+			Error err2 = GetTree().ChangeSceneToFile(NextScene);
+			if (err2 != Error.Ok)
+			{
+				GD.PrintErr($"Level1ExitHole: ChangeSceneToFile epäonnistui ({err2}): {NextScene}");
+				_exiting = false;
+			}
+		}
 	}
 }

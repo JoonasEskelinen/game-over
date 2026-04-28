@@ -15,7 +15,7 @@ height = 1.0491943
 script = ExtResource("1_rp718")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1116881556]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.52459715, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.641089, 0)
 shape = SubResource("CapsuleShape3D_wocps")
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=1367723426]

@@ -2,9 +2,9 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dsrobhjmikiig"
-path.s3tc="res://.godot/imported/Leaves_GiantPine_C.png-26fe0fb7d10550c1f13f48b1ce59cc29.s3tc.ctex"
-path.etc2="res://.godot/imported/Leaves_GiantPine_C.png-26fe0fb7d10550c1f13f48b1ce59cc29.etc2.ctex"
+uid="uid://dljhthknjgqrf"
+path.s3tc="res://.godot/imported/taustauusi.png-b4fb27d7bb1dd3cd0b5ad35f7682467d.s3tc.ctex"
+path.etc2="res://.godot/imported/taustauusi.png-b4fb27d7bb1dd3cd0b5ad35f7682467d.etc2.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
@@ -12,8 +12,8 @@ metadata={
 
 [deps]
 
-source_file="res://assets/models/nature/Textures/Leaves_GiantPine_C.png"
-dest_files=["res://.godot/imported/Leaves_GiantPine_C.png-26fe0fb7d10550c1f13f48b1ce59cc29.s3tc.ctex", "res://.godot/imported/Leaves_GiantPine_C.png-26fe0fb7d10550c1f13f48b1ce59cc29.etc2.ctex"]
+source_file="res://assets/textures/taustauusi.png"
+dest_files=["res://.godot/imported/taustauusi.png-b4fb27d7bb1dd3cd0b5ad35f7682467d.s3tc.ctex", "res://.godot/imported/taustauusi.png-b4fb27d7bb1dd3cd0b5ad35f7682467d.etc2.ctex"]
 
 [params]
 

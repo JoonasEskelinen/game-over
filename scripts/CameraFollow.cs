@@ -48,14 +48,26 @@ public partial class CameraFollow : Camera3D
 
 	[ExportGroup("Level 1 boss — tanssikamera")]
 	[Export] public bool EnableBossDanceCamera = true;
+	/// <summary>
+	/// Kun true, kamera pysyy olkapää-näkymässä koko bossitaistelun ajan (myös syöksy + potku). Estää vapaa-orbitin.
+	/// </summary>
+	[Export] public bool BossEncounterFramingWholeFight = true;
+	/// <summary>True: kamera pelaajan takaa bossia kohti (stabiili). False: vanha bossin etupuoli kohti pelaajaa (lähelle zoom).</summary>
+	[Export] public bool BossDanceCamFromPlayerShoulder = true;
 	[Export] public float BossDanceLookAtYOffset = 1.35f;
-	/// <summary>Etäisyys bossin ja pelaajan välillä XZ: bossin puolelta (näet kasvot).</summary>
+	/// <summary>Tanssi: etäisyys kohteesta (olkapää: pelaajan pivotista taaksepäin); legacy: bossin etupuoli.</summary>
 	[Export] public float BossDanceCamDistance = 2.15f;
+	/// <summary>Lisäetäisyys kun pelaaja–bossi vaakaetäisyys kasvaa (bossi pysyy ruudussa syöksyssä).</summary>
+	[Export] public float BossEncounterCamExtraPerMeterBeyond = 0.42f;
+	[Export] public float BossEncounterCamExtraStartPlanarM = 4.25f;
+	[Export] public float BossEncounterCamExtraMaxM = 9f;
 	[Export] public float BossDanceCamFrontHeightM = 1.05f;
 	[Export] public float BossDanceCamBlendInSeconds = 0.9f;
 	[Export] public float BossDanceCamBlendOutSeconds = 0.75f;
 	[Export] public float BossDanceCamFollowSpeed = 4.2f;
 	[Export] public bool BossDanceCamIgnoreWallPull = true;
+	/// <summary>Kuinka paljon LookAt painottuu bossiin (1 = täysin bossin keskipistettä kohti).</summary>
+	[Export] public float BossEncounterLookAtBossWeight = 0.88f;
 
 	private Node3D _player;
 	private float _yaw;
@@ -74,6 +86,11 @@ public partial class CameraFollow : Camera3D
 	private float _cinemaBlendOut = 1f;
 
 	private float _bossCloseupBlend;
+
+	/// <summary>Pidä lähestymistä hetken kun tanssi päättyy — vähentää blendin "nykäisyä".</summary>
+	private float _bossCloseupRawWantHold;
+
+	private bool _hadBossEncounterFraming;
 
 	// Screen shake
 	private float _shakeAmplitude;
@@ -246,6 +263,15 @@ public partial class CameraFollow : Camera3D
 		}
 
 		var pivotFollow = _player.GlobalPosition + new Vector3(0f, PivotHeight, 0f);
+
+		if (BossEncounterFramingWholeFight && !SideScrollerLock)
+		{
+			bool enc = ShouldBossEncounterFramingCamera();
+			if (_hadBossEncounterFraming && !enc)
+				SyncOrbitFromWorldCamera(pivotFollow);
+			_hadBossEncounterFraming = enc;
+		}
+
 		if (ClampCameraAboveGround && !SideScrollerLock)
 			ApplyGroundPitchClamp(pivotFollow);
 
@@ -310,7 +336,19 @@ public partial class CameraFollow : Camera3D
 			return;
 		}
 
-		bool wantBossCloseup = ShouldBossCloseupDanceCamera();
+		bool rawWantBossCloseup = BossEncounterFramingWholeFight
+			? ShouldBossEncounterFramingCamera()
+			: ShouldBossCloseupDanceCamera();
+		if (rawWantBossCloseup)
+			_bossCloseupRawWantHold = 0.22f;
+		else if (_bossCloseupRawWantHold > 0f)
+			_bossCloseupRawWantHold = Mathf.Max(0f, _bossCloseupRawWantHold - dt);
+
+		var bossForCloseup = GetTree().GetFirstNodeInGroup("level1_boss") as BossLevel1;
+		if (bossForCloseup != null && GodotObject.IsInstanceValid(bossForCloseup) && bossForCloseup.IsBossDead)
+			_bossCloseupRawWantHold = 0f;
+
+		bool wantBossCloseup = rawWantBossCloseup || _bossCloseupRawWantHold > 0f;
 		float blendStep = dt / Mathf.Max(0.05f, wantBossCloseup ? BossDanceCamBlendInSeconds : BossDanceCamBlendOutSeconds);
 		_bossCloseupBlend = Mathf.MoveToward(_bossCloseupBlend, wantBossCloseup ? 1f : 0f, blendStep);
 		float bossBlendSmooth = _bossCloseupBlend * _bossCloseupBlend * (3f - 2f * _bossCloseupBlend);
@@ -318,22 +356,50 @@ public partial class CameraFollow : Camera3D
 		if (_bossCloseupBlend > 0.001f)
 		{
 			var boss = GetTree().GetFirstNodeInGroup("level1_boss") as BossLevel1;
-			if (boss != null && GodotObject.IsInstanceValid(boss) && boss.IsInsideTree())
+			if (boss != null && GodotObject.IsInstanceValid(boss) && boss.IsInsideTree() && !boss.IsBossDead)
 			{
 				Vector3 lookAtBoss = boss.GlobalPosition + Vector3.Up * BossDanceLookAtYOffset;
 				Vector3 bossRoot = boss.GlobalPosition;
-				Vector3 toPlayer = _player.GlobalPosition - bossRoot;
-				toPlayer.Y = 0f;
-				if (toPlayer.LengthSquared() < 1e-5f)
-				{
-					var bz = boss.GlobalTransform.Basis.Z;
-					toPlayer = new Vector3(-bz.X, 0f, -bz.Z);
-					if (toPlayer.LengthSquared() < 1e-5f)
-						toPlayer = Vector3.Forward;
-				}
-				toPlayer = toPlayer.Normalized();
 
-				Vector3 danceTarget = bossRoot + toPlayer * BossDanceCamDistance + Vector3.Up * BossDanceCamFrontHeightM;
+				Vector3 danceTarget;
+				Vector3 blendedLook;
+
+				if (BossDanceCamFromPlayerShoulder)
+				{
+					Vector3 towardBoss = bossRoot - pivotFollow;
+					towardBoss.Y = 0f;
+					float planarSep = towardBoss.Length();
+					if (planarSep < 1e-4f)
+						towardBoss = Vector3.Forward;
+					else
+						towardBoss /= planarSep;
+
+					float extraBack = Mathf.Clamp(
+						(planarSep - BossEncounterCamExtraStartPlanarM) * BossEncounterCamExtraPerMeterBeyond,
+						0f,
+						BossEncounterCamExtraMaxM);
+					float camDist = BossDanceCamDistance + extraBack;
+
+					danceTarget = pivotFollow - towardBoss * camDist + Vector3.Up * BossDanceCamFrontHeightM;
+					float lookW = Mathf.Clamp(BossEncounterLookAtBossWeight, 0.35f, 1f);
+					blendedLook = pivotFollow.Lerp(lookAtBoss, Mathf.Clamp(bossBlendSmooth * lookW, 0f, 1f));
+				}
+				else
+				{
+					Vector3 toPlayer = _player.GlobalPosition - bossRoot;
+					toPlayer.Y = 0f;
+					if (toPlayer.LengthSquared() < 1e-5f)
+					{
+						var bz = boss.GlobalTransform.Basis.Z;
+						toPlayer = new Vector3(-bz.X, 0f, -bz.Z);
+						if (toPlayer.LengthSquared() < 1e-5f)
+							toPlayer = Vector3.Forward;
+					}
+					toPlayer = toPlayer.Normalized();
+
+					danceTarget = bossRoot + toPlayer * BossDanceCamDistance + Vector3.Up * BossDanceCamFrontHeightM;
+					blendedLook = pivotFollow.Lerp(lookAtBoss, bossBlendSmooth);
+				}
 
 				if (!BossDanceCamIgnoreWallPull && spaceState != null)
 				{
@@ -350,7 +416,6 @@ public partial class CameraFollow : Camera3D
 				}
 
 				Vector3 blendedPos = targetPos.Lerp(danceTarget, bossBlendSmooth);
-				Vector3 blendedLook = pivotFollow.Lerp(lookAtBoss, bossBlendSmooth);
 				float spd = Mathf.Lerp(FollowSpeed, BossDanceCamFollowSpeed, bossBlendSmooth);
 				float td = Mathf.Clamp(spd * dt, 0f, 1f);
 				GlobalPosition = GlobalPosition.Lerp(blendedPos, td);
@@ -378,8 +443,45 @@ public partial class CameraFollow : Camera3D
 		return boss != null && GodotObject.IsInstanceValid(boss) && boss.IsInsideTree() && boss.IsBossCloseupDanceCameraActive;
 	}
 
+	/// <summary>Level 1 -bossi elossa → kehystyskamera (olkapää kohti bossia) koko taistelun.</summary>
+	private bool ShouldBossEncounterFramingCamera()
+	{
+		if (!EnableBossDanceCamera || !IsInsideTree())
+			return false;
+		var boss = GetTree().GetFirstNodeInGroup("level1_boss") as BossLevel1;
+		return boss != null && GodotObject.IsInstanceValid(boss) && boss.IsInsideTree() && !boss.IsBossDead;
+	}
+
 	private bool IsBossDanceCameraBlockingInput()
-		=> _bossCloseupBlend > 0.04f || ShouldBossCloseupDanceCamera();
+	{
+		var boss = GetTree()?.GetFirstNodeInGroup("level1_boss") as BossLevel1;
+		if (BossEncounterFramingWholeFight
+			&& boss != null && GodotObject.IsInstanceValid(boss) && boss.IsInsideTree() && !boss.IsBossDead)
+			return true;
+		// Vanha tila: koko taistelun kehystä ei — vapaa orbit kunnes tanssi-lähikuva (blend) pyytää lukkoa.
+		if (!BossEncounterFramingWholeFight
+			&& boss != null && GodotObject.IsInstanceValid(boss) && boss.IsInsideTree() && !boss.IsBossDead)
+			return false;
+		return _bossCloseupBlend > 0.04f || ShouldBossCloseupDanceCamera();
+	}
+
+	/// <summary>
+	/// Boss-kehyksen jälkeen yaw/pitch/distance vastaavat nykyistä kameraa — vapaa orbit ei hyppää väärään kulmaan.
+	/// </summary>
+	private void SyncOrbitFromWorldCamera(Vector3 pivotFollow)
+	{
+		if (SideScrollerLock)
+			return;
+		Vector3 off = GlobalPosition - pivotFollow;
+		float len = off.Length();
+		if (len < 0.08f)
+			return;
+		Vector3 nd = off / len;
+		_pitch = Mathf.Asin(Mathf.Clamp(nd.Y, -1f, 1f));
+		_yaw = Mathf.Atan2(nd.X, nd.Z);
+		_distance = len;
+		_pitch = Mathf.Clamp(_pitch, _minPitchRad, _maxPitchRad);
+	}
 
 	/// <summary>
 	/// Estää kameran uppoamisen pelattavan pinnan alle: vaatii riittävän pitchin suhteessa maahan pivotin alla.

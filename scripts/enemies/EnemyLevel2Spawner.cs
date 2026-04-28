@@ -36,13 +36,13 @@ public partial class EnemyLevel2Spawner : Node3D
 	/// Pelaajan maailman X josta lähtien ensimmäinen spawn yritetään (kun kapasiteetti riittää).
 	/// Esimerkiksi -90: pelaaja alkaa noin -105 → ensimmäinen kynnys kun px ≥ -90.
 	/// </summary>
-	[Export] public float FirstSpawnAtPlayerX = -90f;
+	[Export] public float FirstSpawnAtPlayerX = -112f;
 
 	/// <summary>
 	/// Jokaisen onnistuneen spawnin jälkeen kynnys kasvaa tämän verran (metriä).
 	/// Pienempi arvo = tiheämmin vihollisia, isompi = harvemmin.
 	/// </summary>
-	[Export] public float SpawnEveryPlayerXMeters = 12f;
+	[Export] public float SpawnEveryPlayerXMeters = 7.5f;
 
 	/// <summary>
 	/// Enintään näin monta EnemyLevel2:ta voi olla elossa yhtä aikaa.
@@ -50,8 +50,8 @@ public partial class EnemyLevel2Spawner : Node3D
 	/// </summary>
 	[Export] public int MaxConcurrentEnemies = 3;
 
-	/// <summary>Spawner ei tee mitään jos pelaajan X on tämän alapuolella (kentän alku).</summary>
-	[Export] public float MinPlayerX = -108f;
+	/// <summary>Spawner ei tee mitään jos pelaajan X on tämän alapuolella (level_2 alku ~-115).</summary>
+	[Export] public float MinPlayerX = -200f;
 
 	/// <summary>Spawner ei tee mitään jos pelaajan X on tämän yläpuolella (esim. bossin eteen).</summary>
 	[Export] public float MaxPlayerX = 168f;

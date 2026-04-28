@@ -107,6 +107,12 @@ public partial class EnemySpawner : Node3D
 		_activated = true;
 		GD.Print("EnemySpawner: vipu aktivoitu — aloitetaan spawnaus!");
 		StartLevelSpawns();
+		// Ensimmäinen EnemyLevel1 heti aktivointihetkellä (aiemmin vasta ensimmäisen intervallin jälkeen).
+		if (_spawned < _enemiesInWave)
+		{
+			SpawnEnemy();
+			_timer = 0f;
+		}
 	}
  
 	/// <summary>

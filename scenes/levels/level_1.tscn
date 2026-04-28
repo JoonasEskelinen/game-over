@@ -1,14 +1,14 @@
 [gd_scene format=3 uid="uid://cgyddrt75cngk"]
 
 [ext_resource type="PackedScene" uid="uid://vbg00ynsdulu" path="res://scenes/characters/player.tscn" id="1_ksju7"]
-[ext_resource type="Texture2D" uid="uid://c1v0i0o5rhg7u" path="res://assets/models/arcade/Textures/variation-a.png" id="1_np2pn"]
 [ext_resource type="Script" uid="uid://cdno0yakghq2r" path="res://scripts/CameraFollow.cs" id="2_6iamk"]
+[ext_resource type="Texture2D" uid="uid://by5y0ncuh2o5e" path="res://assets/textures/level1_lattia.png" id="2_7o3do"]
 [ext_resource type="PackedScene" uid="uid://1xf78ky3rplh" path="res://assets/models/arcade/GLB format/gambling-machine.glb" id="2_wtwp4"]
 [ext_resource type="PackedScene" uid="uid://baxolnjckwfpa" path="res://assets/models/arcade/GLB format/pinball.glb" id="3_iwr0g"]
 [ext_resource type="PackedScene" uid="uid://c2fw452v2jiuy" path="res://assets/models/arcade/GLB format/prize-wheel.glb" id="4_bahl2"]
 [ext_resource type="PackedScene" uid="uid://vkw28m56o8t0" path="res://assets/models/arcade/GLB format/ticket-machine.glb" id="5_np2pn"]
-[ext_resource type="PackedScene" uid="uid://bvk3veg02sla" path="res://assets/models/arcade/GLB format/wall.glb" id="6_v6ha0"]
 [ext_resource type="PackedScene" uid="uid://wih47hpauacs" path="res://assets/models/arcade/GLB format/wall-window.glb" id="7_v6ha0"]
+[ext_resource type="Texture2D" uid="uid://cp4cg8pl2dnba" path="res://assets/models/nature/Textures/Mushrooms.png" id="9_7o3do"]
 [ext_resource type="PackedScene" uid="uid://xskgs3c5lg12" path="res://assets/models/arcade/GLB format/air-hockey.glb" id="9_gmpev"]
 [ext_resource type="PackedScene" uid="uid://c01tows0bq8g8" path="res://assets/models/arcade/GLB format/arcade-machine.glb" id="10_mkypq"]
 [ext_resource type="PackedScene" uid="uid://d4e6qxm7ainkh" path="res://assets/models/arcade/GLB format/basketball-game.glb" id="11_ndtll"]
@@ -41,8 +41,8 @@ fog_light_color = Color(0, 0, 0, 1)
 fog_light_energy = 0.3
 fog_density = 0.05
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_gmpev"]
-albedo_texture = ExtResource("1_np2pn")
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_t4umt"]
+albedo_texture = ExtResource("2_7o3do")
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_6iamk"]
 albedo_color = Color(0.101960786, 0.101960786, 0.18039216, 1)
@@ -59,6 +59,9 @@ size = Vector2(30, 30)
 [sub_resource type="BoxShape3D" id="BoxShape3D_nsrm0"]
 size = Vector3(30, 0.1, 30)
 
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_o7j4k"]
+albedo_texture = ExtResource("9_7o3do")
+
 [sub_resource type="BoxMesh" id="BoxMesh_x42e6"]
 size = Vector3(30, 4, 1)
 
@@ -72,17 +75,26 @@ emission_energy_multiplier = 0.3
 [sub_resource type="BoxShape3D" id="BoxShape3D_6761a"]
 size = Vector3(30, 4, 1)
 
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_31oqk"]
+albedo_texture = ExtResource("9_7o3do")
+
 [sub_resource type="BoxMesh" id="BoxMesh_6iamk"]
 size = Vector3(30, 4, 1)
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_x42e6"]
 size = Vector3(30, 4, 1)
 
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_x7jkp"]
+albedo_texture = ExtResource("9_7o3do")
+
 [sub_resource type="BoxMesh" id="BoxMesh_6761a"]
 size = Vector3(1, 4, 30)
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_sk5k4"]
 size = Vector3(1, 4, 30)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_0qwwm"]
+albedo_texture = ExtResource("9_7o3do")
 
 [sub_resource type="BoxMesh" id="BoxMesh_oc4kc"]
 size = Vector3(1, 4, 30)
@@ -93,9 +105,6 @@ size = Vector3(1, 4, 30)
 [sub_resource type="CylinderShape3D" id="CylinderShape3D_7h2jl"]
 height = 0.8145752
 radius = 0.6352539
-
-[sub_resource type="BoxShape3D" id="BoxShape3D_ndtll"]
-size = Vector3(0.9659363, 1, 0.6466675)
 
 [node name="Level 1" type="Node3D" unique_id=507213679]
 script = ExtResource("18_arcphys")
@@ -117,8 +126,8 @@ sky_mode = 1
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.24640417)
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="Floor" unique_id=289122995]
-transform = Transform3D(0.99999636, 0, 0.0026878037, 0, 1, 0, -0.0026878037, 0, 0.99999636, 0.10478568, -0.2046279, -0.49882483)
-material_override = SubResource("StandardMaterial3D_gmpev")
+transform = Transform3D(0.99999636, 0, 0.0026878037, 0, 1, 0, -0.0026878037, 0, 0.99999636, 0.10655761, -0.2046279, -0.49108768)
+material_override = SubResource("StandardMaterial3D_t4umt")
 mesh = SubResource("PlaneMesh_6iamk")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Floor" unique_id=785900582]
@@ -143,16 +152,10 @@ transform = Transform3D(-2.4993565, 0, -0.05671811, 0, 2.5, 0, 0.05671811, 0, -2
 transform = Transform3D(-2.4993565, 0, -0.05671811, 0, 2.5, 0, 0.05671811, 0, -2.4993565, 1.8417411, -0.18600047, 13.5574)
 
 [node name="prize-wheel2" parent="Floor" unique_id=1555938896 instance=ExtResource("4_bahl2")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.4728622, -0.1543054, 0.45307732)
+transform = Transform3D(0.016248303, 0, 0.999868, 0, 1, 0, -0.999868, 0, 0.016248303, -8.947601, -0.1543054, 3.9154487)
 
 [node name="ticket-machine2" parent="Floor" unique_id=1139679256 instance=ExtResource("5_np2pn")]
 transform = Transform3D(2, 0, 0, 0, 2, 0, 0, 0, 2, -8.691927, -0.15239647, -5.103322)
-
-[node name="wall2" parent="Floor" unique_id=2081416588 instance=ExtResource("6_v6ha0")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.7973862, -0.19098383, 6.1111293)
-
-[node name="wall3" parent="Floor" unique_id=1401809605 instance=ExtResource("6_v6ha0")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4.142742, -0.1893214, 6.0338316)
 
 [node name="wall-window2" parent="Floor" unique_id=741675250 instance=ExtResource("7_v6ha0")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.1287484, 1.8217595, 14.200001)
@@ -162,6 +165,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, -15)
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="Wall_N" unique_id=821299276]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.032266438, 0, 0)
+material_override = SubResource("StandardMaterial3D_o7j4k")
 mesh = SubResource("BoxMesh_x42e6")
 surface_material_override/0 = SubResource("StandardMaterial3D_nsrm0")
 
@@ -172,6 +176,7 @@ shape = SubResource("BoxShape3D_6761a")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 15)
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="Wall_S" unique_id=1981204106]
+material_override = SubResource("StandardMaterial3D_31oqk")
 mesh = SubResource("BoxMesh_6iamk")
 surface_material_override/0 = SubResource("StandardMaterial3D_nsrm0")
 
@@ -182,7 +187,8 @@ shape = SubResource("BoxShape3D_x42e6")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 15, 2, 0)
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="Wall_E" unique_id=682551642]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.3677177, 0.96006536, 1.7809362)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.3677177, -0.0321517, 0.19495678)
+material_override = SubResource("StandardMaterial3D_x7jkp")
 mesh = SubResource("BoxMesh_6761a")
 surface_material_override/0 = SubResource("StandardMaterial3D_nsrm0")
 
@@ -193,6 +199,7 @@ shape = SubResource("BoxShape3D_sk5k4")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -15, 2, 0)
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="Wall_W" unique_id=1402117325]
+material_override = SubResource("StandardMaterial3D_0qwwm")
 mesh = SubResource("BoxMesh_oc4kc")
 surface_material_override/0 = SubResource("StandardMaterial3D_nsrm0")
 
@@ -200,7 +207,7 @@ surface_material_override/0 = SubResource("StandardMaterial3D_nsrm0")
 shape = SubResource("BoxShape3D_s8va5")
 
 [node name="Player" parent="." unique_id=1514760592 instance=ExtResource("1_ksju7")]
-transform = Transform3D(1.1, 0, 0, 0, 1.1, 0, 0, 0, 1.1, 0.014350295, -0.1449435, 1.0009072)
+transform = Transform3D(1.1, 0, 0, 0, 1.1, 0, 0, 0, 1.1, 0.014350295, -0.23748426, 1.0009072)
 Juoksunopeus = 5.5
 HypynAlkuvauhti = 7.0
 SyvyysAlaraja = -14.0
@@ -214,10 +221,12 @@ FollowSpeed = 12.0
 Offset = Vector3(2, 2, 3)
 MinPitchDeg = -45.0
 MaxPitchDeg = 45.0
-BossDanceLookAtYOffset = 1.0
-BossDanceCamDistance = 9.0
-BossDanceCamFrontHeightM = 2.5
-BossDanceCamFollowSpeed = 2.0
+BossDanceLookAtYOffset = 1.15
+BossDanceCamDistance = 3.85
+BossDanceCamFrontHeightM = 1.25
+BossDanceCamBlendInSeconds = 1.05
+BossDanceCamBlendOutSeconds = 1.0
+BossDanceCamFollowSpeed = 5.25
 
 [node name="Neon_pink" type="OmniLight3D" parent="." unique_id=1217758410]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, -14)
@@ -288,7 +297,7 @@ EnemySpawnerPath = NodePath("../EnemySpawner")
 StickPivotPath = NodePath("StickPivot")
 
 [node name="SylinderShape" type="CollisionShape3D" parent="JoystickLever" unique_id=255329468]
-transform = Transform3D(0.99999976, 0, 0, 0, 0.99999976, 0, 0, 0, 0.99999976, 0.078930855, 0.3686772, -0.08163452)
+transform = Transform3D(0.99999976, 0, 0, 0, 0.99999976, 0, 0, 0, 0.99999976, 0.078930855, 0.47032934, -0.06856918)
 shape = SubResource("CylinderShape3D_7h2jl")
 
 [node name="Base" type="Node3D" parent="JoystickLever" unique_id=1477467996]
@@ -302,12 +311,6 @@ transform = Transform3D(-1.3312865, 0, 0.073847674, 0, 1.3333334, 0, -0.07384767
 [node name="air-hockey2" parent="." unique_id=242405273 groups=["grabbable"] instance=ExtResource("9_gmpev")]
 transform = Transform3D(2, 0, 0, 0, 2, 0, 0, 0, 2, 1.4441814, -0.16340801, -6.766844)
 
-[node name="RigidBody3D" type="RigidBody3D" parent="air-hockey2" unique_id=1433117017]
-transform = Transform3D(0.5, 0, 0, 0, 0.5, 0, 0, 0, 0.5, 0.0057348013, 0.081704006, -0.0045564175)
-
-[node name="CollisionShape3D" type="CollisionShape3D" parent="air-hockey2" unique_id=1897500254]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.013919055, 0, 0.011993408)
-shape = SubResource("BoxShape3D_ndtll")
-
 [node name="ExitHole" type="Node3D" parent="." unique_id=-1393629876]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.3557653, 0, -6.6856647)
 script = ExtResource("21_exithole")

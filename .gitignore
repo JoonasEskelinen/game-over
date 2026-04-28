@@ -1,4 +1,57 @@
-# Godot 4+ specific ignores
+# Godot 4+ – editori ja välimuisti
 .godot/
+
+# Godot / export – isot binäärit ja paketit
+export/
+builds/
+dist/
+out/
+*.exe
+*.pck
+*.x86_64
+*.arm64
+*.app/
+*.dmg
+*.apk
+*.aab
+*.ipa
+*.msix
+*.tpz
+
+# Android Gradle -projekti (voi kasvaa isoksi)
 /android/
+
+# Projektikohtainen
 /versiot/
+
+# Vanha Godot 3 -tyylinen import-cache (jos esiintyy)
+.import/
+
+# C# / .NET – build-tulosteet (Godot C# -projekti)
+**/bin/
+**/obj/
+.vs/
+
+# Väliaikaiset tiedostot
+*.tmp
+*.bak
+*.swp
+*~
+
+# Käyttöjärjestelmä
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE
+.vscode/
+.idea/
+*.suo
+*.user
+*.userprefs
+
+# Steamworks SDK (lisää paikallisesti, älä commitoi)
+steamworks_sdk/
+steam_api.dll
+steam_api64.dll
+libsteam_api.so

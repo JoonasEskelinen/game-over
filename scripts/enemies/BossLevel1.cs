@@ -1,14 +1,15 @@
+using System;
 using Godot;
 
 /// <summary>
-/// Level 1 -bossi: tanssi (satunnainen kesto) → latautuu reunalle → syöksy pelaajaa kohti → takaisin tanssipisteeseen.
+/// Level 1 -bossi: tanssi → syöksy (kierto kentällä → linjaus + MMA-potku) → takaisin tanssiin.
 /// FBX-polut säädetään Inspectorissa (Mixamo: dance with skin, fast run without skin).
 /// 
 /// BOSSIN KÄYTTÄYTYMINEN:
 /// 1. Dancing-vaihe: bossi tanssii paikallaan satunnaisen ajan
-/// 2. Charging-vaihe: bossi teleporttaa areenan reunalle ja syöksyy pelaajaa kohti
+/// 2. Charging-vaihe: reunalle → kierto kentällä (tangentaali + vaihteleva suunta) → linjaus pelaajaan → MMA-potku
 /// 3. Bossi voi ottaa vahinkoa vain tanssiessaan (vahva isku R1 tappaa)
-/// 4. osuma.fbx R1-osumalla; syöksyssä Mma Kick kun etäisyys pelaajaan ≤ MmaPotkuLaukaisuEtäisyys → tanssiin takaisin
+/// 4. osuma.fbx R1-osumalla; MMA-potku vain linjausvaiheessa kun etäisyys riittää — ainoa vahinko pelaajalle syöksyssä (1 HP).
 /// </summary>
 public partial class BossLevel1 : CharacterBody3D
 {
@@ -45,8 +46,50 @@ public partial class BossLevel1 : CharacterBody3D
 
 	[Export] public string MmaPotkuKlipinNimi = "mma_kick";
 
-	/// <summary>Vaakasuora etäisyys (m): MMA-potku käynnistyy kun bossi on tätä lähempänä pelaajaa.</summary>
-	[Export] public float MmaPotkuLaukaisuEtäisyys = 2.0f;
+	/// <summary>Vaakasuora etäisyys (m): MMA kun <c>dist &lt;= tämä</c> (CharacterBody-juurien XZ). Suuren kapselin kanssa ~2.5–3.2.</summary>
+	[Export] public float MmaPotkuLaukaisuEtäisyys = 2.38f;
+
+	/// <summary>Vähintään näin monta metriä juoksua <b>sulkemisvaiheessa</b> ennen MMA-potkun sallintaa.</summary>
+	[Export] public float MmaPotkuVähintäänJuostuMetriä = 0.22f;
+
+	/// <summary>Sulku-vaiheessa vähintään näin monta sekuntia (vaihtoehto minijuoksulle) — korjaa “jo vieressä” -jumin.</summary>
+	[Export] public float MmaPotkuMinSulkuAikaEnnenPotkua = 0.2f;
+
+	/// <summary>“Lähes potkuetäisyys” — minSulku voidaan täyttää nopeammin kun ollaan tämän sisällä.</summary>
+	[Export] public float MmaPotkuLaukaisuLöysäMarginaaliM = 0.5f;
+
+	/// <summary>Jos syöksyä on jäljellä korkeintaan tämän verran (vain sulkemisvaihe), potku ilman minimijuoksua.</summary>
+	[Export] public float MmaPotkuPakkoIlmanMinJuoksuaKunSyöksyAJäljellä = 1.15f;
+
+	/// <summary>MMA-potku FBX:n pituus fallback (s) jos klipin pituus on 0.</summary>
+	[Export] public float MmaPotkuFallbackPituusSekuntia = 1.35f;
+
+	/// <summary>MMA Potku Play()-blend sekunteina juoksusta.</summary>
+	[Export] public float MmaPotkuBlendSekunteina = 0.18f;
+
+	/// <summary>Kierto: vaakasuunnassa juostu minimi ennen pelaajaan linjausta (metriä).</summary>
+	[Export] public float SyöksyKiertoMinJuostuMetriä = 4.5f;
+
+	/// <summary>Kierto: pakota linjausviive viimeistään näin monta sekuntia (vähentää jumitusta reunalla).</summary>
+	[Export] public float SyöksyKiertoPakotaSulkemisSekunnissa = 4f;
+
+	/// <summary>Kierto: tangentti vs pelaajaan (0–1). Korkea = enemmän ympyrää kentällä.</summary>
+	[Export] public float SyöksyKiertoOrbitPaino = 0.78f;
+
+	/// <summary>Kierto: veto kohti pelaajaa — hieman sisään kierteelle (0–1, täydentää orbitPainoa).</summary>
+	[Export] public float SyöksyKiertoPelaajaanVeto = 0.17f;
+
+	/// <summary>Sulkeminen (pelaajaan): jäljellä orbit-sekoitus esteiden kiertoon.</summary>
+	[Export] public float SyöksySulkuOrbitPaino = 0.02f;
+
+	/// <summary>Kierto: jos pelaaja on näin lähellä vaakatasossa, siirry sulkuun aikaisin (säästää “tyhjää ympyrää”).</summary>
+	[Export] public float SyöksySulkuPakotaKunPelaajaVaakaAlleM = 6.25f;
+
+	/// <summary>Kierto: vähintään näin monta s ennen sulkupakotusta lähellä-pelaajaa -säännöllä.</summary>
+	[Export] public float SyöksySulkuPakotaKierronJälkeenSekuntia = 0.32f;
+
+	/// <summary>Kiertokeskus XZ-maailmassa (yleensä 0,0 — sama kuin areenan reunat).</summary>
+	[Export] public Vector2 SyöksyKiertoKeskipisteXZ = Vector2.Zero;
 
 	/// <summary>Maksimi-HP — oletus 30 = 10 osumaa × R1-vahinko (3) tanssi-/otteluvaiheessa.</summary>
 	[Export] public int BossMaksimiTerveys = 30;
@@ -63,19 +106,23 @@ public partial class BossLevel1 : CharacterBody3D
 	[Export] public float ViiveTanssinJälkeenSekuntia = 1.0f;
 
 	/// <summary>Syöksyn nopeus.</summary>
-	[Export] public float SyöksyNopeus = 12f;
+	[Export] public float SyöksyNopeus = 10.5f;
 
 	/// <summary>Syöksyn maksimikesto — jos pelaajaa ei tavoiteta, palataan tanssimaan.</summary>
-	[Export] public float SyöksyMaksimiKestoSekuntia = 3.2f;
+	[Export] public float SyöksyMaksimiKestoSekuntia = 4.6f;
+
+	/// <summary>Juoksuklipin SpeedScale syöksyvaiheessa (&lt; 1 = hitaampi animaatio, sama liikenopeus).</summary>
+	[Export] public float JuoksuClipSpeedScaleLatauksessa = 0.68f;
 
 	/// <summary>Areenan puolisäde — syöksyn spawnauspisteet ovat tämän etäisyydellä keskipisteestä.</summary>
 	[Export] public float AreenanReunanPuolikas = 13.5f;
 
-	/// <summary>Kontaktivahingon määrä syöksyn aikana.</summary>
-	[Export] public float SyöksyTörmäysVahinko = 1;
+	/// <summary>Syöksyssä: törmäysmaski (lattia + pelaaja + arcade-prop kerros). Boss kiertää esineitä.</summary>
+	[Export] public uint SyöksyTörmäysMaski = 19u;
 
-	/// <summary>Aika sekunteina ennen kuin kontaktivahinko voi toistua.</summary>
-	[Export] public float SyöksyTörmäysJäähdytys = 2.5f;
+	[Export] public float SyöksyEsteSäde = 2.35f;
+
+	[Export] public float SyöksyEsteSäteenAlkuY = 0.65f;
 
 	/// <summary>Osumakeskipisteen korkeus Y-akselilla.</summary>
 	[Export] public float OsumaKeskusOffsetY = 0.9f;
@@ -100,17 +147,26 @@ public partial class BossLevel1 : CharacterBody3D
 	/// Mixamon FBX on usein ~100x liian pieni — oletus ~1,5× aiemmasta (150).
 	/// Aseta 1 jos haluat säilyttää scenen lapsen skaalan sellaisenaan.
 	/// </summary>
-	[Export] public float BossVisuaalinenSkaala = 150f;
+	[Export] public float BossVisuaalinenSkaala = 158f;
 
-	/// <summary>Laske koko hahmoa näin paljon spawnin jälkeen (m) — kun FBX-jalat eivät osu juureen.</summary>
-	[Export] public float LisäSeisomaAlennusY = 0f;
+	/// <summary>Laske koko hahmoa näin paljon spawnin jälkeen (m) — kun FBX-jalat eivät osu juureen. Negatiivinen nostaa.</summary>
+	[Export] public float LisäSeisomaAlennusY = 0.06f;
 
 	/// <summary>Uudelleenlattiasnap _Ready:ssä (sulkee oman colliderin pois säteestä).</summary>
 	[Export] public bool JalatMaahanValmiudessa = true;
 
 	[Export] public float JalatMaahanSädeAlkuYlös = 14f;
 	[Export] public float JalatMaahanSädePituusAlas = 24f;
-	[Export] public float JalatMaahanOffsetLattiasta = 0.06f;
+	/// <summary>Fallback-korjaus juureen, jos visuaalin AABB:ia ei lasketa.</summary>
+	[Export] public float JalatMaahanOffsetLattiasta = 0.11f;
+
+	/// <summary>
+	/// True: lattia koskettaa visuaalin matalinta pistettä (suositus Mixamo-origolle hip-korkeudella).
+	/// </summary>
+	[Export] public bool JalatMaahanKäytäVisuaalinAlareunaa = true;
+
+	/// <summary>Pieni ilma visuaalin alapinnan ja lattian väliin (metriä).</summary>
+	[Export] public float JalatMaahanVisuaaliLattiaVälys = 0.02f;
 
 	/// <summary>Level 1 -bossin taustamusiikki (loop) koko eliniän — tiedosto: musiclevel1.mp3.</summary>
 	[Export] public string BossMusiikkiPolku = "res://assets/audio/music/musiclevel1.mp3";
@@ -178,8 +234,9 @@ public partial class BossLevel1 : CharacterBody3D
 	/// <summary>True kun bossi tanssii — vain tällöin vahva isku (R1) voi osua (ei post-tanssi-viivettä).</summary>
 	public bool IsDanceVulnerable => !_isDead && _phase == BossPhase.Dancing && !_waitingAfterDance;
 
-	/// <summary>True vain tanssilaskurin aikana — lähipiirikamera (ei post-tanssi-viivettä).</summary>
-	public bool IsBossCloseupDanceCameraActive => !_isDead && _phase == BossPhase.Dancing && !_waitingAfterDance && _danceTimeLeft > 0f;
+	/// <summary>Lähipiirikamera vain aktiivisen tanssilaskurin aikana — ei post-tanssi-viiveellä (kamera ehtii palata ennen syöksyä).</summary>
+	public bool IsBossCloseupDanceCameraActive =>
+		!_isDead && _phase == BossPhase.Dancing && !_waitingAfterDance && _danceTimeLeft > 0f && !_hitReactPlaying;
 
 	public bool IsBossDead => _isDead;
 
@@ -196,6 +253,14 @@ public partial class BossLevel1 : CharacterBody3D
 
 	private BossPhase _phase = BossPhase.Dancing;
 
+	/// <summary>Syöksy: ensin kierto kentällä, sitten linjaus + potku.</summary>
+	private enum ChargeRoutePhase { Circuit, Closing }
+
+	private ChargeRoutePhase _chargeRoutePhase = ChargeRoutePhase.Circuit;
+
+	/// <summary>Syöksy- / MMA-vaihe — tanssilähikuva ei saa blendata tähän (kameran pomppu).</summary>
+	public bool IsChargingPhase => !_isDead && _phase == BossPhase.Charging;
+
 	/// <summary>Jäljellä oleva tanssinäytösaika.</summary>
 	private float _danceTimeLeft;
 
@@ -207,9 +272,10 @@ public partial class BossLevel1 : CharacterBody3D
 	/// <summary>Jäljellä oleva syöksyaika.</summary>
 	private float _chargeTimeLeft;
 
-	/// <summary>Kontaktivahingon ajastin — estää liian tiheän vahingon.</summary>
-	private float _chargeContactCd;
+	/// <summary>Hidas eteneminen syöksyssä — kertyy kun vaakanopeus putoaa (seinä / pelaaja).</summary>
+	private float _chargeStuckTimer;
 
+	/// <summary>Kontaktivahingon ajastin — estää liian tiheän vahingon.</summary>
 	private Node3D _player;
 	private PlayerController _playerController;
 	private AnimationPlayer _animationPlayer;
@@ -249,6 +315,24 @@ public partial class BossLevel1 : CharacterBody3D
 	private bool _chargingKickActive;
 
 	private bool _kickTriggeredThisCharge;
+
+	/// <summary>Syöksy: kiertosuunta (±1) — vaihtelee syöksyittäin.</summary>
+	private float _chargeOrbitSign = 1f;
+
+	/// <summary>Kiertovaiheessa kertynyt juoksumatka (m).</summary>
+	private float _circuitPlanarMeters;
+
+	/// <summary>Linjausvaiheessa kertynyt juoksumatka (m) — MMA-potku vain tästä.</summary>
+	private float _closingPlanarMeters;
+
+	/// <summary>Kiertovaiheen kulunut aika (pakotettuun linjaukseen).</summary>
+	private float _circuitElapsed;
+
+	/// <summary>Linjausvaiheessa kulunut aika — mahdollistaa potkun ilman pitkää sulku-matkaa.</summary>
+	private float _closingElapsed;
+
+	/// <summary>Jos AnimationFinished ei laukea, ajastin päättää potkun.</summary>
+	private bool _mmaKickFallbackPending;
 
 	// ─────────────────────────────────────────────
 	// ALUSTUS
@@ -309,6 +393,19 @@ public partial class BossLevel1 : CharacterBody3D
 
 		LoadAnim(OsumaReaktioFbxPolku, MixamoAnimaatioLähdeNimi, OsumaKlipinNimi, loop: false);
 		LoadAnim(MmaPotkuFbxPolku, MixamoAnimaatioLähdeNimi, MmaPotkuKlipinNimi, loop: false);
+		if (_animationPlayer.HasAnimation(JuoksuKlipinNimi) && _animationPlayer.HasAnimation(MmaPotkuKlipinNimi))
+			AlignAnimationPathsFromTemplate(
+				_animationPlayer.GetAnimation(JuoksuKlipinNimi),
+				_animationPlayer.GetAnimation(MmaPotkuKlipinNimi));
+
+		if (!_animationPlayer.HasAnimation(MmaPotkuKlipinNimi))
+			GD.PrintErr($"BossLevel1: MMA-potkuklippi '{MmaPotkuKlipinNimi}' puuttuu — tarkista FBX ({MmaPotkuFbxPolku}).");
+		else
+		{
+			float kl = (float)_animationPlayer.GetAnimation(MmaPotkuKlipinNimi).Length;
+			if (kl <= 0.02f)
+				GD.PrintErr($"BossLevel1: MMA-potkuklipin pituus ~0 — käytetään fallback {MmaPotkuFallbackPituusSekuntia:F2}s.");
+		}
 
 		_animationPlayer.AnimationFinished += OnBossAnimationFinished;
 
@@ -400,7 +497,6 @@ public partial class BossLevel1 : CharacterBody3D
 			TrySnapFeetToWorldFloor();
 		if (!Mathf.IsZeroApprox(LisäSeisomaAlennusY))
 			ShiftStandAndPosition(-LisäSeisomaAlennusY);
-			GD.Print($"[BossSnap] GlobalPosition.Y after snap = {GlobalPosition.Y:F3}");
 	}
 
 	private void ShiftStandAndPosition(float deltaY)
@@ -412,6 +508,23 @@ public partial class BossLevel1 : CharacterBody3D
 	}
 
 	/// <summary>Lattia-säde juuren XZ:stä; oma RID pois jotta isokapseli ei osu itseensä.</summary>
+	/// <summary>
+	/// Syöksy: estä hahmon kellunta (lokit: rootY >> _floorY juoksun aikana tasolla).
+	/// </summary>
+	private void SnapChargeBodyToFloor()
+	{
+		// Potkun root-liike voi nostaa Y:ää — silti kiinnitetään lattiaan ettei "leiju" ilmassa.
+		if (!_chargingKickActive && Velocity.Y > 0.4f)
+			return;
+		float dy = GlobalPosition.Y - _floorY;
+		if (dy <= 0.09f)
+			return;
+		var p = GlobalPosition;
+		p.Y = _floorY;
+		GlobalPosition = p;
+		Velocity = new Vector3(Velocity.X, Mathf.Min(0f, Velocity.Y), Velocity.Z);
+	}
+
 	private void TrySnapFeetToWorldFloor()
 	{
 		if (!IsInsideTree())
@@ -432,8 +545,47 @@ public partial class BossLevel1 : CharacterBody3D
 			return;
 
 		float floorY = ((Vector3)hit["position"]).Y;
+		float pad = Mathf.Max(0f, JalatMaahanVisuaaliLattiaVälys);
+
+		if (JalatMaahanKäytäVisuaalinAlareunaa && TryGetBossVisualLowestWorldY(out float lowestWorldY))
+		{
+			float delta = (floorY + pad) - lowestWorldY;
+			if (Mathf.Abs(delta) > 1e-4f)
+				ShiftStandAndPosition(delta);
+			return;
+		}
+
 		float targetRootY = floorY + JalatMaahanOffsetLattiasta;
 		ShiftStandAndPosition(targetRootY - GlobalPosition.Y);
+	}
+
+	/// <summary>Meshien maailma-AABB:n matalin Y (jalkapohjat likimäärin).</summary>
+	private bool TryGetBossVisualLowestWorldY(out float lowestY)
+	{
+		lowestY = float.MaxValue;
+		var visual = GetNodeOrNull<Node3D>("BossVisual");
+		if (visual == null || !visual.IsInsideTree())
+			return false;
+
+		foreach (Node n in visual.FindChildren("*", "MeshInstance3D", true, false))
+		{
+			if (n is not MeshInstance3D mi || !mi.Visible || mi.Mesh == null)
+				continue;
+			Aabb local = mi.GetAabb();
+			Transform3D xf = mi.GlobalTransform;
+			for (int i = 0; i < 8; i++)
+			{
+				Vector3 c = local.Position + new Vector3(
+					(i & 1) != 0 ? local.Size.X : 0f,
+					(i & 2) != 0 ? local.Size.Y : 0f,
+					(i & 4) != 0 ? local.Size.Z : 0f);
+				Vector3 w = xf * c;
+				if (w.Y < lowestY)
+					lowestY = w.Y;
+			}
+		}
+
+		return lowestY < float.MaxValue - 1f;
 	}
 
 	// ─────────────────────────────────────────────
@@ -586,9 +738,6 @@ public partial class BossLevel1 : CharacterBody3D
 
 		float dt = (float)delta;
 
-		// Lasketaan kontaktivahingon ajastin
-		if (_chargeContactCd > 0f) _chargeContactCd -= dt;
-
 		// Haetaan pelaaja uudelleen jos kadonnut
 		if (_player == null || !GodotObject.IsInstanceValid(_player))
 		{
@@ -609,6 +758,16 @@ public partial class BossLevel1 : CharacterBody3D
 		// Tarkistetaan osuuko pelaajan miekka
 		TrySwordHits();
 		MoveAndSlide();
+
+		if (_phase == BossPhase.Charging && !_isDead)
+		{
+			SnapChargeBodyToFloor();
+			if (!_chargingKickActive && !_hitReactPlaying)
+			{
+				TryChargeSeparationUnstick(dt);
+				ResistPlayerShoveAfterSlide();
+			}
+		}
 
 		// Jolt-fysiikka voi depenetroida bossit irti pelaajasta MoveAndSlide():ssa
 		// vaikka Velocity=Zero — lukitaan positio uudestaan tanssivaiheen jälkeen.
@@ -727,43 +886,169 @@ public partial class BossLevel1 : CharacterBody3D
 		_phase = BossPhase.Charging;
 		_chargingKickActive = false;
 		_kickTriggeredThisCharge = false;
-		// Syöksy: vain kerros 1 (lattia + pelaaja) — ei arcade-proppeja (kerros 5).
-		CollisionMask = 1;
+		_chargeRoutePhase = ChargeRoutePhase.Circuit;
+		_circuitPlanarMeters = 0f;
+		_closingPlanarMeters = 0f;
+		_circuitElapsed = 0f;
+		_closingElapsed = 0f;
+		_mmaKickFallbackPending = false;
+		_chargeOrbitSign = GD.Randf() < 0.5f ? 1f : -1f;
+		// Lattia + pelaaja + arcade-prop (Level1ArcadePhysicsSetup) — MoveAndSlide kiertää esineitä.
+		CollisionMask = SyöksyTörmäysMaski;
 
-		// Teleportataan satunnaiselle reunalle
-		Vector3 edge = PickRandomArenaEdge();
+		// Teleportataan reunalle pelaajan suuntaan (maailman origo = areenan keskipiste, sama kuin reunatarkistus)
+		Vector3 edge = PickArenaEdgeTowardPlayerOrRandom();
 		edge.Y = _floorY;
 		GlobalPosition = edge;
 
-		// Käännetään pelaajaa kohti
-		if (_player != null && GodotObject.IsInstanceValid(_player) && _player.IsInsideTree())
-		{
-			var look = _player.GlobalPosition with { Y = GlobalPosition.Y };
-			if (GlobalPosition.DistanceTo(look) > 0.05f)
-			{
-				LookAt(look, Vector3.Up);
-				RotateY(Mathf.Pi);
-			}
-		}
+		FaceTowardPlayerFlat();
 
-		// Vaihdetaan juoksuanimaatioon
+		// Vaihdetaan juoksuanimaatioon (hitaampi klippi = luettavampi syöksy)
 		if (_animationPlayer.HasAnimation(JuoksuKlipinNimi))
-			_animationPlayer.Play(JuoksuKlipinNimi);
-
-		// Lasketaan syöksyn suunta pelaajaa kohti
-		Vector3 dir = Vector3.Zero;
-		if (_player != null && GodotObject.IsInstanceValid(_player))
 		{
-			dir = _player.GlobalPosition - GlobalPosition;
-			dir.Y = 0f;
-			if (dir.LengthSquared() > 1e-5f) dir = dir.Normalized();
+			_animationPlayer.Play(JuoksuKlipinNimi);
+			_animationPlayer.SpeedScale = Mathf.Clamp(JuoksuClipSpeedScaleLatauksessa, 0.15f, 1.5f);
 		}
-		if (dir.LengthSquared() < 1e-5f)
-			dir = -GlobalTransform.Basis.Z;
 
+		Vector3 dir = ComputeChargeSteerPlanar();
 		float vy = IsOnFloor() ? 0f : Velocity.Y;
 		Velocity = new Vector3(dir.X * SyöksyNopeus, vy, dir.Z * SyöksyNopeus);
 		_chargeTimeLeft = SyöksyMaksimiKestoSekuntia;
+		_chargeStuckTimer = 0f;
+	}
+
+	/// <summary>
+	/// Vaakasuuntainen ohjaus: kiertovaiheessa tangentti kentän keskipisteen ympärillä; linjauksessa kohti pelaajaa.
+	/// </summary>
+	private Vector3 ComputeChargeSteerPlanar()
+	{
+		Vector3 toPlayer = GetChargeToPlayerFlatNormalized();
+
+		return _chargeRoutePhase == ChargeRoutePhase.Circuit
+			? AdjustChargeDirForObstacles(ComputeCircuitSteerPlanar(toPlayer))
+			: AdjustChargeDirForObstacles(ComputeClosingSteerPlanar(toPlayer));
+	}
+
+	private Vector3 GetChargeToPlayerFlatNormalized()
+	{
+		Vector3 toPlayer = Vector3.Zero;
+		if (_player != null && GodotObject.IsInstanceValid(_player) && _player.IsInsideTree())
+		{
+			toPlayer = _player.GlobalPosition - GlobalPosition;
+			toPlayer.Y = 0f;
+			if (toPlayer.LengthSquared() > 1e-5f)
+				return toPlayer.Normalized();
+		}
+
+		var b = -GlobalTransform.Basis.Z;
+		b.Y = 0f;
+		return b.LengthSquared() > 1e-6f ? b.Normalized() : Vector3.Forward;
+	}
+
+	private Vector3 ComputeCircuitSteerPlanar(Vector3 toPlayer)
+	{
+		Vector3 posXz = new(GlobalPosition.X, 0f, GlobalPosition.Z);
+		Vector3 centerXz = new(SyöksyKiertoKeskipisteXZ.X, 0f, SyöksyKiertoKeskipisteXZ.Y);
+		Vector3 radial = posXz - centerXz;
+		radial.Y = 0f;
+
+		Vector3 orbitArena;
+		if (radial.LengthSquared() > 0.06f)
+			orbitArena = radial.Cross(Vector3.Up).Normalized() * _chargeOrbitSign;
+		else
+			orbitArena = toPlayer.Cross(Vector3.Up).Normalized() * _chargeOrbitSign;
+
+		float wobble = Mathf.Sin(_circuitElapsed * 2.1f + _chargeOrbitSign * 1.7f) * 0.38f;
+		orbitArena = orbitArena.Rotated(Vector3.Up, wobble).Normalized();
+
+		Vector3 orbitPlayer = toPlayer.Cross(Vector3.Up).Normalized() * (-_chargeOrbitSign);
+		Vector3 tangentBlend = orbitArena.Lerp(orbitPlayer, 0.35f).Normalized();
+
+		float orb = Mathf.Clamp(SyöksyKiertoOrbitPaino, 0f, 1f);
+		float pull = Mathf.Clamp(SyöksyKiertoPelaajaanVeto, 0f, 1f);
+		float sum = orb + pull;
+		if (sum > 1f)
+		{
+			orb /= sum;
+			pull /= sum;
+		}
+
+		Vector3 mix = tangentBlend * orb + toPlayer * pull;
+		if (mix.LengthSquared() < 1e-6f)
+			mix = tangentBlend;
+		else
+			mix = mix.Normalized();
+
+		return mix;
+	}
+
+	private Vector3 ComputeClosingSteerPlanar(Vector3 toPlayer)
+	{
+		Vector3 posXz = new(GlobalPosition.X, 0f, GlobalPosition.Z);
+		Vector3 centerXz = new(SyöksyKiertoKeskipisteXZ.X, 0f, SyöksyKiertoKeskipisteXZ.Y);
+		Vector3 radial = posXz - centerXz;
+		radial.Y = 0f;
+
+		Vector3 orbit = radial.LengthSquared() > 0.05f
+			? radial.Cross(Vector3.Up).Normalized() * _chargeOrbitSign
+			: toPlayer.Cross(Vector3.Up).Normalized() * _chargeOrbitSign;
+
+		float orbitW = Mathf.Clamp(SyöksySulkuOrbitPaino, 0f, 1f);
+		Vector3 mix = orbit * orbitW + toPlayer * (1f - orbitW);
+		return mix.LengthSquared() < 1e-6f ? toPlayer : mix.Normalized();
+	}
+
+	private Vector3 AdjustChargeDirForObstacles(Vector3 wish)
+	{
+		wish.Y = 0f;
+		if (wish.LengthSquared() < 1e-6f)
+			return wish;
+		wish = wish.Normalized();
+
+		var space = GetWorld3D()?.DirectSpaceState;
+		if (space == null)
+			return wish;
+
+		Vector3 from = GlobalPosition + Vector3.Up * SyöksyEsteSäteenAlkuY;
+		float len = Mathf.Max(0.45f, SyöksyEsteSäde);
+		if (!RayChargeBlocked(space, from, wish, len))
+			return wish;
+
+		float[] probeAngles = { -38f, 38f, -72f, 72f, -20f, 20f, -105f, 105f };
+		foreach (float deg in probeAngles)
+		{
+			Vector3 dir = wish.Rotated(Vector3.Up, Mathf.DegToRad(deg));
+			dir.Y = 0f;
+			if (dir.LengthSquared() < 1e-6f)
+				continue;
+			dir = dir.Normalized();
+			if (!RayChargeBlocked(space, from, dir, len))
+				return dir;
+		}
+
+		Vector3 perp = Vector3.Up.Cross(wish).Normalized();
+		if (!RayChargeBlocked(space, from, perp, len * 0.55f))
+			return perp;
+		perp = -perp;
+		if (!RayChargeBlocked(space, from, perp, len * 0.55f))
+			return perp;
+		return wish;
+	}
+
+	private bool RayChargeBlocked(PhysicsDirectSpaceState3D space, Vector3 from, Vector3 dirXZ, float len)
+	{
+		dirXZ.Y = 0f;
+		if (dirXZ.LengthSquared() < 1e-6f)
+			return true;
+		dirXZ = dirXZ.Normalized();
+		var q = PhysicsRayQueryParameters3D.Create(from, from + dirXZ * len);
+		q.CollisionMask = SyöksyTörmäysMaski;
+		q.CollideWithAreas = false;
+		var ex = new Godot.Collections.Array<Rid> { GetRid() };
+		if (_player is CollisionObject3D pc)
+			ex.Add(pc.GetRid());
+		q.Exclude = ex;
+		return space.IntersectRay(q).Count > 0;
 	}
 
 	// ─────────────────────────────────────────────
@@ -771,7 +1056,7 @@ public partial class BossLevel1 : CharacterBody3D
 	// ─────────────────────────────────────────────
 
 	/// <summary>
-	/// Syöksyvaiheessa bossi seuraa pelaajaa ja vahingoittaa kontaktista.
+	/// Syöksyvaiheessa bossi juoksee (run); vahinko vain MMA-potkussa (<see cref="TryKickContactDamage"/>).
 	/// Palataan tanssimaan kun aika loppuu tai bossi menee ulos areenasta.
 	/// </summary>
 	private void ProcessCharging(float dt)
@@ -794,42 +1079,78 @@ public partial class BossLevel1 : CharacterBody3D
 
 		_chargeTimeLeft -= dt;
 
-		// MMA-potku kun ollaan tarpeeksi lähellä (kerran per syöksy)
-		if (!_kickTriggeredThisCharge
-			&& _player != null && GodotObject.IsInstanceValid(_player)
-			&& _animationPlayer != null
-			&& _animationPlayer.HasAnimation(MmaPotkuKlipinNimi))
+		float planarDistPlayer = 0f;
+		if (_player != null && GodotObject.IsInstanceValid(_player) && _player.IsInsideTree())
 		{
-			var flat = _player.GlobalPosition - GlobalPosition;
-			flat.Y = 0f;
-			if (flat.Length() <= MmaPotkuLaukaisuEtäisyys)
-			{
-				_kickTriggeredThisCharge = true;
-				_chargingKickActive = true;
-				_animationPlayer.Play(MmaPotkuKlipinNimi);
-				TryKickContactDamage();
-				ApplyChargeVerticalPhysics(dt);
-				Velocity = new Vector3(0f, Velocity.Y, 0f);
-				return;
-			}
+			var w = _player.GlobalPosition - GlobalPosition;
+			w.Y = 0f;
+			planarDistPlayer = w.Length();
 		}
 
-		// Seurataan pelaajaa reaaliajassa
-		if (_player != null && GodotObject.IsInstanceValid(_player))
-		{
-			var flat = _player.GlobalPosition - GlobalPosition;
-			flat.Y = 0f;
-			if (flat.LengthSquared() > 1e-5f)
-			{
-				flat = flat.Normalized();
-				Velocity = new Vector3(flat.X * SyöksyNopeus, Velocity.Y, flat.Z * SyöksyNopeus);
-			}
-		}
+		Vector3 steer = ComputeChargeSteerPlanar();
+		Velocity = new Vector3(steer.X * SyöksyNopeus, Velocity.Y, steer.Z * SyöksyNopeus);
+
+		var vPlanar = new Vector2(Velocity.X, Velocity.Z);
+		float planarSpeed = vPlanar.Length();
+
+		float stuckThreshold = SyöksyNopeus * 0.22f;
+		if (planarSpeed < stuckThreshold)
+			_chargeStuckTimer += dt;
+		else
+			_chargeStuckTimer = 0f;
+
+		FacePlanarDirection(steer);
 
 		ApplyChargeVerticalPhysics(dt);
 
-		// Kontaktivahinko
-		TryChargeContactDamage();
+		if (_animationPlayer != null && _animationPlayer.CurrentAnimation == JuoksuKlipinNimi)
+			_animationPlayer.SpeedScale = Mathf.Clamp(JuoksuClipSpeedScaleLatauksessa, 0.15f, 1.5f);
+
+		// Kierto → linjaus: kertymät, sitten MMA vain linjauksessa
+		if (_chargeRoutePhase == ChargeRoutePhase.Circuit)
+		{
+			_circuitElapsed += dt;
+			_circuitPlanarMeters += planarSpeed * dt;
+			bool pakotaSulkuLähellä = planarDistPlayer < Mathf.Max(1.5f, SyöksySulkuPakotaKunPelaajaVaakaAlleM)
+				&& _circuitElapsed >= Mathf.Max(0.08f, SyöksySulkuPakotaKierronJälkeenSekuntia);
+			if (_circuitPlanarMeters >= SyöksyKiertoMinJuostuMetriä
+				|| _circuitElapsed >= SyöksyKiertoPakotaSulkemisSekunnissa
+				|| pakotaSulkuLähellä)
+			{
+				_chargeRoutePhase = ChargeRoutePhase.Closing;
+				_closingPlanarMeters = 0f;
+				_closingElapsed = 0f;
+			}
+		}
+		else
+		{
+			_closingElapsed += dt;
+			_closingPlanarMeters += planarSpeed * dt;
+		}
+
+		float effKickRange = Mathf.Max(0.55f, MmaPotkuLaukaisuEtäisyys);
+		float effKickLoose = effKickRange + Mathf.Max(0f, MmaPotkuLaukaisuLöysäMarginaaliM);
+
+		if (!_kickTriggeredThisCharge
+			&& _chargeRoutePhase == ChargeRoutePhase.Closing
+			&& _player != null && GodotObject.IsInstanceValid(_player)
+			&& _animationPlayer != null)
+		{
+			float dist = planarDistPlayer;
+			bool minClosingOk = _closingPlanarMeters >= MmaPotkuVähintäänJuostuMetriä
+				|| _closingElapsed >= MmaPotkuMinSulkuAikaEnnenPotkua
+				|| (dist <= effKickLoose && _closingElapsed >= 0.1f);
+			bool endWindow = _chargeTimeLeft >= 0f
+				&& _chargeTimeLeft <= MmaPotkuPakkoIlmanMinJuoksuaKunSyöksyAJäljellä;
+			bool canKickTight = dist <= effKickRange && (minClosingOk || endWindow);
+			bool canKickLoose = endWindow && dist <= effKickLoose + 0.28f && _closingElapsed >= 0.08f;
+			if (canKickTight || canKickLoose)
+				StartMmaKick(dt);
+			if (_chargingKickActive)
+				return;
+			if (_phase != BossPhase.Charging)
+				return;
+		}
 
 		// Palataan tanssimaan jos aika loppuu tai mennään ulos areenasta
 		if (_chargeTimeLeft <= 0f
@@ -846,7 +1167,48 @@ public partial class BossLevel1 : CharacterBody3D
 			Velocity = new Vector3(Velocity.X, 0f, Velocity.Z);
 	}
 
-	/// <summary>Vahinko MMA-potkun käynnistyksessä (ei jatkuvaa törmäystä).</summary>
+	/// <summary>Käynnistää MMA-potkun: blend, fallback jos AnimationFinished puuttuu.</summary>
+	private void StartMmaKick(float dt)
+	{
+		_kickTriggeredThisCharge = true;
+
+		if (_animationPlayer == null || !_animationPlayer.HasAnimation(MmaPotkuKlipinNimi))
+		{
+			GD.PrintErr($"BossLevel1: ei voida toistaa MMA-potkua — klippi '{MmaPotkuKlipinNimi}' puuttuu.");
+			ReturnToDance();
+			return;
+		}
+
+		_chargingKickActive = true;
+		FaceTowardPlayerFlat();
+
+		float blend = Mathf.Clamp(MmaPotkuBlendSekunteina, 0f, 0.55f);
+		_animationPlayer.Play(MmaPotkuKlipinNimi, blend);
+		_animationPlayer.SpeedScale = 1f;
+
+		_mmaKickFallbackPending = true;
+		float rawLen = (float)_animationPlayer.GetAnimation(MmaPotkuKlipinNimi).Length;
+		float kickLen = rawLen > 0.02f ? rawLen : MmaPotkuFallbackPituusSekuntia;
+		float wait = kickLen / Mathf.Max(0.12f, _animationPlayer.SpeedScale) + 0.15f;
+		GetTree().CreateTimer(wait).Timeout += OnMmaKickAnimFallbackTimeout;
+
+		TryKickContactDamage();
+		ApplyChargeVerticalPhysics(dt);
+		Velocity = new Vector3(0f, Velocity.Y, 0f);
+	}
+
+	private void OnMmaKickAnimFallbackTimeout()
+	{
+		if (!_mmaKickFallbackPending || !_chargingKickActive || _isDead)
+			return;
+		_mmaKickFallbackPending = false;
+		GD.PrintErr("BossLevel1: MMA-potku ei saanut AnimationFinished — paketoidaan sulku.");
+		_chargingKickActive = false;
+		if (_phase == BossPhase.Charging)
+			ReturnToDance();
+	}
+
+	/// <summary>Ainoa bossin aiheuttama vahinko syöksyssä: 1 HP kun MMA-potku alkaa (ei juoksukontaktia).</summary>
 	private void TryKickContactDamage()
 	{
 		if (_playerController == null || _isDead) return;
@@ -854,35 +1216,7 @@ public partial class BossLevel1 : CharacterBody3D
 		if (_playerController.IsBlockingEffectiveAgainst(threatFromBoss))
 			return;
 		var hc = _playerController.GetNodeOrNull<HealthComponent>("HealthComponent");
-		hc?.TakeDamage(Mathf.RoundToInt(SyöksyTörmäysVahinko));
-		_chargeContactCd = SyöksyTörmäysJäähdytys;
-	}
-
-	/// <summary>Tarkistaa osuuko bossi pelaajaan ja vahingoittaa tarvittaessa.</summary>
-	private void TryChargeContactDamage()
-	{
-		// Vain syöksyvaiheessa — tanssi ei saa vahingoittaa (turva myös jos tila epäsynkassa).
-		if (_phase != BossPhase.Charging || _isDead)
-			return;
-		if (_chargingKickActive || _hitReactPlaying)
-			return;
-		if (_chargeContactCd > 0f || _playerController == null) return;
-
-		Vector3 threatFromBoss = GlobalPosition + Vector3.Up * OsumaKeskusOffsetY;
-
-		for (int i = 0; i < GetSlideCollisionCount(); i++)
-		{
-			if (GetSlideCollision(i).GetCollider() is PlayerController)
-			{
-				if (_playerController.IsBlockingEffectiveAgainst(threatFromBoss))
-					return;
-
-				var hc = _playerController.GetNodeOrNull<HealthComponent>("HealthComponent");
-				hc?.TakeDamage(Mathf.RoundToInt(SyöksyTörmäysVahinko));
-				_chargeContactCd = SyöksyTörmäysJäähdytys;
-				return;
-			}
-		}
+		hc?.TakeDamage(1);
 	}
 
 	/// <summary>Palaa tanssivaiheeseen: siirtyy kotipaikalle ja aloittaa tanssin.</summary>
@@ -898,27 +1232,209 @@ public partial class BossLevel1 : CharacterBody3D
 		_danceTimeLeft = (float)GD.RandRange(TanssiKestoMinSekuntia, TanssiKestoMaxSekuntia);
 		if (_animationPlayer.HasAnimation(TanssiKlipinNimi))
 			_animationPlayer.Play(TanssiKlipinNimi);
+		if (_animationPlayer != null)
+			_animationPlayer.SpeedScale = 1f;
 	}
 
 	private void OnBossAnimationFinished(StringName animName)
 	{
-		if (animName == OsumaKlipinNimi)
+		if (AnimationNameMatches(animName, OsumaKlipinNimi))
 		{
 			_hitReactPlaying = false;
 			if (_isDead) return;
 			if (!string.IsNullOrEmpty(_resumeClipAfterHit) && _animationPlayer != null
 				&& _animationPlayer.HasAnimation(_resumeClipAfterHit))
+			{
 				_animationPlayer.Play(_resumeClipAfterHit);
+				_animationPlayer.SpeedScale = _resumeClipAfterHit == JuoksuKlipinNimi
+					? Mathf.Clamp(JuoksuClipSpeedScaleLatauksessa, 0.15f, 1.5f)
+					: 1f;
+			}
 			_resumeClipAfterHit = "";
 			return;
 		}
 
-		if (animName == MmaPotkuKlipinNimi && _chargingKickActive)
+		if (AnimationNameMatches(animName, MmaPotkuKlipinNimi) && _chargingKickActive)
 		{
+			_mmaKickFallbackPending = false;
 			_chargingKickActive = false;
 			if (!_isDead)
 				ReturnToDance();
 		}
+	}
+
+	/// <summary>Godot 4 AnimationFinished voi antaa kirjasto-etuliitteen; vertaa pelkkään klipin nimeen.</summary>
+	private static bool AnimationNameMatches(StringName played, string expected)
+	{
+		if (string.IsNullOrEmpty(expected))
+			return false;
+		string p = played.ToString();
+		return p == expected || p.EndsWith("/" + expected, StringComparison.Ordinal);
+	}
+
+	/// <summary>Syöksy/potku: käänny XZ-tasossa pelaajaan kohti (Mixamo + Pi).</summary>
+	private void FaceTowardPlayerFlat()
+	{
+		if (_player == null || !GodotObject.IsInstanceValid(_player) || !_player.IsInsideTree())
+			return;
+		var look = _player.GlobalPosition with { Y = GlobalPosition.Y };
+		if (GlobalPosition.DistanceTo(look) < 0.05f)
+			return;
+		LookAt(look, Vector3.Up);
+		RotateY(Mathf.Pi);
+	}
+
+	/// <summary>Juoksu/potku: käänny vaakasuuntaan sama konventio kuin LookAt+Pii (Mixamo).</summary>
+	private void FacePlanarDirection(Vector3 dirWorldFlat)
+	{
+		dirWorldFlat.Y = 0f;
+		if (dirWorldFlat.LengthSquared() < 1e-6f)
+			return;
+		dirWorldFlat = dirWorldFlat.Normalized();
+		var look = GlobalPosition + dirWorldFlat with { Y = 0f };
+		look.Y = GlobalPosition.Y;
+		if (GlobalPosition.DistanceSquaredTo(look) < 1e-8f)
+			return;
+		LookAt(look, Vector3.Up);
+		RotateY(Mathf.Pi);
+	}
+
+	/// <summary>Reuna samaan suuntaan kuin pelaaja origosta (boss tulee \"etämmältä\" pelaajaa kohti).</summary>
+	private Vector3 PickArenaEdgeTowardPlayerOrRandom()
+	{
+		if (_player == null || !GodotObject.IsInstanceValid(_player) || !_player.IsInsideTree())
+			return PickRandomArenaEdge();
+
+		float h = Mathf.Max(0.5f, AreenanReunanPuolikas);
+		Vector3 p = _player.GlobalPosition;
+		Vector3 radial = new(p.X, 0f, p.Z);
+		if (radial.LengthSquared() < 0.12f)
+			return PickRandomArenaEdge();
+
+		radial = radial.Normalized();
+		float tx = Mathf.Abs(radial.X) > 1e-5f ? h / Mathf.Abs(radial.X) : float.MaxValue;
+		float tz = Mathf.Abs(radial.Z) > 1e-5f ? h / Mathf.Abs(radial.Z) : float.MaxValue;
+		float tEdge = Mathf.Min(tx, tz);
+		float inset = Mathf.Clamp(h * 0.12f, 0.35f, 1.15f);
+		Vector3 edge = radial * Mathf.Max(0.28f, tEdge - inset);
+		edge.Y = _floorY;
+		return edge;
+	}
+
+	/// <summary>
+	/// FBX:stä ladatun klipin NodePathit viittaavat usein eri juureen kuin juoksuklippi — potku ei näy.
+	/// Kohdistetaan "Armature"-etuliite samaan kuin juoksuanimaatiossa.
+	/// </summary>
+	private static void AlignAnimationPathsFromTemplate(Animation template, Animation imported)
+	{
+		if (template == null || imported == null) return;
+		if (template.GetTrackCount() == 0 || imported.GetTrackCount() == 0) return;
+
+		string refPath = template.TrackGetPath(0).ToString();
+		int armRef = IndexOfRigRoot(refPath);
+		if (armRef < 0)
+			return;
+
+		string pathPrefix = refPath.Substring(0, armRef);
+
+		int n = imported.GetTrackCount();
+		for (int i = 0; i < n; i++)
+		{
+			string p = imported.TrackGetPath(i).ToString();
+			int arm = IndexOfRigRoot(p);
+			if (arm < 0)
+				continue;
+			string suffix = p.Substring(arm);
+			imported.TrackSetPath(i, new NodePath(pathPrefix + suffix));
+		}
+	}
+
+	private static int IndexOfRigRoot(string nodePath)
+	{
+		int a = nodePath.IndexOf("Armature", StringComparison.Ordinal);
+		if (a >= 0) return a;
+		return nodePath.IndexOf("Skeleton3D", StringComparison.Ordinal);
+	}
+
+	/// <summary>
+	/// Estää pelaajan kävely-MoveAndSlideä työntämästä bossia sivuun syöksyn aikana (CharacterBody vs CharacterBody).
+	/// </summary>
+	private void ResistPlayerShoveAfterSlide()
+	{
+		if (_playerController == null || _player == null || !GodotObject.IsInstanceValid(_player))
+			return;
+		// Sulussa bossin pitää päästä potkuetäisyydelle — työntö pois pelaajasta estäisi MMA:n.
+		if (_chargeRoutePhase == ChargeRoutePhase.Closing && !_kickTriggeredThisCharge)
+			return;
+
+		Vector3 delta = GlobalPosition - _player.GlobalPosition;
+		delta.Y = 0f;
+		float dist = delta.Length();
+		// Pieni bufferi: pelaaja + bossin kapseli (likimäärin)
+		float minDist = 1.45f;
+		if (dist >= minDist || dist < 1e-4f)
+			return;
+
+		Vector3 pv = _playerController.Velocity;
+		pv.Y = 0f;
+		if (pv.LengthSquared() < 6.25f)
+			return;
+
+		Vector3 toBoss = delta / dist;
+		if (pv.Normalized().Dot(toBoss) < 0.28f)
+			return;
+
+		GlobalPosition += toBoss * ((minDist - dist) * 0.72f);
+	}
+
+	private void TryChargeSeparationUnstick(float dt)
+	{
+		Vector3 accum = Vector3.Zero;
+
+		for (int i = 0; i < GetSlideCollisionCount(); i++)
+		{
+			Vector3 n = GetSlideCollision(i).GetNormal();
+			if (n.Y > 0.62f)
+				continue;
+			Vector3 flat = new(n.X, 0f, n.Z);
+			if (flat.LengthSquared() > 1e-5f)
+				accum += flat.Normalized();
+		}
+
+		if (_player != null && GodotObject.IsInstanceValid(_player))
+		{
+			Vector3 away = GlobalPosition - _player.GlobalPosition;
+			away.Y = 0f;
+			float distSq = away.LengthSquared();
+			if (distSq > 0.008f && distSq < 8f)
+			{
+				float planar = new Vector2(Velocity.X, Velocity.Z).Length();
+				if (planar < SyöksyNopeus * 0.32f || _chargeStuckTimer > 0.18f)
+					accum += away.Normalized() * 1.35f;
+			}
+		}
+
+		if (_chargeStuckTimer > 0.34f && accum.LengthSquared() < 1e-7f && _player != null && GodotObject.IsInstanceValid(_player))
+		{
+			Vector3 toP = _player.GlobalPosition - GlobalPosition;
+			toP.Y = 0f;
+			if (toP.LengthSquared() > 1e-5f)
+			{
+				// Sulussa: älä kierrä pelaajan ympäri — työnnä kohti pelaajaa (pois “loopista”).
+				if (_chargeRoutePhase == ChargeRoutePhase.Closing)
+					accum += toP.Normalized() * 2.55f;
+				else
+				{
+					Vector3 side = Vector3.Up.Cross(toP.Normalized()) * _chargeOrbitSign;
+					accum += side * 2.1f;
+				}
+			}
+		}
+
+		if (accum.LengthSquared() < 1e-8f)
+			return;
+
+		GlobalPosition += accum.Normalized() * Mathf.Clamp(dt * 4.8f, 0f, 0.18f);
 	}
 
 	/// <summary>Valitsee satunnaisen spawnauspiste areenan reunalta.</summary>
@@ -1068,7 +1584,10 @@ public partial class BossLevel1 : CharacterBody3D
 			_resumeClipAfterHit = _phase == BossPhase.Dancing ? TanssiKlipinNimi : JuoksuKlipinNimi;
 			_hitReactPlaying = true;
 			if (_chargingKickActive)
+			{
 				_chargingKickActive = false;
+				_mmaKickFallbackPending = false;
+			}
 			_animationPlayer.SpeedScale = 1f;
 			_animationPlayer.Play(OsumaKlipinNimi);
 		}
@@ -1080,8 +1599,13 @@ public partial class BossLevel1 : CharacterBody3D
 			animFreeze.TweenInterval(0.08f);
 			animFreeze.TweenCallback(Callable.From(() =>
 			{
-				if (GodotObject.IsInstanceValid(_animationPlayer) && !_isDead)
-					_animationPlayer.SpeedScale = 1f;
+				if (!GodotObject.IsInstanceValid(_animationPlayer) || _isDead)
+					return;
+				bool runCharge = _phase == BossPhase.Charging
+					&& _animationPlayer.CurrentAnimation == JuoksuKlipinNimi;
+				_animationPlayer.SpeedScale = runCharge
+					? Mathf.Clamp(JuoksuClipSpeedScaleLatauksessa, 0.15f, 1.5f)
+					: 1f;
 			}));
 		}
 
@@ -1232,18 +1756,26 @@ public partial class BossLevel1 : CharacterBody3D
 		var ap   = inst.FindChild("AnimationPlayer", true, false) as AnimationPlayer;
 		if (ap == null) { inst.QueueFree(); return false; }
 
-		Animation anim = null;
+		Animation sourceAnim = null;
 		foreach (var n in new[] { MixamoAnimaatioLähdeNimi, MixamoAnimaatioLähdeNimi.Replace("_", ".") })
 		{
-			if (ap.HasAnimation(n)) { anim = ap.GetAnimation(n); break; }
+			if (ap.HasAnimation(n)) { sourceAnim = ap.GetAnimation(n); break; }
 		}
 
-		inst.QueueFree();
-		if (anim == null)
+		if (sourceAnim == null)
 		{
+			sourceAnim = ResolveAnimationFromPlayer(ap, MixamoAnimaatioLähdeNimi, path);
+		}
+
+		if (sourceAnim == null)
+		{
+			inst.QueueFree();
 			GD.PrintErr($"BossLevel1: animaatiota '{MixamoAnimaatioLähdeNimi}' ei löydy: {path}");
 			return false;
 		}
+
+		var anim = (Animation)sourceAnim.Duplicate();
+		inst.QueueFree();
 
 		anim.LoopMode = Animation.LoopModeEnum.Linear;
 		var lib = _animationPlayer.GetAnimationLibrary("");
@@ -1265,19 +1797,56 @@ public partial class BossLevel1 : CharacterBody3D
 		var ap   = inst.FindChild("AnimationPlayer", true, false) as AnimationPlayer;
 		if (ap == null) { inst.QueueFree(); return; }
 
-		Animation anim = null;
-		foreach (var name in new[] { sourceName, sourceName.Replace("_", ".") })
+		Animation sourceAnim = ResolveAnimationFromPlayer(ap, sourceName, path);
+		if (sourceAnim == null)
 		{
-			if (ap.HasAnimation(name)) { anim = ap.GetAnimation(name); break; }
+			inst.QueueFree();
+			GD.PrintErr($"BossLevel1: clip '{sourceName}' puuttuu: {path}");
+			return;
 		}
 
+		var anim = (Animation)sourceAnim.Duplicate();
 		inst.QueueFree();
-		if (anim == null) { GD.PrintErr($"BossLevel1: clip '{sourceName}' puuttuu: {path}"); return; }
 
 		if (loop) anim.LoopMode = Animation.LoopModeEnum.Linear;
 		else anim.LoopMode = Animation.LoopModeEnum.None;
 		var lib = _animationPlayer.GetAnimationLibrary("");
 		if (lib.HasAnimation(targetName)) lib.RemoveAnimation(targetName);
 		lib.AddAnimation(targetName, anim);
+	}
+
+	/// <summary>
+	/// Mixamo/FBX-importteri voi nimetä clipin eri tavalla (mixamo_com, mixamo.com, Armature|…).
+	/// Haetaan ensin sourceName, sitten mixamo-niminen, sitten ensimmäinen ei-RESET.
+	/// </summary>
+	private static Animation ResolveAnimationFromPlayer(AnimationPlayer ap, string sourceName, string pathForLog)
+	{
+		if (ap == null) return null;
+
+		foreach (var name in new[] { sourceName, sourceName.Replace("_", ".") })
+		{
+			if (ap.HasAnimation(name))
+				return ap.GetAnimation(name);
+		}
+
+		foreach (StringName nm in ap.GetAnimationList())
+		{
+			string sn = nm.ToString();
+			if (sn.IndexOf("RESET", StringComparison.OrdinalIgnoreCase) >= 0)
+				continue;
+			if (sn.IndexOf("mixamo", StringComparison.OrdinalIgnoreCase) >= 0)
+				return ap.GetAnimation(nm);
+		}
+
+		foreach (StringName nm in ap.GetAnimationList())
+		{
+			string sn = nm.ToString();
+			if (sn.IndexOf("RESET", StringComparison.OrdinalIgnoreCase) >= 0)
+				continue;
+			GD.Print($"BossLevel1 LoadAnim: {pathForLog} → clip '{nm}' (fallback, ei tyypillistä mixamo-nimeä)");
+			return ap.GetAnimation(nm);
+		}
+
+		return null;
 	}
 }

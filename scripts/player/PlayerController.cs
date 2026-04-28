@@ -116,10 +116,16 @@ public partial class PlayerController : CharacterBody3D
 	/// <summary>Fysiikkakello R2-osumaa varten (AnimationPlayer-position voi jäädä jälkeen blendissä).</summary>
 	private float _meleeSwingElapsed;
 
+	/// <summary>Miekkasoundi kerran per swing — vasta kun osumaikkuna alkaa, ei R2-painalluksessa.</summary>
+	private bool _meleeStrikeSfxPlayedThisSwing;
+
 	private float _meleeHitStopTimer;
 	private double _meleeHitStopSeekPos;
 
 	private RigidBody3D _grabbedBody;
+
+	/// <summary>Kapselin säde (CollisionShape3D / CapsuleShape3D) — välys lasketaan törmäyspinnalle, ei vain juureen.</summary>
+	private float _playerCapsuleRadius = 0.5f;
 
 	/// <summary>R2: liipasin uudelleen "sallittu" kun akseli on päästetty tarpeeksi alas (latch).</summary>
 	private bool _lightTriggerArmed = true;
@@ -231,7 +237,7 @@ public partial class PlayerController : CharacterBody3D
 	[Export] public float MiekkaIskuSuuntaPuolikulma = 72f;
 
 	/// <summary>R2-iskun teräkartion puolikulma (asteita). R1 käyttää <see cref="TeräkaariPuolikulmaRaskas"/>.</summary>
-	[Export] public float TeräkaariPuolikulmaKevyt = 56f;
+	[Export] public float TeräkaariPuolikulmaKevyt = 50f;
 
 	/// <summary>R1: vain teräkartio — hieman leveämpi kuin ennen (edessä oleva vihollinen rekisteröityy luotettavammin).</summary>
 	[Export] public float TeräkaariPuolikulmaRaskas = 42f;
@@ -260,6 +266,19 @@ public partial class PlayerController : CharacterBody3D
 	[Export] public float TartuntaKääntöPehmennysKerroin = 2.2f;
 
 	[Export] public float TartuntaPitoEtäisyys = 1.15f;
+
+	/// <summary>
+	/// Fallback jos grabbablella ei ole BoxShapeä: minimi XZ-etäisyys pelurista <see cref="GetGrabbableReferenceWorld"/>-pisteeseen (ei laatikon pintaan).
+	/// </summary>
+	[Export] public float TartuntaMinKeskietäisyysXZ = 0.54f;
+
+	/// <summary>
+	/// Ilmakiekko / laatikko: minimivälys (m) kapselin ulkokehän ja BoxShape-hillin välillä XZ-suunnassa (katso Level1ArcadePhysicsSetup — RB-origin ei ole laatikon keskipiste).
+	/// </summary>
+	[Export] public float TartuntaVaakaVälysPöytään = 0.12f;
+
+	/// <summary>Mitä kauemmas tästä (metriä) minimistä eteenpäin nopeus pysyy täydenä (pehmeä jarru).</summary>
+	[Export] public float TartuntaLähestymisPehmennysLeveys = 0.38f;
 
 	[Export] public float TartuntaVetoVahvistus = 7f;
 	
@@ -400,7 +419,7 @@ public partial class PlayerController : CharacterBody3D
 	}
 
 	/// <summary>
-	/// Yksi osumatesti: etäisyys iskulinjaan + R1 vain teräkartio, R2 terä tai facing (rintaorigolla).
+	/// Yksi osumatesti: etäisyys iskulinjaan + R1 vain teräkartio, R2 teräkartio ja facing (rintaorigolla).
 	/// </summary>
 	/// <param name="proximityMaxOverride">Jos ≥ 0, käytetään tätä max-etäisyytenä metrienä (esim. korkea bossi).</param>
 	public bool CanApplyMeleeHitAtWorldPoint(Vector3 worldPoint, float proximityMaxOverride = -1f)
@@ -414,7 +433,7 @@ public partial class PlayerController : CharacterBody3D
 		bool facing = IsPointInMeleeHitFacingArc(worldPoint);
 		if (_attackDamage >= 3)
 			return blade;
-		return blade || facing;
+		return blade && facing;
 	}
 
 	public float GetMeleeHitProximityMax()
@@ -468,6 +487,7 @@ public partial class PlayerController : CharacterBody3D
 		_meleeStrikeClip = default;
 		_meleeHitStopTimer = 0f;
 		ClearEnemyHitThisSwing();
+		_meleeStrikeSfxPlayedThisSwing = false;
 		if (_animationPlayer != null)
 			_animationPlayer.SpeedScale = 1f;
 	}
@@ -602,6 +622,9 @@ public partial class PlayerController : CharacterBody3D
 		_healthComponent.HealthChanged += OnHealthChanged;
 		_healthComponent.PlayerDied += OnPlayerDied;
 		_healthComponent.GameOver += OnGameOver; // ← Game Over -signaali
+
+		if (GetNodeOrNull("CollisionShape3D") is CollisionShape3D capShape && capShape.Shape is CapsuleShape3D cap)
+			_playerCapsuleRadius = cap.Radius;
 
 		// Tallennetaan hahmon alkuperäinen katselusuunta
 		_facingYaw = _characterModel.Rotation.Y;
@@ -759,15 +782,14 @@ public partial class PlayerController : CharacterBody3D
 			}
 		}
 
-		// ── Asemoodi (kolmio): drone-moodi jos joystick on poimittu, muuten asevaihto
+		// ── Asemoodi (kolmio): drone vain level_1:ssä (arcade-joystick). Muilla kentillä kolmio = miekka/kilpi kuten ilman joystickia.
 		if (Input.IsActionJustPressed("toggle_weapon"))
 		{
-			// Joystick on pelaajan hallussa → kolmio = drone-moodi
-			if (GameState.Instance?.HasJoystick == true)
+			if (GameState.Instance?.HasJoystick == true && CurrentSceneFilePathLooksLikeLevel1())
 			{
 				if (_isDroneMode) ExitDroneMode();
 				else              EnterDroneMode();
-				return; // ei jatketa normaalia asevaihtoon
+				return;
 			}
 
 			_weaponMode = _weaponMode == WeaponMode.Normal ? WeaponMode.SwordShield : WeaponMode.Normal;
@@ -822,9 +844,9 @@ public partial class PlayerController : CharacterBody3D
 			_isAttacking = true;
 			_attackDamage = 1;
 			_meleeStrikeClip = "mixamo_com_005";
+			_meleeStrikeSfxPlayedThisSwing = false;
 			PlayAnim("mixamo_com_005");
 			Vibrate(0.3f, 0.5f, 0.15f);
-			_swordSFX?.Play();
 			_lightTriggerArmed = false;
 			_lightAttackDebounce = KevytIskuPainallustenSuodatus;
 			_lightMeleeCooldown = Mathf.Max(0f, KevytIskuToistojäähdytys);
@@ -839,9 +861,9 @@ public partial class PlayerController : CharacterBody3D
 			_isAttacking = true;
 			_attackDamage = 3;
 			_meleeStrikeClip = "mixamo_com_010";
+			_meleeStrikeSfxPlayedThisSwing = false;
 			PlayAnim("mixamo_com_010");
 			Vibrate(0.6f, 1.0f, 0.25f);
-			_swordSFX?.Play();
 			_heavyCooldownBarUnlocked = true;
 			_heavyAttackCooldown = RaskasHyökkäysJäähdytys;
 		}
@@ -914,13 +936,29 @@ public partial class PlayerController : CharacterBody3D
 		if (_grabbedBody != null && Input.IsActionPressed("grab")
 			&& GodotObject.IsInstanceValid(_grabbedBody) && _grabbedBody.IsInsideTree())
 		{
-			var toObj = _grabbedBody.GlobalPosition - GlobalPosition;
+			var refPt = GetGrabbableReferenceWorld(_grabbedBody);
+			var toObj = refPt - GlobalPosition;
 			toObj.Y = 0f;
 			if (toObj.LengthSquared() > 1e-5f)
 			{
 				var pushDir = toObj.Normalized();
 				float fwd = new Vector3(wish.X, 0f, wish.Z).Dot(pushDir);
 				fwd = Mathf.Max(0f, fwd);
+
+				// BoxShape (ilmakiekko): älä jarruta eteenpäin-toive clearance-luvulla — 3D-pintamatka + säde + margin
+				// nollasi käytännössä aina fwd:n (pöytä ei liikkunut). Vaakasuuntainen välys EnforceGrabMinimumStandoffXZ:ssä.
+				if (!TryGetPrimaryBoxCollision(_grabbedBody, out _, out _))
+				{
+					float dist = toObj.Length();
+					float hardMin = Mathf.Max(0.08f, TartuntaMinKeskietäisyysXZ);
+					float softEnd = hardMin + Mathf.Max(0.05f, TartuntaLähestymisPehmennysLeveys);
+					if (dist < softEnd)
+					{
+						float u = Mathf.Clamp((dist - hardMin) / Mathf.Max(0.02f, softEnd - hardMin), 0f, 1f);
+						fwd *= u * u;
+					}
+				}
+
 				wish.X = pushDir.X * fwd;
 				wish.Z = pushDir.Z * fwd;
 			}
@@ -943,7 +981,8 @@ public partial class PlayerController : CharacterBody3D
 			&& GodotObject.IsInstanceValid(_grabbedBody) && _grabbedBody.IsInsideTree();
 		if (grabbing)
 		{
-			var toObj = _grabbedBody.GlobalPosition - GlobalPosition;
+			var refPt = GetGrabbableReferenceWorld(_grabbedBody);
+			var toObj = refPt - GlobalPosition;
 			toObj.Y = 0f;
 			if (toObj.LengthSquared() > 1e-5f)
 			{
@@ -969,8 +1008,8 @@ public partial class PlayerController : CharacterBody3D
 			_characterModel.Rotation = new Vector3(0f, _facingYaw, 0f);
 		}
 
-	if (grabbing)
-		ApplyGrabPull(new Vector3(wish.X, 0f, wish.Z));
+		if (grabbing)
+			ApplyGrabPull(new Vector3(wish.X, 0f, wish.Z));
 
 		// ── Liike-animaatiot ──
 		// Vaihdetaan animaatiota tilanteen mukaan
@@ -995,6 +1034,9 @@ public partial class PlayerController : CharacterBody3D
 
 		Velocity = velocity;
 		MoveAndSlide();
+
+		if (grabbing)
+			EnforceGrabMinimumStandoffXZ();
 
 		// ── Z-akselin rajaus ──
 		// Rajoittaa pelaajan Z-liikettä kun SyvyysliikeKäytössä on päällä
@@ -1027,6 +1069,13 @@ public partial class PlayerController : CharacterBody3D
 			_meleeSwingElapsed += swingDt;
 		else
 			_meleeSwingElapsed = 0f;
+
+		if (_isAttacking && IsSwordWeaponMode() && _swordSFX != null && !_meleeStrikeSfxPlayedThisSwing
+			&& GetAttackAnimationTime() >= GetMeleeStrikeWindowStart())
+		{
+			_meleeStrikeSfxPlayedThisSwing = true;
+			_swordSFX.Play();
+		}
 	}
 
 	// ─────────────────────────────────────────────
@@ -1122,6 +1171,7 @@ public partial class PlayerController : CharacterBody3D
 			_isAttacking = false;
 			_meleeStrikeClip = default;
 			_meleeHitStopTimer = 0f;
+			_meleeStrikeSfxPlayedThisSwing = false;
 			if (_animationPlayer != null)
 				_animationPlayer.SpeedScale = 1f;
 		}
@@ -1132,6 +1182,7 @@ public partial class PlayerController : CharacterBody3D
 			_isAttacking = false;
 			_meleeStrikeClip = default;
 			_meleeHitStopTimer = 0f;
+			_meleeStrikeSfxPlayedThisSwing = false;
 			if (_animationPlayer != null)
 				_animationPlayer.SpeedScale = 1f;
 		}
@@ -1193,6 +1244,7 @@ public partial class PlayerController : CharacterBody3D
 		_isAttacking   = false;
 		_meleeStrikeClip = default;
 		_meleeSwingElapsed = 0f;
+		_meleeStrikeSfxPlayedThisSwing = false;
 		_grabbedBody   = null;
 		_isBlocking    = false;
 		_isWindingUp   = false;
@@ -1231,6 +1283,16 @@ public partial class PlayerController : CharacterBody3D
 	/// Luo yksinkertaisen joystick-visuaalin oikeaan käteen (SwordAttachment-boneen).
 	/// Käytetään CylinderMesh + SphereMesh -yhdistelmää. Korvaa myöhemmin oikealla mallilla.
 	/// </summary>
+	/// <summary>Drone (kolmio + joystick) vain level_1-scenessä — level_2+ kolmio vaihtaa asetta.</summary>
+	private bool CurrentSceneFilePathLooksLikeLevel1()
+	{
+		var cur = GetTree()?.CurrentScene as Node;
+		if (cur == null) return false;
+		string p = cur.SceneFilePath?.Replace("\\", "/") ?? "";
+		if (p.Length == 0) return false;
+		return p.Contains("level_1", StringComparison.OrdinalIgnoreCase);
+	}
+
 	private void SetupDroneJoystick()
 	{
 		var swordAttach = GetNodeOrNull<Node3D>("gameover_character/Skeleton3D/SwordAttachment");
@@ -1327,6 +1389,38 @@ public partial class PlayerController : CharacterBody3D
 		_grabbedBody = best;
 	}
 
+	/// <summary>
+	/// CharacterBody vs RigidBody — työntö voi hilata pelaajan törmäyskuoren osittain pöydän sisään; korjataan XZ pois.
+	/// </summary>
+	private void EnforceGrabMinimumStandoffXZ()
+	{
+		if (_grabbedBody == null || !GodotObject.IsInstanceValid(_grabbedBody) || !_grabbedBody.IsInsideTree())
+			return;
+		if (!Input.IsActionPressed("grab"))
+			return;
+
+		if (TryGetPrimaryBoxCollision(_grabbedBody, out CollisionShape3D col, out BoxShape3D box))
+		{
+			float margin = Mathf.Max(0.01f, TartuntaVaakaVälysPöytään);
+			float need = _playerCapsuleRadius + margin;
+			if (TryGetPushOutFromObbXZ(col.GlobalTransform, box.Size, GlobalPosition, need, out Vector3 deltaXZ))
+				GlobalPosition += deltaXZ;
+			return;
+		}
+
+		Vector3 refPt = GetGrabbableReferenceWorld(_grabbedBody);
+		Vector3 toRb = refPt - GlobalPosition;
+		toRb.Y = 0f;
+		float d = toRb.Length();
+		float minD = Mathf.Max(0.08f, TartuntaMinKeskietäisyysXZ);
+		if (d >= minD || d < 1e-6f)
+			return;
+
+		Vector3 away = (-toRb) / d;
+		float fix = minD - d;
+		GlobalPosition += new Vector3(away.X * fix, 0f, away.Z * fix);
+	}
+
 	private void ApplyGrabPull(Vector3 playerWishXZ)
 	{
 		if (_grabbedBody == null || !GodotObject.IsInstanceValid(_grabbedBody) || !_grabbedBody.IsInsideTree())
@@ -1341,7 +1435,8 @@ public partial class PlayerController : CharacterBody3D
 			return;
 		}
 
-		var toRb = _grabbedBody.GlobalPosition - GlobalPosition;
+		Vector3 refPt = GetGrabbableReferenceWorld(_grabbedBody);
+		var toRb = refPt - GlobalPosition;
 		toRb.Y = 0f;
 		if (toRb.Length() > TartuntaEtäisyys * 1.35f)
 		{
@@ -1361,5 +1456,108 @@ public partial class PlayerController : CharacterBody3D
 			pushDir.X * speed,
 			lv.Y,
 			pushDir.Z * speed);
+	}
+
+	private Vector3 GetGrabbableReferenceWorld(RigidBody3D rb)
+	{
+		if (TryGetPrimaryBoxCollision(rb, out CollisionShape3D col, out _))
+			return col.GlobalTransform.Origin;
+		return rb.GlobalPosition;
+	}
+
+	private static bool TryGetPrimaryBoxCollision(RigidBody3D rb, out CollisionShape3D col, out BoxShape3D box)
+	{
+		col = null;
+		box = null;
+		if (rb == null)
+			return false;
+		foreach (Node child in rb.GetChildren())
+		{
+			if (child is CollisionShape3D c && c.Shape is BoxShape3D b)
+			{
+				col = c;
+				box = b;
+				return true;
+			}
+		}
+		return false;
+	}
+
+	private static void ClosestPointOnObb(Transform3D xf, Vector3 size, Vector3 worldP, out Vector3 closestWorld)
+	{
+		Vector3 half = size * 0.5f;
+		Transform3D inv = xf.AffineInverse();
+		Vector3 localP = inv * worldP;
+
+		Vector3 inner = new(
+			Mathf.Clamp(localP.X, -half.X, half.X),
+			Mathf.Clamp(localP.Y, -half.Y, half.Y),
+			Mathf.Clamp(localP.Z, -half.Z, half.Z));
+
+		bool inside = Mathf.Abs(localP.X) <= half.X
+			&& Mathf.Abs(localP.Y) <= half.Y
+			&& Mathf.Abs(localP.Z) <= half.Z;
+
+		Vector3 closestL;
+		if (!inside)
+			closestL = inner;
+		else
+		{
+			float ex = half.X - Mathf.Abs(localP.X);
+			float ey = half.Y - Mathf.Abs(localP.Y);
+			float ez = half.Z - Mathf.Abs(localP.Z);
+			if (ex <= ey && ex <= ez)
+			{
+				float sx = Mathf.Sign(localP.X);
+				closestL = new Vector3(
+					sx * half.X,
+					Mathf.Clamp(localP.Y, -half.Y, half.Y),
+					Mathf.Clamp(localP.Z, -half.Z, half.Z));
+			}
+			else if (ey <= ez)
+			{
+				float sy = Mathf.Sign(localP.Y);
+				closestL = new Vector3(
+					Mathf.Clamp(localP.X, -half.X, half.X),
+					sy * half.Y,
+					Mathf.Clamp(localP.Z, -half.Z, half.Z));
+			}
+			else
+			{
+				float sz = Mathf.Sign(localP.Z);
+				closestL = new Vector3(
+					Mathf.Clamp(localP.X, -half.X, half.X),
+					Mathf.Clamp(localP.Y, -half.Y, half.Y),
+					sz * half.Z);
+			}
+		}
+
+		closestWorld = xf * closestL;
+	}
+
+	/// <summary>XZ-korjaus kun kapseli on liian lähellä laatikon pintaa (projisoidaan ulos-suunta vaakatasoon).</summary>
+	private static bool TryGetPushOutFromObbXZ(Transform3D xf, Vector3 size, Vector3 worldP, float needSeparation, out Vector3 deltaXZ)
+	{
+		deltaXZ = Vector3.Zero;
+		ClosestPointOnObb(xf, size, worldP, out Vector3 closestW);
+		// Vaakasuora etäisyys (XZ): juuren Y vs laatikon pinnan Y vääristi 3D-etäisyyttä → ei työnnä ulos / pöytä jäi jumiin.
+		Vector3 sepH = new(worldP.X - closestW.X, 0f, worldP.Z - closestW.Z);
+		float horizDist = sepH.Length();
+		if (horizDist < 1e-7f)
+		{
+			Vector3 p = worldP;
+			p.Y = 0f;
+			Vector3 c = xf.Origin;
+			c.Y = 0f;
+			sepH = p - c;
+			horizDist = sepH.Length();
+		}
+		if (horizDist >= needSeparation - 1e-5f || horizDist < 1e-7f)
+			return false;
+
+		Vector3 horiz = sepH / horizDist;
+		float fix = needSeparation - horizDist;
+		deltaXZ = new Vector3(horiz.X * fix, 0f, horiz.Z * fix);
+		return fix > 1e-5f;
 	}
 }

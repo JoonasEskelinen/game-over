@@ -2,9 +2,9 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dsrobhjmikiig"
-path.s3tc="res://.godot/imported/Leaves_GiantPine_C.png-26fe0fb7d10550c1f13f48b1ce59cc29.s3tc.ctex"
-path.etc2="res://.godot/imported/Leaves_GiantPine_C.png-26fe0fb7d10550c1f13f48b1ce59cc29.etc2.ctex"
+uid="uid://gvt32vb26ypi"
+path.s3tc="res://.godot/imported/Näyttökuva 2026-04-24 073546.png-86a8ffbd94630801b0328080b31cef18.s3tc.ctex"
+path.etc2="res://.godot/imported/Näyttökuva 2026-04-24 073546.png-86a8ffbd94630801b0328080b31cef18.etc2.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
@@ -12,8 +12,8 @@ metadata={
 
 [deps]
 
-source_file="res://assets/models/nature/Textures/Leaves_GiantPine_C.png"
-dest_files=["res://.godot/imported/Leaves_GiantPine_C.png-26fe0fb7d10550c1f13f48b1ce59cc29.s3tc.ctex", "res://.godot/imported/Leaves_GiantPine_C.png-26fe0fb7d10550c1f13f48b1ce59cc29.etc2.ctex"]
+source_file="res://assets/textures/Näyttökuva 2026-04-24 073546.png"
+dest_files=["res://.godot/imported/Näyttökuva 2026-04-24 073546.png-86a8ffbd94630801b0328080b31cef18.s3tc.ctex", "res://.godot/imported/Näyttökuva 2026-04-24 073546.png-86a8ffbd94630801b0328080b31cef18.etc2.ctex"]
 
 [params]
 

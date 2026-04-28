@@ -27,8 +27,10 @@ public partial class Level1BossDirector : Node
 
 	[Export] public bool SnapStandYToFloorRaycast = true;
 
-	/// <summary>Laskee bossin hieman alemmas snapatun lattiatason suhteen (älä käytä >~0.5 ilman clampia).</summary>
-	[Export] public float BossStandExtraLowerY = 0.28f;
+	/// <summary>
+	/// Vähennetään snapatusta Y:stä (positiivinen upottaa bossia). Oletus 0 — aiempi ~0.28 upotti jalat maan alle.
+	/// </summary>
+	[Export] public float BossStandExtraLowerY = 0f;
 
 	/// <summary>Lisätään säteen osuman Y:hin (pieni positiivinen = jalkojen juuri lattian päällä).</summary>
 	[Export] public float BossFloorRayHitYOffset = 0.08f;
@@ -39,7 +41,7 @@ public partial class Level1BossDirector : Node
 	[Export] public float CinematicBlendIn = 1.05f;
 	[Export] public float CinematicHold = 0.45f;
 	[Export] public float CinematicBlendOut = 1.35f;
-	[Export] public Vector3 CinematicCameraOffsetFromBoss = new(5f, 3.4f, 7.5f);
+	[Export] public Vector3 CinematicCameraOffsetFromBoss = new(6.5f, 3.65f, 9f);
 
 	private EnemySpawner _spawner;
 	private Node3D _danceMachine;
