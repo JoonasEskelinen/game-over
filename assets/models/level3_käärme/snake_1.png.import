@@ -2,18 +2,21 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bckyp87qnivy6"
-path.s3tc="res://.godot/imported/metsäkuva2.png-2dceb80d0ee321e1e367dd0379682787.s3tc.ctex"
-path.etc2="res://.godot/imported/metsäkuva2.png-2dceb80d0ee321e1e367dd0379682787.etc2.ctex"
+uid="uid://753yw8m8xad3"
+path.s3tc="res://.godot/imported/snake_1.png-4f68d48abbf49e2394a16c3e79c68590.s3tc.ctex"
+path.etc2="res://.godot/imported/snake_1.png-4f68d48abbf49e2394a16c3e79c68590.etc2.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
+generator_parameters={
+"md5": "d1d18877ec9215bfc32460cd852b1387"
+}
 
 [deps]
 
-source_file="res://assets/textures/metsäkuva2.png"
-dest_files=["res://.godot/imported/metsäkuva2.png-2dceb80d0ee321e1e367dd0379682787.s3tc.ctex", "res://.godot/imported/metsäkuva2.png-2dceb80d0ee321e1e367dd0379682787.etc2.ctex"]
+source_file="res://assets/models/level3_käärme/snake_1.png"
+dest_files=["res://.godot/imported/snake_1.png-4f68d48abbf49e2394a16c3e79c68590.s3tc.ctex", "res://.godot/imported/snake_1.png-4f68d48abbf49e2394a16c3e79c68590.etc2.ctex"]
 
 [params]
 
@@ -23,7 +26,7 @@ compress/lossy_quality=0.7
 compress/uastc_level=0
 compress/rdo_quality_loss=0.0
 compress/hdr_compression=1
-compress/normal_map=0
+compress/normal_map=1
 compress/channel_pack=0
 mipmaps/generate=true
 mipmaps/limit=-1

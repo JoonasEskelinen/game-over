@@ -1,0 +1,29 @@
+[gd_scene load_steps=3 format=3 uid="uid://6irff44v8env"]
+
+[ext_resource type="Script" path="res://scenes/enemies/EnemyLevel3.cs" id="1_k3"]
+[ext_resource type="PackedScene" uid="uid://dplbujk8ui51p" path="res://assets/models/level3_käärme/snake.fbx" id="2_snake"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_k3"]
+radius = 0.32
+height = 0.65
+
+[node name="EnemyLevel3" type="CharacterBody3D" unique_id=663553059]
+script = ExtResource("1_k3")
+Health = 1
+Speed = 3.8
+AttackRange = 0.96
+ContactReachMeters = 0.84
+ContactMaxHeightDelta = 1.5
+ContactDamageCooldownSeconds = 0.55
+FaceYawOffsetDegrees = 180.0
+LightMeleeProximityOverride = 1.12
+RaskasIskuLäheisyysYlikirjoitus = 0.85
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=663553060]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.36, 0)
+shape = SubResource("CapsuleShape3D_k3")
+
+[node name="Visual" type="Node3D" parent="." unique_id=663553061]
+
+[node name="Snake" parent="Visual" unique_id=663553062 instance=ExtResource("2_snake")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)

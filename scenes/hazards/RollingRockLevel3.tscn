@@ -1,0 +1,37 @@
+[gd_scene load_steps=5 format=3 uid="uid://b8krollingrck3"]
+
+[ext_resource type="Script" uid="uid://c7rollingrk31" path="res://scripts/hazards/RollingRockLevel3.cs" id="1_script"]
+[ext_resource type="PackedScene" uid="uid://c8spe10lgxrcu" path="res://assets/models/nature/glTF/Rock_Medium_1.gltf" id="2_rock"]
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_body"]
+radius = 0.38
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_hit"]
+radius = 0.52
+
+[node name="RollingRockLevel3" type="RigidBody3D"]
+collision_layer = 256
+collision_mask = 3
+mass = 62.0
+linear_damp = 0.06
+angular_damp = 0.1
+continuous_cd = true
+can_sleep = false
+script = ExtResource("1_script")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+shape = SubResource("SphereShape3D_body")
+
+[node name="Visual" type="Node3D" parent="."]
+transform = Transform3D(1.25, 0, 0, 0, 1.25, 0, 0, 0, 1.25, 0, 0, 0)
+
+[node name="Rock_Medium_1" parent="Visual" instance=ExtResource("2_rock")]
+
+[node name="HitArea" type="Area3D" parent="."]
+collision_layer = 512
+collision_mask = 1
+monitoring = true
+monitorable = false
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="HitArea"]
+shape = SubResource("SphereShape3D_hit")

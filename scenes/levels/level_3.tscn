@@ -9,6 +9,13 @@
 [ext_resource type="PackedScene" uid="uid://b4vo37fhel30m" path="res://assets/models/nature/glTF/CommonTree_1.gltf" id="8_pimnq"]
 [ext_resource type="PackedScene" uid="uid://p4s7rgnhje0r" path="res://assets/models/nature/glTF/CommonTree_3.gltf" id="9_2bnyt"]
 [ext_resource type="PackedScene" uid="uid://dcl7fiqplg31j" path="res://assets/models/nature/glTF/CommonTree_4.gltf" id="10_t4"]
+[ext_resource type="Script" uid="uid://wmx8uef4qdaq" path="res://scripts/enemies/EnemyLevel3Spawner.cs" id="11_l3spawner"]
+[ext_resource type="PackedScene" uid="uid://6irff44v8env" path="res://scenes/enemies/Enemy_Level3.tscn" id="12_en_l3"]
+[ext_resource type="PackedScene" uid="uid://0aem52h3rph" path="res://assets/models/nature/glTF/Rock_Medium_3.gltf" id="12_t4txi"]
+[ext_resource type="PackedScene" uid="uid://c8spe10lgxrcu" path="res://assets/models/nature/glTF/Rock_Medium_1.gltf" id="13_apo5x"]
+[ext_resource type="Script" uid="uid://b7k3m2n8pqxw1" path="res://scripts/levels/Level3GroundAlign.cs" id="13_l3align"]
+[ext_resource type="Script" uid="uid://c7rockspwnl31" path="res://scripts/levels/Level3RollingRockSpawner.cs" id="14_rocksp"]
+[ext_resource type="PackedScene" uid="uid://butvkmvducgo3" path="res://scenes/hazards/RollingRockLevel3.tscn" id="15_rockscn"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_0ljxa"]
 sky_horizon_color = Color(0.45, 0.55, 0.42, 1)
@@ -80,9 +87,14 @@ size = Vector3(66, 18, 3.5)
 [node name="Level3" type="Node3D" unique_id=2065126888]
 
 [node name="Player" parent="." unique_id=1514760592 instance=ExtResource("1_o8c3j")]
-transform = Transform3D(1.1, 0, 0, 0, 1.1, 0, 0, 0, 1.1, -28.05812, -7.8561497, 0)
+transform = Transform3D(1.1, 0, 0, 0, 1.1, 0, 0, 0, 1.1, -28.05812, -9.681442, 0)
 Juoksunopeus = 6.0
 SyvyysAlaraja = -14.0
+HahmonPohjanOffsetY = 0.2
+MiekkaIskuSuuntaPuolikulma = 65.0
+
+[node name="Level3GroundAlign" type="Node" parent="." unique_id=1569803156]
+script = ExtResource("13_l3align")
 
 [node name="HUD" parent="." unique_id=499664610 instance=ExtResource("2_0ljxa")]
 
@@ -112,6 +124,14 @@ shadow_enabled = true
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=695517407]
 environment = SubResource("Environment_0ljxa")
+
+[node name="EnemyLevel3Spawner" type="Node3D" parent="." unique_id=3000999]
+script = ExtResource("11_l3spawner")
+EnemyScene = ExtResource("12_en_l3")
+
+[node name="Level3RollingRockSpawner" type="Node3D" parent="." unique_id=922737359]
+script = ExtResource("14_rocksp")
+RockScene = ExtResource("15_rockscn")
 
 [node name="World" type="Node3D" parent="." unique_id=1066280580]
 
@@ -179,6 +199,21 @@ size = Vector3(0.001, 20.580322, 40.37451)
 transform = Transform3D(-0.7578208, 0.6523467, 0.012302704, -0.015278234, 0.0011084201, -0.99988276, -0.65228415, -0.7579204, 0.009126785, -21.480576, 15.093052, -20.517803)
 material_override = SubResource("StandardMaterial3D_pimnq")
 size = Vector3(0.55, 26.385712, 37.583862)
+
+[node name="RingSegSouth2" type="CSGBox3D" parent="World/PlateauRingWalls" unique_id=436983383]
+transform = Transform3D(0.7124915, 0.7016086, -0.010109182, -0.015278234, 0.0011084188, -0.99988276, -0.70151454, 0.7125621, 0.011509088, 27.003868, 15.093052, -23.290909)
+material_override = SubResource("StandardMaterial3D_pimnq")
+size = Vector3(0.55, 26.385712, 37.583862)
+
+[node name="RingSegSouth4" type="CSGBox3D" parent="World/PlateauRingWalls" unique_id=1074058956]
+transform = Transform3D(-0.3112244, 0.9503188, 0.0058089793, -0.015278232, 0.0011084196, -0.99988276, -0.9502138, -0.3112772, 0.014174286, -5.5940704, 12.825413, -29.916836)
+material_override = SubResource("StandardMaterial3D_pimnq")
+size = Vector3(0.55, 19.916, 37.583862)
+
+[node name="RingSegSouth3" type="CSGBox3D" parent="World/PlateauRingWalls" unique_id=1203839552]
+transform = Transform3D(0.7550247, -0.65558153, -0.012263564, -0.015278233, 0.0011084195, -0.99988276, 0.65551853, 0.755124, -0.009179306, 19.40429, 17.098492, 25.149677)
+material_override = SubResource("StandardMaterial3D_pimnq")
+size = Vector3(0.55, 29.008774, 37.583862)
 
 [node name="RoundaboutDeck" type="CSGCylinder3D" parent="World" unique_id=974303120]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 91.15391, 22.53965, 0.075930595)
@@ -280,7 +315,7 @@ shape = SubResource("BoxShape3D_plateau_ns")
 
 [node name="PlateauCornerSW" type="StaticBody3D" parent="World" unique_id=3001215]
 
-[node name="puijontorni" parent="World" unique_id=1033750417 instance=ExtResource("5_fmg3e")]
+[node name="puijontorni" parent="World" unique_id=1531584067 instance=ExtResource("5_fmg3e")]
 transform = Transform3D(30, 0, 0, 0, 30, 0, 0, 0, 30, 107.529495, 37.71131, -18.834871)
 
 [node name="CommonTree_51" parent="World" unique_id=261912648 instance=ExtResource("10_t4")]
@@ -374,19 +409,19 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 104.41958, 21.5833, -26.21825
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 116.744545, 21.5833, 24.65636)
 
 [node name="CommonTree_43" parent="World" unique_id=1030447698 instance=ExtResource("8_pimnq")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 110.72665, 21.5833, 24.65636)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 108.16242, 21.5833, 22.438484)
 
 [node name="CommonTree_44" parent="World" unique_id=910322209 instance=ExtResource("8_pimnq")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 117.53635, 21.5833, 17.229403)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 114.09653, 21.481215, 15.894663)
 
 [node name="CommonTree_45" parent="World" unique_id=274750318 instance=ExtResource("8_pimnq")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 117.53635, 21.5833, 13.800756)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 118.054276, 20.033447, 13.800756)
 
 [node name="CommonTree_46" parent="World" unique_id=1409280245 instance=ExtResource("8_pimnq")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 114.54888, 21.5833, 20.931662)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 111.20687, 21.5833, 19.18308)
 
 [node name="CommonTree_47" parent="World" unique_id=631727807 instance=ExtResource("8_pimnq")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 105.93329, 21.5833, 27.009802)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 104.78811, 21.117823, 25.230858)
 
 [node name="CommonTree_48" parent="World" unique_id=618602705 instance=ExtResource("8_pimnq")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 115.13588, 21.5833, 27.009802)
@@ -410,13 +445,19 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -48.805923, -14.249662, -3.92
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -48.805923, -17.754911, -7.529814)
 
 [node name="CommonTree_32" parent="World" unique_id=234183024 instance=ExtResource("8_pimnq")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -48.805923, -14.249662, -3.920922)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -51.44184, -17.084208, -5.972312)
 
 [node name="CommonTree_33" parent="World" unique_id=799222259 instance=ExtResource("8_pimnq")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -54.8092, -20.217787, -6.731435)
 
 [node name="CommonTree_34" parent="World" unique_id=703175393 instance=ExtResource("8_pimnq")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -20.572308, -14.249662, -3.920922)
+
+[node name="Rock_Medium_32" parent="World" unique_id=893396899 instance=ExtResource("12_t4txi")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 60.778797, 22.595837, -0.6681543)
+
+[node name="Rock_Medium_12" parent="World" unique_id=1272877208 instance=ExtResource("13_apo5x")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 62.494965, 22.98578, 3.0867531)
 
 [node name="CommonTree_32" parent="." unique_id=1580322418 instance=ExtResource("9_2bnyt")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 74.51583, 22.60729, 28.169888)

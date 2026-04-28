@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Godot;
 
 /// <summary>
@@ -194,6 +195,55 @@ public partial class PlayerController : CharacterBody3D
 		if (_characterModel == null || !_characterModel.IsInsideTree() || !IsInsideTree())
 			return false;
 		return IsShieldBlockFacingArc(GlobalPosition, threatWorldPosition, KilpiTorjuntaPuolikulma);
+	}
+
+	/// <summary>
+	/// Palaute kun vihollinen (esim. käärme) vie HP:ta — värinä + lyhyt visuaalinen “energia”-välähdys; ei keskeytä miekkalyöntiä.
+	/// </summary>
+	public void NotifyEnemyEnergyDrainHit()
+	{
+		Vibrate(0.52f, 0.52f, 0.2f);
+		PlayEnergyDrainFlashVisual();
+	}
+
+	private void PlayEnergyDrainFlashVisual()
+	{
+		if (_characterModel == null || !GodotObject.IsInstanceValid(_characterModel) || !IsInsideTree())
+			return;
+
+		var geos = new List<GeometryInstance3D>();
+		CollectGeometryInstancesForDrainFx(_characterModel, geos);
+		if (geos.Count == 0)
+			return;
+
+		var flashMat = new StandardMaterial3D
+		{
+			ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded,
+			AlbedoColor = new Color(0.55f, 0.92f, 1f),
+			EmissionEnabled = true,
+			Emission = new Color(0.2f, 0.75f, 0.95f),
+			EmissionEnergyMultiplier = 2.4f,
+		};
+		foreach (var g in geos)
+			if (GodotObject.IsInstanceValid(g))
+				g.MaterialOverride = flashMat;
+
+		var t = CreateTween();
+		t.TweenInterval(0.07f);
+		t.TweenCallback(Callable.From(() =>
+		{
+			foreach (var g in geos)
+				if (GodotObject.IsInstanceValid(g))
+					g.MaterialOverride = null;
+		}));
+	}
+
+	private static void CollectGeometryInstancesForDrainFx(Node node, List<GeometryInstance3D> list)
+	{
+		if (node is GeometryInstance3D gi)
+			list.Add(gi);
+		foreach (Node child in node.GetChildren())
+			CollectGeometryInstancesForDrainFx(child, list);
 	}
 
 	/// <summary>
