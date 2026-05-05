@@ -2,26 +2,31 @@ using System;
 using Godot;
 
 /// <summary>
-/// Level 3: kiviä mäkeä alas Timerilla (ei riipu _Processista). RockScene + UphillRoadRoot pakolliset.
+/// Level 3: kiviä mäkeä alas Timerilla (ei riipu _Processista). KivienSkena + UphillRoadRoot pakolliset.
 /// </summary>
 public partial class Level3RollingRockSpawner : Node3D
 {
-	[Export] public PackedScene RockScene;
+	[ExportCategory("Kierivät kivet")]
+	[ExportGroup("Skena ja polku")]
+	[Export] public PackedScene KivienSkena;
 
-	[Export] public NodePath RoadRootPath;
+	[Export] public NodePath TienJuurenPolku;
 
-	[Export] public float MinSpawnIntervalSeconds = 2.2f;
-	[Export] public float MaxSpawnIntervalSeconds = 5.5f;
+	[ExportGroup("Ilmestymisvälit")]
+	[Export] public float IlmestymisväliMinSek = 2.2f;
+	[Export] public float IlmestymisväliMaxSek = 5.5f;
 
-	[Export] public float SpawnUphillMin = 16f;
-	[Export] public float SpawnUphillMax = 34f;
+	[ExportGroup("Sijainti pelaajaan nähden")]
+	[Export] public float EtäisyysYlämäkeenMin = 16f;
+	[Export] public float EtäisyysYlämäkeenMax = 34f;
 
-	[Export] public float LateralHalfWidth = 2.0f;
+	[Export] public float SivuttaisenPuolikasLeveys = 2.0f;
 
-	[Export] public float RaycastTopY = 70f;
-	[Export] public float SpawnHeightAboveHit = 0.55f;
+	[ExportGroup("Tien pinta (säde)")]
+	[Export] public float SäteenLähtöY = 70f;
+	[Export] public float KorkeusOsumanYläpuolella = 0.55f;
 
-	[Export] public float MinWalkableNormalDotUp = 0.32f;
+	[Export] public float MinKuljettavaNormaaliY = 0.32f;
 
 	private Node3D _player;
 	private Node3D _roadRoot;
@@ -48,9 +53,9 @@ public partial class Level3RollingRockSpawner : Node3D
 		_player = tree.GetFirstNodeInGroup("player") as Node3D;
 		ResolveRoadRoot();
 
-		if (RockScene == null)
+		if (KivienSkena == null)
 		{
-			GD.PushError("Level3RollingRockSpawner: RockScene puuttuu (PackedScene).");
+			GD.PushError("Level3RollingRockSpawner: KivienSkena puuttuu (PackedScene).");
 			return;
 		}
 
@@ -66,7 +71,7 @@ public partial class Level3RollingRockSpawner : Node3D
 
 	private void OnSpawnTimer()
 	{
-		if (RockScene == null || _roadRoot == null)
+		if (KivienSkena == null || _roadRoot == null)
 			return;
 
 		var tree = GetTree();
@@ -75,7 +80,7 @@ public partial class Level3RollingRockSpawner : Node3D
 		_player = tree.GetFirstNodeInGroup("player") as Node3D;
 		SpawnOneRock();
 
-		_timer.WaitTime = (float)GD.RandRange(MinSpawnIntervalSeconds, MaxSpawnIntervalSeconds);
+		_timer.WaitTime = (float)GD.RandRange(IlmestymisväliMinSek, IlmestymisväliMaxSek);
 		_timer.Start();
 	}
 
@@ -85,18 +90,24 @@ public partial class Level3RollingRockSpawner : Node3D
 		if (!IsInsideTree())
 			return;
 
-		try
-		{
-			if (!RoadRootPath.IsEmpty && HasNode(RoadRootPath))
-				_roadRoot = GetNodeOrNull<Node3D>(RoadRootPath);
-		}
-		catch (Exception e)
-		{
-			GD.PushWarning($"Level3RollingRockSpawner: RoadRootPath virheellinen: {e.Message}");
-		}
+		// level_3.tscn: juuri → World/UphillRoadRoot (vältetään rikkinäinen / null TienJuurenPolku-export).
+		var sceneRoot = GetParent();
+		if (sceneRoot != null)
+			_roadRoot = sceneRoot.GetNodeOrNull<Node3D>("World/UphillRoadRoot");
 
 		if (_roadRoot == null)
-			_roadRoot = GetParent()?.GetNodeOrNull<Node3D>("World/UphillRoadRoot");
+		{
+			try
+			{
+				var path = TienJuurenPolku;
+				if (!path.IsEmpty && HasNode(path))
+					_roadRoot = GetNodeOrNull<Node3D>(path);
+			}
+			catch (Exception e)
+			{
+				GD.PushWarning($"Level3RollingRockSpawner: TienJuurenPolku virheellinen: {e.Message}");
+			}
+		}
 
 		SceneTree tree = GetTree();
 		if (_roadRoot == null && tree?.Root != null)
@@ -124,8 +135,8 @@ public partial class Level3RollingRockSpawner : Node3D
 		Vector3 uphill = -downhill;
 		Vector3 lateral = _roadRoot.GlobalTransform.Basis.Z.Normalized();
 
-		float up = (float)GD.RandRange(SpawnUphillMin, SpawnUphillMax);
-		float side = (float)GD.RandRange(-LateralHalfWidth, LateralHalfWidth);
+		float up = (float)GD.RandRange(EtäisyysYlämäkeenMin, EtäisyysYlämäkeenMax);
+		float side = (float)GD.RandRange(-SivuttaisenPuolikasLeveys, SivuttaisenPuolikasLeveys);
 
 		Vector3 basePos = (_player != null && GodotObject.IsInstanceValid(_player) && _player.IsInsideTree())
 			? _player.GlobalPosition
@@ -136,15 +147,15 @@ public partial class Level3RollingRockSpawner : Node3D
 
 		Vector3 spawn;
 		if (hitPos.HasValue)
-			spawn = hitPos.Value + Vector3.Up * SpawnHeightAboveHit;
+			spawn = hitPos.Value + Vector3.Up * KorkeusOsumanYläpuolella;
 		else
 		{
 			Vector3 localOnRamp = _roadRoot.GlobalTransform.Basis.Inverse() * (anchor - _roadRoot.GlobalPosition);
-			localOnRamp = new Vector3(localOnRamp.X, 0.42f, Mathf.Clamp(localOnRamp.Z, -LateralHalfWidth, LateralHalfWidth));
+			localOnRamp = new Vector3(localOnRamp.X, 0.42f, Mathf.Clamp(localOnRamp.Z, -SivuttaisenPuolikasLeveys, SivuttaisenPuolikasLeveys));
 			spawn = _roadRoot.ToGlobal(localOnRamp);
 		}
 
-		Node inst = RockScene.Instantiate();
+		Node inst = KivienSkena.Instantiate();
 		if (inst is not RollingRockLevel3 rock)
 		{
 			GD.PushError($"Level3RollingRockSpawner: juuri ei ole RollingRockLevel3 (oli {inst?.GetType().Name}).");
@@ -183,7 +194,7 @@ public partial class Level3RollingRockSpawner : Node3D
 		if (world == null)
 			return null;
 
-		var from = new Vector3(worldAnchor.X, RaycastTopY, worldAnchor.Z);
+		var from = new Vector3(worldAnchor.X, SäteenLähtöY, worldAnchor.Z);
 		var to = from + Vector3.Down * 220f;
 
 		var exclude = new Godot.Collections.Array<Rid>();
@@ -207,7 +218,7 @@ public partial class Level3RollingRockSpawner : Node3D
 				? ((Vector3)nrmObj).Normalized()
 				: Vector3.Up;
 
-			if (hitNormal.Dot(Vector3.Up) >= MinWalkableNormalDotUp && ColliderLooksLikeLevel3Road(hit))
+			if (hitNormal.Dot(Vector3.Up) >= MinKuljettavaNormaaliY && ColliderLooksLikeLevel3Road(hit))
 				return hitPos;
 
 			if (hit.TryGetValue("collider", out var colVar) && colVar.Obj is CollisionObject3D co)

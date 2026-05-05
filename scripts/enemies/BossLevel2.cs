@@ -573,7 +573,6 @@ public partial class BossLevel2 : CharacterBody3D
 			_animationPlayer.Play("death");
 
 		RemoveFromGroup("level2_boss");
-		GD.Print("BossLevel2 kuoli — aktivoi exit täällä!");
 
 		Engine.TimeScale = 0.15f;
 		if (IsInsideTree())

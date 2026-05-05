@@ -41,6 +41,20 @@ public partial class HealthComponent : Node
 		EmitSignal(SignalName.HealthChanged, _currentHealth, MaxHealth);
 	}
 
+	/// <summary>
+	/// Lisää yhden elämän vain jos elämiä on kulunut (alle MaxLives). Tallentaa levylle.
+	/// </summary>
+	public bool TryGrantExtraLife()
+	{
+		if (_currentLives >= MaxLives)
+			return false;
+		_currentLives++;
+		EmitSignal(SignalName.LivesChanged, _currentLives, MaxLives);
+		SaveLives(_currentLives);
+		GD.Print($"Elämä palautettu: {_currentLives}/{MaxLives}");
+		return true;
+	}
+
 	public int GetCurrentHealth() => _currentHealth;
 	public int GetCurrentLives() => _currentLives;
 
@@ -97,6 +111,7 @@ public partial class HealthComponent : Node
 	private void SaveLives(int lives)
 	{
 		var config = new ConfigFile();
+		config.Load(SavePath);
 		config.SetValue(SaveSection, SaveKey, lives);
 		config.Save(SavePath);
 		GD.Print($"Tallennettu elämät: {lives}");

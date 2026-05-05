@@ -5,6 +5,7 @@
 [ext_resource type="PackedScene" uid="uid://cq8itp0wt5535" path="res://scenes/characters/gameover_character.tscn" id="3_76oj4"]
 [ext_resource type="AudioStream" uid="uid://fwwsx07hc66n" path="res://assets/audio/sfx/miekka.mp3" id="4_sword_sfx"]
 [ext_resource type="AudioStream" uid="uid://bb6vcxtpadsox" path="res://assets/audio/sfx/vahinko.mp3" id="5_damage_sfx"]
+[ext_resource type="PackedScene" uid="uid://ba0ticp74r0qo" path="res://assets/models/joystick/joystick.glb" id="6_kqtwu"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_wocps"]
 height = 1.0491943
@@ -34,3 +35,5 @@ stream = ExtResource("4_sword_sfx")
 
 [node name="DamageSFX" type="AudioStreamPlayer" parent="." unique_id=513855978]
 stream = ExtResource("5_damage_sfx")
+
+[node name="joystick" parent="." unique_id=935058774 instance=ExtResource("6_kqtwu")]

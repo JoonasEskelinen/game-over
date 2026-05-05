@@ -62,6 +62,19 @@ public partial class PlayerController : CharacterBody3D
 	/// </summary>
 	[Export] public float HahmonPohjanOffsetY = 0f;
 
+	/// <summary>
+	/// Kun true, joystick-malli näkyy istuessa ilman <see cref="GameState.HasJoystick"/> (esim. level_3 playtest).
+	/// Kampanjassa false — keräyksen jälkeen HasJoystick riittää.
+	/// </summary>
+	[Export] public bool JoystickInHandAlwaysWhenSitting = false;
+
+	[ExportGroup("Joystick glb (oikea käsi)")]
+	/// <summary>Paikallinen siirtymä <c>SwordAttachment</c> / mixamorig_RightHand -akselissa (metriä).</summary>
+	[Export] public Vector3 JoystickHandLocalPosition = new Vector3(0.02f, -0.05f, 0.04f);
+	/// <summary>Euler-kulmat asteina (Godot YXZ).</summary>
+	[Export] public Vector3 JoystickHandLocalEulerDeg = new Vector3(-88f, 8f, -6f);
+	[Export] public Vector3 JoystickHandLocalScale = new Vector3(0.42f, 0.42f, 0.42f);
+
 	// ─────────────────────────────────────────────
 	// ASE-TILA
 	// ─────────────────────────────────────────────
@@ -143,14 +156,20 @@ public partial class PlayerController : CharacterBody3D
 
 	private bool _heavyCooldownBarUnlocked;
 
-	/// <summary>Miekka-node — haetaan Skeleton3D:n alta. Näkyy vain SwordShield-tilassa.</summary>
+	/// <summary>Oikean käden BoneAttachment (miekka + mahdollinen joystick-lapsi).</summary>
 	private Node3D _sword;
+
+	/// <summary>Miekan mesh (<c>miekka</c>) — näkyvyys erikseen, jotta joystick voi olla SwordAttachmentin lapsena.</summary>
+	private Node3D _swordMeshVisual;
 
 	/// <summary>Kilpi-node — haetaan Skeleton3D:n alta. Näkyy vain SwordShield-tilassa.</summary>
 	private Node3D _shield;
 
-	/// <summary>Drone-joystickin visuaali oikeassa kädessä — luodaan koodissa SetupDroneJoystick().</summary>
+	/// <summary>Drone-joystickin visuaali oikeassa kädessä — luodaan koodissa SetupDroneJoystick() jos scene:ssä ei ole joystick.glb.</summary>
 	private Node3D _droneJoystick;
+
+	/// <summary>Scene-puun joystick.glb -instanssi — siirretään SwordAttachmentiin _Readyssä.</summary>
+	private Node _handJoystickSceneRoot;
 
 	/// <summary>True kun drone-moodi on aktiivinen (kolmio + HasJoystick).</summary>
 	private bool _isDroneMode = false;
@@ -186,6 +205,19 @@ public partial class PlayerController : CharacterBody3D
 	/// <summary>Palauttaa true jos pelaaja blokkaa kilvillä juuri nyt.</summary>
 	public bool IsBlocking() => _isBlocking;
 
+	/// <summary>HUD / erikoisase: istutaan ja joystick on käytössä (sama ehto kuin käsimalli).</summary>
+	public bool IsSpecialWeaponJoystickContextActive()
+		=> _isSitting && (JoystickInHandAlwaysWhenSitting || GameState.Instance?.HasJoystick == true);
+
+	/// <summary>
+	/// Liikkeen syöte (<c>move_*</c> = vasen tat + WASD). HUD-ikonin kallistus; myöhemmin erikoisaseen ohjaus.
+	/// </summary>
+	public Vector2 GetSpecialWeaponStickVector()
+	{
+		Vector2 v = Input.GetVector("move_left", "move_right", "move_forward", "move_back");
+		return new Vector2(Mathf.Clamp(v.X, -1f, 1f), Mathf.Clamp(v.Y, -1f, 1f));
+	}
+
 	/// <summary>
 	/// True vain jos kilpi on ylhäällä ja uhka on edessä (kapea kartio). Käytä purema-/iskutarkistuksissa.
 	/// </summary>
@@ -205,6 +237,9 @@ public partial class PlayerController : CharacterBody3D
 		Vibrate(0.52f, 0.52f, 0.2f);
 		PlayEnergyDrainFlashVisual();
 	}
+
+	/// <summary>Kutsutaan kun joystick kerätään level_1:ssä — päivittää käsimallin jos pelaaja jo istuu.</summary>
+	public void SyncHandJoystickAfterPickup() => RefreshHandJoystickVisibility();
 
 	private void PlayEnergyDrainFlashVisual()
 	{
@@ -707,12 +742,31 @@ public partial class PlayerController : CharacterBody3D
 		// Jos polku ei täsmää, tarkista scene-puusta että nimet ovat samat
 		_sword  = GetNodeOrNull<Node3D>("gameover_character/Skeleton3D/SwordAttachment");
 		_shield = GetNodeOrNull<Node3D>("gameover_character/Skeleton3D/ShieldAttachment");
+		_swordMeshVisual = _sword?.GetNodeOrNull<Node3D>("miekka");
 
-		// Piilotetaan aseet oletuksena — tulevat näkyviin SwordShield-tilassa
-		if (_sword  != null) _sword.Visible  = false;
+		// Piilotetaan aseet oletuksena — tulevat näkyviin SwordShield-tilassa (miekka erikseen, jotta joystick-bone säilyy)
+		SetSwordMeshVisible(false);
 		if (_shield != null) _shield.Visible = false;
 
-		// Luodaan drone-joystickin visuaali oikeaan käteen (piilotettu kunnes drone-moodi aktivoituu)
+		_handJoystickSceneRoot = GetNodeOrNull("joystick");
+		if (_handJoystickSceneRoot != null && _sword != null)
+		{
+			_handJoystickSceneRoot.Reparent(_sword, keepGlobalTransform: false);
+			ApplyJoystickHandLocalPose();
+			SetJoystickAttachTreeVisible(_handJoystickSceneRoot, false);
+			try
+			{
+				MeshTangentFix.ApplyToSubtree(_handJoystickSceneRoot);
+			}
+			catch (Exception ex)
+			{
+				GD.PrintErr("MeshTangentFix (joystick): " + ex.Message);
+			}
+		}
+		else if (_handJoystickSceneRoot != null && _sword == null)
+			GD.PrintErr("Player: SwordAttachment puuttuu — joystickia ei kiinnitetty luurankoon.");
+
+		// Luodaan yksinkertainen joystick vain jos scene:ssä ei ole joystick.glb
 		SetupDroneJoystick();
 
 		// Korjataan tangentit miekalle ja kilpelle (estää shader-varoitukset)
@@ -755,6 +809,10 @@ public partial class PlayerController : CharacterBody3D
 
 		// Arcade-prop kerros 5 (Level1ArcadePhysicsSetup: bitmask 16) — pelaaja törmää, bossin syöksy-maski 1 ei.
 		SetCollisionMaskValue(5, true);
+
+		RefreshHandJoystickVisibility();
+
+		Callable.From(DeferredReloadJoystickProgressFromSave).CallDeferred();
 	}
 
 	// ─────────────────────────────────────────────
@@ -819,17 +877,19 @@ public partial class PlayerController : CharacterBody3D
 
 			if (_isSitting)
 			{
-				if (_sword  != null) _sword.Visible  = false;
+				SetSwordMeshVisible(false);
 				if (_shield != null) _shield.Visible = false;
 				PlayAnim("mixamo_com_004");
 			}
 			else
 			{
 				bool showWeapons = _weaponMode == WeaponMode.SwordShield;
-				if (_sword  != null) _sword.Visible  = showWeapons;
+				SetSwordMeshVisible(showWeapons);
 				if (_shield != null) _shield.Visible = showWeapons;
 				PlayAnim(showWeapons ? "mixamo_com_007" : "mixamo_com");
 			}
+
+			RefreshHandJoystickVisibility();
 		}
 
 		// ── Asemoodi (kolmio): drone vain level_1:ssä (arcade-joystick). Muilla kentillä kolmio = miekka/kilpi kuten ilman joystickia.
@@ -852,13 +912,13 @@ public partial class PlayerController : CharacterBody3D
 			{
 				if (_weaponMode == WeaponMode.Normal)
 				{
-					if (_sword  != null) _sword.Visible  = false;
+					SetSwordMeshVisible(false);
 					if (_shield != null) _shield.Visible = false;
 					PlayAnim("mixamo_com");
 				}
 				else
 				{
-					if (_sword  != null) _sword.Visible  = true;
+					SetSwordMeshVisible(true);
 					if (_shield != null) _shield.Visible = true;
 					PlayAnim("mixamo_com_007");
 				}
@@ -1077,6 +1137,9 @@ public partial class PlayerController : CharacterBody3D
 				target = planarInput.LengthSquared() > 0.01f ? "mixamo_com_003" : "mixamo_com";
 			PlayAnim(target);
 		}
+
+		if (_isSitting)
+			RefreshHandJoystickVisibility();
 
 		// Testitoiminto — ottaa vahinkoa (poista julkaisusta)
 		if (Input.IsActionJustPressed("test_damage"))
@@ -1307,8 +1370,11 @@ public partial class PlayerController : CharacterBody3D
 		_lightTriggerArmed = true;
 		_lightAnalogPreviousFrame = 0f;
 
-		if (_sword  != null) _sword.Visible  = false;
+		SetSwordMeshVisible(false);
 		if (_shield != null) _shield.Visible = false;
+
+		_isDroneMode = false;
+		RefreshHandJoystickVisibility();
 
 		PlayAnim("mixamo_com");
 	}
@@ -1329,6 +1395,14 @@ public partial class PlayerController : CharacterBody3D
 	// DRONE-MOODI (joystick kädessä)
 	// ─────────────────────────────────────────────
 
+	private void SetSwordMeshVisible(bool visible)
+	{
+		if (_swordMeshVisual != null)
+			_swordMeshVisual.Visible = visible;
+		else if (_sword != null)
+			_sword.Visible = visible;
+	}
+
 	/// <summary>
 	/// Luo yksinkertaisen joystick-visuaalin oikeaan käteen (SwordAttachment-boneen).
 	/// Käytetään CylinderMesh + SphereMesh -yhdistelmää. Korvaa myöhemmin oikealla mallilla.
@@ -1347,6 +1421,8 @@ public partial class PlayerController : CharacterBody3D
 	{
 		var swordAttach = GetNodeOrNull<Node3D>("gameover_character/Skeleton3D/SwordAttachment");
 		if (swordAttach == null) return;
+		if (_handJoystickSceneRoot != null)
+			return;
 
 		// Varsi (lieriö)
 		var handle = new MeshInstance3D { Name = "DroneJoystick", Visible = false };
@@ -1373,6 +1449,62 @@ public partial class PlayerController : CharacterBody3D
 		_droneJoystick = handle;
 	}
 
+	/// <summary>Joystick kädessä istuessa kun kerätty tai <see cref="JoystickInHandAlwaysWhenSitting"/> (level_3).</summary>
+	private void RefreshHandJoystickVisibility()
+	{
+		bool hasJoy = JoystickInHandAlwaysWhenSitting || GameState.Instance?.HasJoystick == true;
+		bool show = hasJoy && _isSitting;
+		if (_handJoystickSceneRoot != null)
+			SetJoystickAttachTreeVisible(_handJoystickSceneRoot, show);
+		if (_droneJoystick != null)
+			_droneJoystick.Visible = show && _handJoystickSceneRoot == null;
+	}
+
+	private static void SetJoystickAttachTreeVisible(Node root, bool visible)
+	{
+		if (root == null) return;
+		if (root is Node3D n3)
+			n3.Visible = visible;
+		foreach (Node ch in root.GetChildren())
+			SetJoystickAttachTreeVisible(ch, visible);
+	}
+
+	/// <summary>Asettaa joystick.glb:n paikallisen asennon oikean käden BoneAttachmentissa (ei Player-juuren offsettia).</summary>
+	private void ApplyJoystickHandLocalPose()
+	{
+		if (_handJoystickSceneRoot == null)
+			return;
+
+		Node3D target = _handJoystickSceneRoot as Node3D;
+		if (target == null)
+		{
+			foreach (Node c in _handJoystickSceneRoot.GetChildren())
+			{
+				if (c is Node3D d)
+				{
+					target = d;
+					break;
+				}
+			}
+		}
+
+		if (target == null)
+			return;
+
+		var eulerRad = new Vector3(
+			Mathf.DegToRad(JoystickHandLocalEulerDeg.X),
+			Mathf.DegToRad(JoystickHandLocalEulerDeg.Y),
+			Mathf.DegToRad(JoystickHandLocalEulerDeg.Z));
+		var basis = Basis.FromEuler(eulerRad, EulerOrder.Yxz).Scaled(JoystickHandLocalScale);
+		target.Transform = new Transform3D(basis, JoystickHandLocalPosition);
+	}
+
+	private void DeferredReloadJoystickProgressFromSave()
+	{
+		GameState.Instance?.LoadJoystickFromSave();
+		RefreshHandJoystickVisibility();
+	}
+
 	/// <summary>Aktivoi drone-moodin: pelaaja istuu, joystick tulee käteen.</summary>
 	private void EnterDroneMode()
 	{
@@ -1383,9 +1515,9 @@ public partial class PlayerController : CharacterBody3D
 		_grabbedBody     = null;
 		_isBlocking      = false;
 
-		if (_sword         != null) _sword.Visible         = false;
+		SetSwordMeshVisible(false);
 		if (_shield        != null) _shield.Visible        = false;
-		if (_droneJoystick != null) _droneJoystick.Visible = true;
+		RefreshHandJoystickVisibility();
 
 		PlayAnim("mixamo_com_004"); // istumisanimaatio
 		GD.Print("DroneMode: aktivoitu — joystick kädessä.");
@@ -1397,10 +1529,10 @@ public partial class PlayerController : CharacterBody3D
 		_isDroneMode = false;
 		_isSitting   = false;
 
-		if (_droneJoystick != null) _droneJoystick.Visible = false;
+		RefreshHandJoystickVisibility();
 
 		bool showWeapons = _weaponMode == WeaponMode.SwordShield;
-		if (_sword  != null) _sword.Visible  = showWeapons;
+		SetSwordMeshVisible(showWeapons);
 		if (_shield != null) _shield.Visible = showWeapons;
 
 		PlayAnim(showWeapons ? "mixamo_com_007" : "mixamo_com");

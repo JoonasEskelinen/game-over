@@ -43,6 +43,11 @@ public partial class HUDController : CanvasLayer
 		_player = GetTree().Root.FindChild("Player", true, false) as PlayerController;
 		if (_player == null) { GD.PrintErr("HUDController: Pelaajaa ei löydy!"); return; }
 
+		var hudJoy = new HudJoystickPreview();
+		hudJoy.Name = "JoystickHudPreview";
+		hudJoy.Initialize(_player);
+		AddChild(hudJoy);
+
 		var hc = _player.GetNode<HealthComponent>("HealthComponent");
 		hc.HealthChanged += UpdateHealthBar;
 		hc.LivesChanged += OnLivesChanged;

@@ -19,6 +19,7 @@ public partial class MainMenu : Control
 	{
 		GD.Print("MainMenu: Uusi peli — latausruutu → level_1.tscn");
 		GameState.Instance.HasJoystick = false;
+		GameState.Instance.PersistHasJoystickToSave();
 		GameState.Instance.PendingLoadScenePath = "res://scenes/levels/level_1.tscn";
 		var err = GetTree().ChangeSceneToFile("res://scenes/ui/loading_screen.tscn");
 		if (err != Error.Ok)
@@ -29,6 +30,7 @@ public partial class MainMenu : Control
 	{
 		// TODO: tallenna myös viimeisin kenttä jotta voidaan ladata oikea kenttä
 		GD.Print("MainMenu: Lataa peli — latausruutu → level_1.tscn");
+		GameState.Instance.LoadJoystickFromSave();
 		GameState.Instance.PendingLoadScenePath = "res://scenes/levels/level_1.tscn";
 		var err = GetTree().ChangeSceneToFile("res://scenes/ui/loading_screen.tscn");
 		if (err != Error.Ok)

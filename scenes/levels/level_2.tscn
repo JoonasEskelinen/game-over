@@ -22,6 +22,9 @@
 [ext_resource type="PackedScene" uid="uid://bhu5kukhmbee5" path="res://assets/models/luola/gltf/floor_tile_big_grate_open.gltf" id="14_p4se4"]
 [ext_resource type="PackedScene" uid="uid://c2dvbmhhilimn" path="res://assets/models/luola/gltf/wall_corner_scaffold.gltf" id="15_sibr7"]
 [ext_resource type="PackedScene" uid="uid://bgxtpqca28ga8" path="res://assets/models/luola/gltf/sword_shield.gltf" id="18_p4se4"]
+[ext_resource type="Script" uid="uid://dnmeujjopilrt" path="res://scripts/levels/Level2SpecialCat.cs" id="19_l2cat"]
+[ext_resource type="Script" uid="uid://bf3c7hbco6l2y" path="res://scripts/levels/Level2CrateKokis.cs" id="20_crate"]
+[ext_resource type="Script" uid="uid://d3ec6u0ew5klr" path="res://scripts/levels/Level2BossExit.cs" id="21_l2exit"]
 
 [sub_resource type="PhysicsMaterial" id="PhysicsMaterial_qsp8v"]
 
@@ -165,6 +168,10 @@ albedo_texture = ExtResource("6_5niy6")
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_yxkvy"]
 albedo_texture = ExtResource("6_5niy6")
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_l2cat"]
+radius = 0.22
+height = 0.48
 
 [sub_resource type="Environment" id="Environment_ra442"]
 background_mode = 1
@@ -826,6 +833,9 @@ surface_material_override/0 = SubResource("mat_cave")
 
 [node name="HUD" parent="." unique_id=499664610 instance=ExtResource("1_j2425")]
 
+[node name="Level2BossExit" type="Node3D" parent="." unique_id=2100045001]
+script = ExtResource("21_l2exit")
+
 [node name="Camera3D" type="Camera3D" parent="." unique_id=1832840748]
 transform = Transform3D(1, 0, 0, 0, 0.9848158, 0.17360279, 0, -0.17360279, 0.9848158, -105, 3.6, 13.5)
 current = true
@@ -851,6 +861,21 @@ BossDanceCamFollowSpeed = 2.0
 transform = Transform3D(1.1, 0, 0, 0, 1.1, 0, 0, 0, 1.1, -114.77098, -0.073586024, 0)
 Juoksunopeus = 6.0
 SyvyysAlaraja = -14.0
+JoystickInHandAlwaysWhenSitting = true
+JoystickHandLocalPosition = Vector3(0, 0.3, 0.1)
+
+[node name="Level2SpecialCat" type="CharacterBody3D" parent="." unique_id=-1194923297]
+transform = Transform3D(3, 0, 0, 0, 3, 0, 0, 0, 3, -110, 0.25, 0)
+script = ExtResource("19_l2cat")
+VisualUniformScale = 0.2
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Level2SpecialCat" unique_id=-1194923298]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.22, 0)
+shape = SubResource("CapsuleShape3D_l2cat")
+
+[node name="Level2CrateKokis" type="Node3D" parent="." unique_id=-1194923196]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4, 0.28, 0)
+script = ExtResource("20_crate")
 
 [node name="Sun" type="DirectionalLight3D" parent="." unique_id=124042727]
 transform = Transform3D(0.70710677, 0.49999997, -0.49999997, 0, 0.70710677, 0.70710677, 0.70710677, -0.49999997, 0.49999997, 0, 0, 0)
@@ -861,10 +886,6 @@ environment = SubResource("Environment_ra442")
 [node name="EnemyLevel2Spawner" type="Node3D" parent="." unique_id=2100043000]
 script = ExtResource("6_spawner")
 EnemyScene = ExtResource("4_fiq81")
-FirstSpawnAtPlayerX = -112.0
-SpawnEveryPlayerXMeters = 7.5
-MaxConcurrentEnemies = 3
-MinPlayerX = -200.0
 
 [node name="BossLevel2" parent="." unique_id=2100042000 instance=ExtResource("5_boss2")]
 transform = Transform3D(1.5, 0, 0, 0, 1.5, 0, 0, 0, 1.5, 175, -0.073586024, 0)

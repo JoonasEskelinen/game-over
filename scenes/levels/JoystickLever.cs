@@ -330,7 +330,12 @@ public partial class JoystickLever : Area3D
 		_pickedUp = true;
 
 		if (GameState.Instance != null)
+		{
 			GameState.Instance.HasJoystick = true;
+			GameState.Instance.PersistHasJoystickToSave();
+		}
+
+		_playerController?.SyncHandJoystickAfterPickup();
 
 		GD.Print("JoystickLever: pelaaja poimi joystickin! (GameState.HasJoystick = true)");
 
