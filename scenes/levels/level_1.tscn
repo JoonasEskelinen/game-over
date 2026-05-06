@@ -24,6 +24,7 @@
 [ext_resource type="Script" uid="uid://2ktb8dsqvp8w" path="res://scripts/levels/Level1ExitHole.cs" id="21_exithole"]
 [ext_resource type="PackedScene" uid="uid://ba0ticp74r0qo" path="res://assets/models/joystick/joystick.glb" id="22_mqh5v"]
 [ext_resource type="Script" uid="uid://dpwtmiouoyjmt" path="res://scenes/levels/JoystickLever.cs" id="22_ndtll"]
+[ext_resource type="Script" uid="uid://bxmusiclvloop01" path="res://scripts/levels/LevelMusicPlayer.cs" id="23_lvlmusic"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_7u6i3"]
 
@@ -279,6 +280,12 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7.529998, -0.13904151, -4.56
 [node name="EnemySpawner" type="Node3D" parent="." unique_id=899631862]
 script = ExtResource("15_wtwp4")
 EnemyScene = ExtResource("16_iwr0g")
+
+[node name="Level1ExploreMusic" type="Node" parent="." unique_id=156060371]
+script = ExtResource("23_lvlmusic")
+MusicResourcePath = "res://assets/audio/music/level1_explore.ogg"
+VolumeDb = -14.0
+StopWhenBossGroupAppears = true
 
 [node name="Level1BossDirector" type="Node" parent="." unique_id=156060372]
 script = ExtResource("19_bossdir")

@@ -1,0 +1,21 @@
+Kenttämusiikit (CC0 / public domain) — OpenGameArt "CC0 - Rock Music" -kokoelma ja sen osana olleet teokset:
+
+1) level1_explore.ogg
+   Alkuperäinen tiedosto: trash1.91_v1ext_0.ogg
+   Teos: "I am not Trash, or am I?"
+   Lähde: https://opengameart.org/content/i-am-not-trash-or-am-i
+
+2) level2_bgm.ogg
+   Alkuperäinen tiedosto: Peachtea-LastStandLetsGo_0.ogg
+   Teos: "Last Stand Lets Go" (Noah Cedeno / Peachtea)
+   Lähde: https://opengameart.org/content/last-stand-lets-go
+   Tekijän huomio: vapaasti käytettävissä ilman pakollista attribuutiota.
+
+3) level3_bgm.ogg
+   Alkuperäinen tiedosto: rb_rock_song_0.ogg
+   Teos: "R&B Rock Fusion Song!"
+   Tekijä: Lukarikid
+   Lähde: https://opengameart.org/content/rb-rock-fusion-song-1
+
+
+Boss-musiikki Level 1:ssä: assets/audio/music/musiclevel1.mp3 (projektin aiempi tiedosto).

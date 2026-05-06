@@ -25,6 +25,7 @@
 [ext_resource type="Script" uid="uid://dnmeujjopilrt" path="res://scripts/levels/Level2SpecialCat.cs" id="19_l2cat"]
 [ext_resource type="Script" uid="uid://bf3c7hbco6l2y" path="res://scripts/levels/Level2CrateKokis.cs" id="20_crate"]
 [ext_resource type="Script" uid="uid://d3ec6u0ew5klr" path="res://scripts/levels/Level2BossExit.cs" id="21_l2exit"]
+[ext_resource type="Script" uid="uid://bxmusiclvloop01" path="res://scripts/levels/LevelMusicPlayer.cs" id="22_lvlbgm"]
 
 [sub_resource type="PhysicsMaterial" id="PhysicsMaterial_qsp8v"]
 
@@ -187,6 +188,11 @@ size = Vector3(2.25, 4, 1.71)
 size = Vector3(5, 5.1, 4)
 
 [node name="level_2" type="Node3D" unique_id=1064084596]
+
+[node name="LevelMusic" type="Node" parent="." unique_id=2100000999]
+script = ExtResource("22_lvlbgm")
+MusicResourcePath = "res://assets/audio/music/level2_bgm.ogg"
+VolumeDb = -11.0
 
 [node name="PipeA" type="Node3D" parent="." unique_id=2100010001]
 
