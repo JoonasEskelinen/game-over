@@ -24,6 +24,15 @@ public partial class Level3TowerBossRockThrower : Node3D
 
 	private Timer _timer;
 	private Node3D _player;
+	private bool _throwingStopped;
+
+	/// <summary>Kutsutaan kun bossi kaatuu — ei uusia kiviä.</summary>
+	public void StopThrowing()
+	{
+		_throwingStopped = true;
+		if (_timer != null)
+			_timer.Stop();
+	}
 
 	public override void _Ready()
 	{
@@ -37,12 +46,17 @@ public partial class Level3TowerBossRockThrower : Node3D
 	private void OnThrowTimer()
 	{
 		TryThrowOne();
+		if (_throwingStopped)
+			return;
 		_timer.WaitTime = (float)GD.RandRange(HeittoVäliMinSek, HeittoVäliMaxSek);
 		_timer.Start();
 	}
 
 	private void TryThrowOne()
 	{
+		if (_throwingStopped)
+			return;
+
 		if (RollingRockScene == null)
 		{
 			GD.PushWarning("Level3TowerBossRockThrower: RollingRockScene puuttuu.");

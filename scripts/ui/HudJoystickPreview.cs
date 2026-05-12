@@ -49,11 +49,8 @@ public partial class HudJoystickPreview : Control
 		};
 		AddChild(_viewport);
 
-		var w3d = _viewport.World3D;
-		if (w3d.Environment == null)
-			w3d.Environment = new Godot.Environment();
-		w3d.Environment.BackgroundMode = Godot.Environment.BGMode.ClearColor;
-		w3d.Environment.BackgroundColor = new Color(0.06f, 0.06f, 0.08f, 1f);
+		// World3D / ympäristö vasta kun SubViewport on puussa — muuten World3D voi olla null (NRE).
+		Callable.From(SetupSubViewportEnvironmentDeferred).CallDeferred();
 
 		_modelRoot = new Node3D { Name = "HudJoystickModelRoot" };
 		_viewport.AddChild(_modelRoot);
@@ -130,14 +127,41 @@ public partial class HudJoystickPreview : Control
 		_display.OffsetLeft = _display.OffsetTop = _display.OffsetRight = _display.OffsetBottom = 0f;
 		AddChild(_display);
 
-		var vtex = new ViewportTexture();
-		vtex.ViewportPath = _display.GetPathTo(_viewport);
-		_display.Texture = vtex;
+		// ViewportTexture vaatii että molemmat ovat puussa; polku suhteessa TextureRectiin.
+		Callable.From(BindViewportTextureDeferred).CallDeferred();
 
 		_display.Resized += OnDisplayResized;
 		Callable.From(SyncViewportSizeToDisplay).CallDeferred();
 
 		Callable.From(DeferredFitCameraToModel).CallDeferred();
+	}
+
+	private void SetupSubViewportEnvironmentDeferred()
+	{
+		if (!GodotObject.IsInstanceValid(_viewport) || !_viewport.IsInsideTree())
+			return;
+		var w3d = _viewport.World3D;
+		if (w3d == null)
+		{
+			GD.PrintErr("HudJoystickPreview: SubViewport.World3D puuttuu — HUD-joystickin tausta voi näyttää väärältä.");
+			return;
+		}
+
+		if (w3d.Environment == null)
+			w3d.Environment = new Godot.Environment();
+		w3d.Environment.BackgroundMode = Godot.Environment.BGMode.ClearColor;
+		w3d.Environment.BackgroundColor = new Color(0.06f, 0.06f, 0.08f, 1f);
+	}
+
+	private void BindViewportTextureDeferred()
+	{
+		if (!GodotObject.IsInstanceValid(_display) || !GodotObject.IsInstanceValid(_viewport)
+			|| !_display.IsInsideTree() || !_viewport.IsInsideTree())
+			return;
+
+		var vtex = new ViewportTexture();
+		vtex.ViewportPath = _display.GetPathTo(_viewport);
+		_display.Texture = vtex;
 	}
 
 	private void OnDisplayResized() => SyncViewportSizeToDisplay();

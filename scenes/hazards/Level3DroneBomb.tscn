@@ -1,0 +1,16 @@
+[gd_scene load_steps=2 format=3 uid="uid://c8l3dronebomb01"]
+
+[ext_resource type="Script" path="res://scripts/hazards/Level3DroneBomb.cs" id="1_script"]
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_bomb"]
+radius = 0.2
+
+[node name="Level3DroneBomb" type="RigidBody3D"]
+mass = 4.0
+continuous_cd = true
+linear_damp = 0.08
+angular_damp = 0.35
+script = ExtResource("1_script")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+shape = SubResource("SphereShape3D_bomb")

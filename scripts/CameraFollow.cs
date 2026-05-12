@@ -1,7 +1,9 @@
+using System;
 using Godot;
 
 /// <summary>
 /// Seuraa pelaajaa ja orbitoi oikean sauvan (tai hiiren) suuntaan — voi katsoa ylös (torni) ja sivuille.
+/// Level 3: <see cref="Level3DroneFollowPath"/> + dronetila → pivot dronella.
 /// </summary>
 public partial class CameraFollow : Camera3D
 {
@@ -69,7 +71,14 @@ public partial class CameraFollow : Camera3D
 	/// <summary>Kuinka paljon LookAt painottuu bossiin (1 = täysin bossin keskipistettä kohti).</summary>
 	[Export] public float BossEncounterLookAtBossWeight = 0.88f;
 
+	[ExportGroup("Level 3 — dronen kamera")]
+	/// <summary>
+	/// Esim. <c>../Level3SpecialDrone</c> — kun polku on asetettu ja pelaaja on dronetilassa, kameran pivot seuraa dronetta.
+	/// </summary>
+	[Export] public NodePath Level3DroneFollowPath;
+
 	private Node3D _player;
+	private Node3D _level3Drone;
 	private float _yaw;
 	private float _pitch;
 	private float _distance;
@@ -132,9 +141,7 @@ public partial class CameraFollow : Camera3D
 
 	public override void _Ready()
 	{
-		_player = GetNodeOrNull<Node3D>(PlayerPath);
-		if (_player == null && GetParent() is Node3D)
-			_player = GetParent().GetNodeOrNull<Node3D>("Player");
+		_player = ResolvePlayerNode3D();
 		_minPitchRad = Mathf.DegToRad(MinPitchDeg);
 		_maxPitchRad = Mathf.DegToRad(MaxPitchDeg);
 		var o = Offset;
@@ -158,6 +165,73 @@ public partial class CameraFollow : Camera3D
 
 		if (_player != null && SideScrollerLock)
 			CallDeferred(nameof(DeferredSnapSideScrollerToPlayer));
+
+		_level3Drone = ResolveLevel3DroneNode3D();
+	}
+
+	/// <summary>
+	/// Turvallinen NodePath → node (C#-export voi joissain tilanteissa olla null → IsEmpty heittää).
+	/// </summary>
+	private Node3D ResolvePlayerNode3D()
+	{
+		if (TryGetNodeFromPath(PlayerPath, out var fromPath) && fromPath is Node3D nPath)
+			return nPath;
+
+		var parent = GetParent();
+		if (parent != null)
+		{
+			var byName = parent.GetNodeOrNull("Player");
+			if (byName is Node3D nName)
+				return nName;
+		}
+
+		GD.PrintErr("CameraFollow: PlayerPath ei löydä pelaajaa — tarkista kameran PlayerPath tai että vanhemman lapsi on nimeltään Player.");
+		return null;
+	}
+
+	private Node3D ResolveLevel3DroneNode3D()
+	{
+		if (!TryGetNodeFromPath(Level3DroneFollowPath, out var node))
+			return null;
+		if (node is Node3D n3)
+			return n3;
+		GD.PrintErr($"CameraFollow: Level3DroneFollowPath osoittaa {node.GetType().Name}, odotettiin Node3D.");
+		return null;
+	}
+
+	private bool TryGetNodeFromPath(NodePath path, out Node node)
+	{
+		node = null;
+		if (!IsInsideTree())
+			return false;
+		try
+		{
+			if (path.IsEmpty)
+				return false;
+		}
+		catch (NullReferenceException)
+		{
+			return false;
+		}
+
+		node = GetNodeOrNull(path);
+		return node != null;
+	}
+
+	/// <summary>
+	/// Level 3: dronetila = pivot dronen kohdalla; muuten pelaaja. Muilla kentillä <see cref="Level3DroneFollowPath"/> tyhjä.
+	/// </summary>
+	private Node3D GetCameraPivotSubject3D()
+	{
+		if (_player == null || !GodotObject.IsInstanceValid(_player) || !_player.IsInsideTree())
+			return null;
+		if (_level3Drone == null || !GodotObject.IsInstanceValid(_level3Drone) || !_level3Drone.IsInsideTree())
+			return _player;
+		if (!_level3Drone.Visible)
+			return _player;
+		if (_player is PlayerController pc && pc.IsSpecialWeaponJoystickContextActive())
+			return _level3Drone;
+		return _player;
 	}
 
 	/// <summary>
@@ -167,7 +241,10 @@ public partial class CameraFollow : Camera3D
 	{
 		if (_player == null || !_player.IsInsideTree() || !SideScrollerLock)
 			return;
-		var pivotFollow = _player.GlobalPosition + new Vector3(0f, PivotHeight, 0f);
+		var pivotSubject = GetCameraPivotSubject3D();
+		if (pivotSubject == null || !pivotSubject.IsInsideTree())
+			return;
+		var pivotFollow = pivotSubject.GlobalPosition + new Vector3(0f, PivotHeight, 0f);
 		float cp = Mathf.Cos(_pitch);
 		var dir = new Vector3(Mathf.Sin(_yaw) * cp, Mathf.Sin(_pitch), Mathf.Cos(_yaw) * cp);
 		if (dir.LengthSquared() < 1e-6f)
@@ -262,7 +339,10 @@ public partial class CameraFollow : Camera3D
 			_pitch = Mathf.Clamp(_pitch, _minPitchRad, _maxPitchRad);
 		}
 
-		var pivotFollow = _player.GlobalPosition + new Vector3(0f, PivotHeight, 0f);
+		var pivotSubject = GetCameraPivotSubject3D();
+		if (pivotSubject == null || !pivotSubject.IsInsideTree())
+			return;
+		var pivotFollow = pivotSubject.GlobalPosition + new Vector3(0f, PivotHeight, 0f);
 
 		if (BossEncounterFramingWholeFight && !SideScrollerLock)
 		{

@@ -1,7 +1,7 @@
 [gd_scene load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://scenes/ui/LoadingScreen.cs" id="1_script"]
-[ext_resource type="Texture2D" uid="uid://diwfsoagwl5dw" path="res://icon.svg" id="2_icon"]
+[ext_resource type="Texture2D" path="res://assets/textures/loading.png" id="2_loading"]
 
 [node name="LoadingScreen" type="Control"]
 layout_mode = 3
@@ -43,13 +43,13 @@ text = "Ladataan..."
 horizontal_alignment = 1
 
 [node name="Spinner" type="TextureRect" parent="Overlay/Center/Column"]
-custom_minimum_size = Vector2(72, 72)
+custom_minimum_size = Vector2(120, 120)
 layout_mode = 2
 size_flags_horizontal = 4
-texture = ExtResource("2_icon")
+texture = ExtResource("2_loading")
 expand_mode = 1
 stretch_mode = 5
-pivot_offset = Vector2(36, 36)
+pivot_offset = Vector2(60, 60)
 
 [node name="ProgressBar" type="ProgressBar" parent="Overlay/Center/Column"]
 custom_minimum_size = Vector2(280, 14)

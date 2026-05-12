@@ -12,13 +12,17 @@ transform = Transform3D(1.5, 0, 0, 0, 1.5, 0, 0, 0, 1.5, 0, 0.30376124, 0)
 collision_layer = 2
 collision_mask = 3
 script = ExtResource("1_boss")
-"MmaPotkuLaukaisuEtäisyys" = 2.38
-TanssiKestoMinSekuntia = 5.5
-TanssiKestoMaxSekuntia = 8.5
-"ViiveTanssinJälkeenSekuntia" = 4.0
-"SyöksyNopeus" = 7.0
+"SpinOsumaEtäisyys" = 2.8
+TorjuntaHorjahdusVoima = 0.8
+"SyöksyKiertoKestoSekuntia" = 3.0
+TanssiKestoMinSekuntia = 4.5
+TanssiKestoMaxSekuntia = 7.5
+"ViiveTanssinJälkeenSekuntia" = 3.0
+"SyöksyNopeus" = 9.0
 "SyöksyMaksimiKestoSekuntia" = 8.0
 MiekkaIskuAktivoitumisaika = 0.8
+JalatMaahanOffsetLattiasta = 0.0
+"JalatMaahanVisuaaliLattiaVälys" = 0.0
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1088415914]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.4491416, 1.687984, -0.009433342)

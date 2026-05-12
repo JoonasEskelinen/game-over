@@ -53,11 +53,6 @@ custom_minimum_size = Vector2(100, 65)
 layout_mode = 2
 text = "Uusi peli"
 
-[node name="LoadGameButton" type="Button" parent="VBoxContainer" unique_id=503433596]
-custom_minimum_size = Vector2(350, 65)
-layout_mode = 2
-text = "Lataa peli"
-
 [node name="InstructionsButton" type="Button" parent="VBoxContainer" unique_id=223856692]
 custom_minimum_size = Vector2(350, 65)
 layout_mode = 2
@@ -67,3 +62,67 @@ text = "Peliohjeet"
 custom_minimum_size = Vector2(350, 65)
 layout_mode = 2
 text = "Poistu"
+
+[node name="InstructionsPanel" type="Control" parent="."]
+unique_id=284573063
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+visible = false
+z_index = 10
+
+[node name="Dim" type="ColorRect" parent="InstructionsPanel" unique_id=284573064]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.05, 0.05, 0.08, 0.82)
+mouse_filter = 2
+
+[node name="CenterContainer" type="CenterContainer" parent="InstructionsPanel" unique_id=284573065]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Panel" type="PanelContainer" parent="InstructionsPanel/CenterContainer" unique_id=284573066]
+custom_minimum_size = Vector2(560, 420)
+layout_mode = 2
+
+[node name="VBox" type="VBoxContainer" parent="InstructionsPanel/CenterContainer/Panel" unique_id=284573067]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="TitleLabel" type="Label" parent="InstructionsPanel/CenterContainer/Panel/VBox" unique_id=284573068]
+layout_mode = 2
+text = "Peliohjeet"
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 22
+
+[node name="Scroll" type="ScrollContainer" parent="InstructionsPanel/CenterContainer/Panel/VBox" unique_id=284573069]
+layout_mode = 2
+size_flags_vertical = 3
+custom_minimum_size = Vector2(0, 320)
+horizontal_scroll_mode = 0
+
+[node name="RichTextLabel" type="RichTextLabel" parent="InstructionsPanel/CenterContainer/Panel/VBox/Scroll" unique_id=284573070]
+layout_mode = 2
+size_flags_horizontal = 3
+bbcode_enabled = true
+fit_content = true
+autowrap_mode = 3
+scroll_active = false
+custom_minimum_size = Vector2(480, 0)
+
+[node name="CloseInstructionsButton" type="Button" parent="InstructionsPanel/CenterContainer/Panel/VBox" unique_id=284573071]
+layout_mode = 2
+text = "Takaisin"

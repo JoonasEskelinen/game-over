@@ -51,4 +51,4 @@ script = ExtResource("2_cam")
 
 [node name="BossLevel1" parent="." unique_id=1857587842 instance=ExtResource("1_boss")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1.0761751, 0)
-"MmaPotkuLaukaisuEtäisyys" = 1.2
+"MmaPotkuLaukaisuEtäisyys" = 4.45

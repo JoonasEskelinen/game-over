@@ -20,13 +20,16 @@ public partial class EnemySpawner : Node3D
 	[Export] public PackedScene EnemyScene;
  
 	/// <summary>Vihollisten miniminopeus.</summary>
-	[Export] public float MinSpeed = 1.5f;
+	[Export] public float MinSpeed = 1.65f;
  
 	/// <summary>Vihollisten maksiminopeus.</summary>
-	[Export] public float MaxSpeed = 3.5f;
+	[Export] public float MaxSpeed = 3.75f;
  
 	/// <summary>Kuinka monta normaalia vihollista spawnataan ennen bossia.</summary>
 	[Export] public int TotalNormalEnemiesToSpawn = 20;
+
+	/// <summary>Enintään näin monta EnemyLevel1:ää kerrallaan elossa — uusia ei luoda ennen kuin joku kuolee.</summary>
+	[Export] public int MaxConcurrentEnemyLevel1 = 3;
  
 	/// <summary>
 	/// HUD-viesti joka näytetään kun pelaaja on vivun lähellä.
@@ -191,6 +194,10 @@ public partial class EnemySpawner : Node3D
 			GD.PrintErr("EnemySpawner: EnemyScene puuttuu Inspectorista!");
 			return;
 		}
+
+		int cap = Mathf.Max(1, MaxConcurrentEnemyLevel1);
+		if (CountAliveEnemyLevel1() >= cap)
+			return;
  
 		var enemy = EnemyScene.Instantiate() as CharacterBody3D;
 		if (enemy == null)
@@ -223,5 +230,16 @@ public partial class EnemySpawner : Node3D
  
 		_spawned++;
 		GD.Print($"EnemySpawner: spawnattu {_spawned}/{_enemiesInWave}");
+	}
+
+	private int CountAliveEnemyLevel1()
+	{
+		int n = 0;
+		foreach (Node node in GetTree().GetNodesInGroup("enemy"))
+		{
+			if (node is EnemyLevel1 && GodotObject.IsInstanceValid(node) && node.IsInsideTree())
+				n++;
+		}
+		return n;
 	}
 }

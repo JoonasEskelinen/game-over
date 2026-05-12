@@ -39,32 +39,18 @@ show_percentage = false
 
 [node name="BossHealthBar" type="ProgressBar" parent="." unique_id=785265178]
 visible = false
-anchors_preset = 5
-anchor_left = 0.5
-anchor_right = 0.5
-offset_left = -140.0
-offset_top = 36.0
-offset_right = 140.0
-offset_bottom = 54.0
-grow_horizontal = 2
-max_value = 30.0
-value = 30.0
-show_percentage = false
-
-[node name="BossR1Hint" type="Label" parent="." unique_id=384674125]
-visible = false
-anchors_preset = 7
-anchor_left = 0.5
-anchor_top = 1.0
-anchor_right = 0.5
-anchor_bottom = 1.0
-offset_left = -220.0
-offset_top = -72.0
-offset_right = 220.0
-offset_bottom = -40.0
-grow_horizontal = 2
+anchors_preset = 1
+anchor_left = 1.0
+anchor_top = 0.0
+anchor_right = 1.0
+anchor_bottom = 0.0
+custom_minimum_size = Vector2(220, 22)
+offset_left = -240.0
+offset_top = 22.0
+offset_right = -20.0
+offset_bottom = 44.0
+grow_horizontal = 0
 grow_vertical = 0
-theme_override_colors/font_color = Color(1, 0.92, 0.35, 1)
-theme_override_font_sizes/font_size = 18
-text = "Boss tanssii — käytä vahvaa iskua (R1)"
-horizontal_alignment = 1
+max_value = 100.0
+value = 100.0
+show_percentage = false

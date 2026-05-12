@@ -12,7 +12,9 @@ height = 1.17
 collision_layer = 2
 collision_mask = 19
 script = ExtResource("1_euuwm")
-AttackRange = 1.2
+Speed = 4.35
+AttackRange = 1.3
+AttackStickMargin = 0.32
 HitCenterYOffset = 0.58
 SwordHitActivationTime = 0.1
 

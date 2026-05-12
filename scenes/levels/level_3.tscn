@@ -17,8 +17,14 @@
 [ext_resource type="Script" uid="uid://c7rockspwnl31" path="res://scripts/levels/Level3RollingRockSpawner.cs" id="14_rocksp"]
 [ext_resource type="PackedScene" uid="uid://butvkmvducgo3" path="res://scenes/hazards/RollingRockLevel3.tscn" id="15_rockscn"]
 [ext_resource type="Script" uid="uid://b8l3towrbss1" path="res://scripts/levels/Level3TowerBossRockThrower.cs" id="16_tboss"]
-[ext_resource type="PackedScene" uid="uid://txqyy43ursth" path="res://assets/models/Level3_BossEnemy/boss_level3.glb" id="17_boss3"]
+[ext_resource type="PackedScene" uid="uid://v5int6h28x41" path="res://scenes/enemies/boss_level_3.tscn" id="17_boss3"]
 [ext_resource type="Script" uid="uid://cw6u05mm1rl3m" path="res://scripts/levels/LevelMusicPlayer.cs" id="18_lvlbgm"]
+[ext_resource type="Script" uid="uid://tdh57ghrgew8" path="res://scripts/levels/Level3SpecialDrone.cs" id="19_l3drone"]
+[ext_resource type="PackedScene" uid="uid://cfvc3deuhghto" path="res://scenes/hazards/Level3DroneBomb.tscn" id="20_l3bomb"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_l3drone"]
+radius = 0.22
+height = 0.48
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_0ljxa"]
 sky_horizon_color = Color(0.45, 0.55, 0.42, 1)
@@ -102,6 +108,16 @@ HahmonPohjanOffsetY = 0.2
 JoystickInHandAlwaysWhenSitting = true
 MiekkaIskuSuuntaPuolikulma = 65.0
 
+[node name="Level3SpecialDrone" type="CharacterBody3D" parent="." unique_id=2065127777]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -24, -8, 0)
+script = ExtResource("19_l3drone")
+BombScene = ExtResource("20_l3bomb")
+MoveSpeed = 10.0
+HoverGroundClearance = 3.5
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Level3SpecialDrone" unique_id=2065127778]
+shape = SubResource("CapsuleShape3D_l3drone")
+
 [node name="Level3GroundAlign" type="Node" parent="." unique_id=1569803156]
 script = ExtResource("13_l3align")
 
@@ -126,6 +142,7 @@ BossDanceLookAtYOffset = 1.0
 BossDanceCamDistance = 9.0
 BossDanceCamFrontHeightM = 2.5
 BossDanceCamFollowSpeed = 2.0
+Level3DroneFollowPath = NodePath("../Level3SpecialDrone")
 
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=448343644]
 transform = Transform3D(0.8660254, 0.35355338, -0.35355338, 0, 0.70710677, 0.70710677, 0.5, -0.6123724, 0.6123724, 0, 0, 0)

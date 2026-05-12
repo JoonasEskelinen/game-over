@@ -3,13 +3,13 @@
 importer="scene"
 importer_version=1
 type="PackedScene"
-uid="uid://ba0ticp74r0qo"
-path="res://.godot/imported/joystick.glb-39b310f692804fff105d9619ca13be87.scn"
+uid="uid://brqfimdugrtei"
+path="res://.godot/imported/drone.glb-46e2411d383e3ad6055da6b9f9b7452f.scn"
 
 [deps]
 
-source_file="res://assets/models/joystick/joystick.glb"
-dest_files=["res://.godot/imported/joystick.glb-39b310f692804fff105d9619ca13be87.scn"]
+source_file="res://assets/models/drone/drone.glb"
+dest_files=["res://.godot/imported/drone.glb-46e2411d383e3ad6055da6b9f9b7452f.scn"]
 
 [params]
 
@@ -26,7 +26,7 @@ meshes/generate_lods=true
 meshes/create_shadow_meshes=true
 meshes/light_baking=1
 meshes/lightmap_texel_size=0.2
-meshes/force_disable_compression=true
+meshes/force_disable_compression=false
 skins/use_named_skins=true
 animation/import=true
 animation/fps=30

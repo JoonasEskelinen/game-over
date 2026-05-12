@@ -3,13 +3,13 @@
 importer="scene"
 importer_version=1
 type="PackedScene"
-uid="uid://ba0ticp74r0qo"
-path="res://.godot/imported/joystick.glb-39b310f692804fff105d9619ca13be87.scn"
+uid="uid://b7lc5eh0qrfgg"
+path="res://.godot/imported/Spin.fbx-75da5c996074b94e68b119f1460e08a1.scn"
 
 [deps]
 
-source_file="res://assets/models/joystick/joystick.glb"
-dest_files=["res://.godot/imported/joystick.glb-39b310f692804fff105d9619ca13be87.scn"]
+source_file="res://assets/models/level1_BossEnemy/Spin.fbx"
+dest_files=["res://.godot/imported/Spin.fbx-75da5c996074b94e68b119f1460e08a1.scn"]
 
 [params]
 
@@ -26,11 +26,11 @@ meshes/generate_lods=true
 meshes/create_shadow_meshes=true
 meshes/light_baking=1
 meshes/lightmap_texel_size=0.2
-meshes/force_disable_compression=true
+meshes/force_disable_compression=false
 skins/use_named_skins=true
 animation/import=true
 animation/fps=30
-animation/trimming=false
+animation/trimming=true
 animation/remove_immutable_tracks=true
 animation/import_rest_as_RESET=false
 import_script/path=""
@@ -38,5 +38,7 @@ materials/extract=0
 materials/extract_format=0
 materials/extract_path=""
 _subresources={}
-gltf/naming_version=2
-gltf/embedded_image_handling=1
+fbx/importer=0
+fbx/allow_geometry_helper_nodes=false
+fbx/embedded_image_handling=1
+fbx/naming_version=2

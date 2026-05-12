@@ -54,7 +54,7 @@ public partial class LoadingScreen : Control
 			return;
 
 		if (_spinner != null)
-			_spinner.Rotation += (float)(delta * 3.5);
+			_spinner.Rotation += (float)(delta * 1.25);
 
 		var progressArr = new Godot.Collections.Array();
 		ResourceLoader.ThreadLoadStatus status =

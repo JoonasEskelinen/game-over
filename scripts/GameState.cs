@@ -37,7 +37,33 @@ public partial class GameState : Node
 	{
 		Instance = this;
 		LoadJoystickFromSave();
+		RegisterDevelopmentPcCombatKeys();
 		GD.Print("GameState: alustettu.");
+	}
+
+	/// <summary>
+	/// Debug/kehitysajossa: PC-näppäimet kun ohjain ei ole käytössä (u=miekka/kilpi, o=miekka, p=blokki, å=tartunta, i=istu).
+	/// Ei rekisteröidä release-exportissa.
+	/// </summary>
+	static void RegisterDevelopmentPcCombatKeys()
+	{
+		if (!OS.IsDebugBuild())
+			return;
+
+		static void AddKey(string action, Key physicalKey)
+		{
+			if (!InputMap.HasAction(action))
+				return;
+			var ev = new InputEventKey { PhysicalKeycode = physicalKey };
+			InputMap.ActionAddEvent(action, ev);
+		}
+
+		AddKey("toggle_weapon", Key.U);
+		AddKey("attack", Key.O);
+		AddKey("block", Key.P);
+		// å (FI/SE): sama fyysinen näppäin kuin US `[` — Unicode-input ei laukaise luotettavasti grab / JoystickLever.
+		AddKey("grab", Key.Bracketleft);
+		AddKey("sit", Key.I);
 	}
 
 	/// <summary>Lataa joystick-keräyksen tallenteesta (sama tiedosto kuin elämät).</summary>

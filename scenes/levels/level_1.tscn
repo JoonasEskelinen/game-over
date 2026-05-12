@@ -24,7 +24,7 @@
 [ext_resource type="Script" uid="uid://2ktb8dsqvp8w" path="res://scripts/levels/Level1ExitHole.cs" id="21_exithole"]
 [ext_resource type="PackedScene" uid="uid://ba0ticp74r0qo" path="res://assets/models/joystick/joystick.glb" id="22_mqh5v"]
 [ext_resource type="Script" uid="uid://dpwtmiouoyjmt" path="res://scenes/levels/JoystickLever.cs" id="22_ndtll"]
-[ext_resource type="Script" uid="uid://bxmusiclvloop01" path="res://scripts/levels/LevelMusicPlayer.cs" id="23_lvlmusic"]
+[ext_resource type="Script" uid="uid://cw6u05mm1rl3m" path="res://scripts/levels/LevelMusicPlayer.cs" id="23_lvlmusic"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_7u6i3"]
 
@@ -108,6 +108,7 @@ height = 0.8145752
 radius = 0.6352539
 
 [node name="Level 1" type="Node3D" unique_id=507213679]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.051007986, 0)
 script = ExtResource("18_arcphys")
 AirHockeyLinearDamp = 10.0
 
@@ -284,7 +285,7 @@ EnemyScene = ExtResource("16_iwr0g")
 [node name="Level1ExploreMusic" type="Node" parent="." unique_id=156060371]
 script = ExtResource("23_lvlmusic")
 MusicResourcePath = "res://assets/audio/music/level1_explore.ogg"
-VolumeDb = -14.0
+VolumeDb = -8.0
 StopWhenBossGroupAppears = true
 
 [node name="Level1BossDirector" type="Node" parent="." unique_id=156060372]
@@ -312,7 +313,7 @@ shape = SubResource("CylinderShape3D_7h2jl")
 [node name="StickPivot" type="Node3D" parent="JoystickLever" unique_id=654267058]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.15, 0)
 
-[node name="StickPivot#joystick" parent="JoystickLever" unique_id=935058774 instance=ExtResource("22_mqh5v")]
+[node name="StickPivot#joystick" parent="JoystickLever" unique_id=65566725 instance=ExtResource("22_mqh5v")]
 transform = Transform3D(-1.3312865, 0, 0.073847674, 0, 1.3333334, 0, -0.073847674, 0, -1.3312865, 0.09194946, -0.120244086, -0.30288506)
 
 [node name="air-hockey2" parent="." unique_id=242405273 groups=["grabbable"] instance=ExtResource("9_gmpev")]
