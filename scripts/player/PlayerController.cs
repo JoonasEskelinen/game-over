@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using Godot;
 
@@ -170,6 +170,12 @@ public partial class PlayerController : CharacterBody3D
 	/// <summary>Kilpi-node — haetaan Skeleton3D:n alta. Näkyy vain SwordShield-tilassa.</summary>
 	private Node3D _shield;
 
+	/// <summary>Duplikaatti <c>miekka</c> selkäluun BoneAttachmentissa — näkyy vain normaalitilassa (ei istu/drone).</summary>
+	private Node3D _swordBackVisual;
+
+	/// <summary>Duplikaatti <c>kilpi</c> selässä — sama logiikka kuin <see cref="_swordBackVisual"/>.</summary>
+	private Node3D _shieldBackVisual;
+
 	/// <summary>Drone-joystickin visuaali oikeassa kädessä — luodaan koodissa SetupDroneJoystick() jos scene:ssä ei ole joystick.glb.</summary>
 	private Node3D _droneJoystick;
 
@@ -180,7 +186,11 @@ public partial class PlayerController : CharacterBody3D
 	private bool _isDroneMode = false;
 
 	private AudioStreamPlayer _swordSFX;
-	private AudioStreamPlayer _damageSFX;
+
+	/// <summary>gameover_character juuren skaala _Readyssä — palautetaan vahinkoreaktion tweenissä.</summary>
+	private Vector3 _characterModelBaseScale = Vector3.One;
+
+	private Tween _damageHitBodyTween;
 
 	/// <summary>
 	/// True kun jokin EnemyLevel1 on jo rekisteröinyt osuman tällä lyöntiswingillä (tai R2 yksi kohde).
@@ -233,17 +243,21 @@ public partial class PlayerController : CharacterBody3D
 	/// Lukee syötteen suoraan — ei riipu <see cref="_isBlocking"/>-välimuistista (vihollisen fysiikka voi ajaa ennen pelaajaa).
 	/// </summary>
 	/// <param name="shieldHalfAngleDegreesOverride">
-	/// Jos ≥ 0, käytetään tätä puolikulmaa (asteina) kartiolle; muuten <see cref="KilpiTorjuntaPuolikulma"/>.
-	/// Boss L1 spin käyttää leveämpää kartiota.
+	/// Jos &gt; 0, käytetään tätä puolikulmaa (asteina) kartiolle; muuten <see cref="KilpiTorjuntaPuolikulma"/>.
+	/// Boss L1 spin käyttää leveämpää kartiota. (Arvo 0 = sama kuin oletus — ei “suljettu kartio”.)
 	/// </param>
-	public bool IsBlockingEffectiveAgainst(Vector3 threatWorldPosition, float shieldHalfAngleDegreesOverride = -1f)
+	/// <param name="flipShieldFacing180">
+	/// Kun true, kilven “edessä”-akseli käyttää <c>+Basis.Z</c> eikä <c>-Basis.Z</c> (EnemyLevel2 lisko + sivukamera).
+	/// Älä käytä level_1 -poluilla — susi/boss pysyvät oletuksella.
+	/// </param>
+	public bool IsBlockingEffectiveAgainst(Vector3 threatWorldPosition, float shieldHalfAngleDegreesOverride = -1f, bool flipShieldFacing180 = false)
 	{
 		bool blockHeld = Input.IsActionPressed("block") || Input.GetActionStrength("block") > 0.42f;
 		if (!blockHeld || !IsSwordWeaponMode()) return false;
 		if (_characterModel == null || !_characterModel.IsInsideTree() || !IsInsideTree())
 			return false;
-		float half = shieldHalfAngleDegreesOverride >= 0f ? shieldHalfAngleDegreesOverride : KilpiTorjuntaPuolikulma;
-		return IsShieldBlockFacingArc(GlobalPosition, threatWorldPosition, half);
+		float half = shieldHalfAngleDegreesOverride > 0f ? shieldHalfAngleDegreesOverride : KilpiTorjuntaPuolikulma;
+		return IsShieldBlockFacingArc(GlobalPosition, threatWorldPosition, half, flipShieldFacing180);
 	}
 
 	/// <summary>Torjuttu isku (Boss L1 spin / isku) — ei HP-tappiota, kevyt palaute.</summary>
@@ -266,7 +280,7 @@ public partial class PlayerController : CharacterBody3D
 	}
 
 	/// <summary>
-	/// Level 1 susipurema: ruututärinä + lyhyt punainen välähdys; vaurioääni vain kun HP ei tipu nollaan (<see cref="OnHealthChanged"/> hoitaa elämän menetyksen ilman ääntä).
+	/// Level 1 susipurema: ruututärinä + lyhyt punainen välähdys + kevyt hahmon iskureaktio jos HP ei ole nollassa (<see cref="OnHealthChanged"/> hoitaa elämän menetyksen).
 	/// </summary>
 	public void NotifyLevel1BiteHit()
 	{
@@ -274,7 +288,7 @@ public partial class PlayerController : CharacterBody3D
 			cf.ShakeImpulse(0.19f, 0.24f);
 
 		if (_healthComponent != null && _healthComponent.GetCurrentHealth() > 0)
-			_damageSFX?.Play();
+			PlayDamageHitBodyTween(strong: false);
 
 		PlayBiteDamageFlashVisual();
 	}
@@ -291,7 +305,7 @@ public partial class PlayerController : CharacterBody3D
 		Vibrate(0.62f, 1f, 0.16f);
 
 		if (_healthComponent != null && _healthComponent.GetCurrentHealth() > 0)
-			_damageSFX?.Play();
+			PlayDamageHitBodyTween(strong: true);
 
 		PlayBossMmaKickFlashVisual();
 	}
@@ -314,30 +328,99 @@ public partial class PlayerController : CharacterBody3D
 	/// <summary>Käynnistää piirtymisviiveen: meshet piilossa kunnes <see cref="FinishWeaponEquipVisual"/>.</summary>
 	private void BeginWeaponEquipVisualDelay()
 	{
-		SetSwordMeshVisible(false);
-		if (_shield != null)
-			_shield.Visible = false;
-
 		float d = MiekkaKilpiNäkyviinViive;
-		if (d <= 0.001f)
-		{
-			_weaponDrawTimer = 0f;
+		_weaponDrawTimer = d <= 0.001f ? 0f : d;
+		RefreshWeaponCarryVisuals();
+		if (_weaponDrawTimer <= 0f)
 			FinishWeaponEquipVisual();
-		}
-		else
-			_weaponDrawTimer = d;
 	}
 
 	private void FinishWeaponEquipVisual()
 	{
 		if (_weaponMode != WeaponMode.SwordShield || _isSitting)
+		{
+			RefreshWeaponCarryVisuals();
+			return;
+		}
+
+		RefreshWeaponCarryVisuals();
+		PlayWeaponToggleFeedback(true);
+	}
+
+	/// <summary>Käsi vs selkä: kädessä vain miekka+kilpi -tilassa (ei piirtymisviiveen aikana); selässä normaalitilassa kun ei istu eikä drone.</summary>
+	private void RefreshWeaponCarryVisuals()
+	{
+		bool sittingOrDrone = _isSitting || _isDroneMode;
+		bool equipping = _weaponDrawTimer > 0f;
+		bool handVisible = !sittingOrDrone && _weaponMode == WeaponMode.SwordShield && !equipping;
+		bool backVisible = !sittingOrDrone && _weaponMode == WeaponMode.Normal && !equipping;
+
+		SetSwordMeshVisible(handVisible);
+		if (_shield != null)
+			_shield.Visible = handVisible;
+
+		if (_swordBackVisual != null)
+			_swordBackVisual.Visible = backVisible;
+		if (_shieldBackVisual != null)
+			_shieldBackVisual.Visible = backVisible;
+	}
+
+	/// <summary>
+	/// Selkäaseet: <c>gameover_character.tscn</c> → <c>Skeleton3D/BackSwordAttachment/miekka_selkä</c> ja <c>.../kilpi_selkä</c>.
+	/// Muokkaa asentoa 3D-näkymässä avaamalla tuo scene (ei player.tscn).
+	/// </summary>
+	private void SetupBackWeaponCarry()
+	{
+		_swordBackVisual = _characterModel?.GetNodeOrNull<Node3D>("Skeleton3D/BackSwordAttachment/miekka_selkä");
+		_shieldBackVisual = _characterModel?.GetNodeOrNull<Node3D>("Skeleton3D/BackShieldAttachment/kilpi_selkä");
+
+		if (_swordBackVisual != null)
+		{
+			try
+			{
+				MeshTangentFix.ApplyToSubtree(_swordBackVisual);
+			}
+			catch (Exception ex)
+			{
+				GD.PrintErr("MeshTangentFix (selkämiekka): " + ex.Message);
+			}
+		}
+
+		if (_shieldBackVisual != null)
+		{
+			try
+			{
+				MeshTangentFix.ApplyToSubtree(_shieldBackVisual);
+			}
+			catch (Exception ex)
+			{
+				GD.PrintErr("MeshTangentFix (selkäkilpi): " + ex.Message);
+			}
+		}
+
+		if (_swordBackVisual == null && _shieldBackVisual == null)
+			GD.PrintErr("Player: selkäaseet puuttuvat — odotettiin gameover_character/Skeleton3D/Back*Attachment/miekka_selkä ja kilpi_selkä.");
+	}
+
+	/// <summary>Lyhyt skaala-“isku” vahinkopalautteessa (ei ääntä, kevyt GPU-kuorma).</summary>
+	private void PlayDamageHitBodyTween(bool strong)
+	{
+		if (_characterModel == null || !GodotObject.IsInstanceValid(_characterModel) || !IsInsideTree())
 			return;
 
-		SetSwordMeshVisible(true);
-		if (_shield != null)
-			_shield.Visible = true;
+		_damageHitBodyTween?.Kill();
+		_characterModel.Scale = _characterModelBaseScale;
 
-		PlayWeaponToggleFeedback(true);
+		float peak = strong ? 1.042f : 1.028f;
+		var t = CreateTween();
+		_damageHitBodyTween = t;
+		Vector3 b = _characterModelBaseScale;
+		t.TweenProperty(_characterModel, "scale", b * peak, 0.038f)
+			.SetTrans(Tween.TransitionType.Quad).SetEase(Tween.EaseType.Out);
+		t.TweenProperty(_characterModel, "scale", b * 0.988f, 0.055f)
+			.SetTrans(Tween.TransitionType.Quad).SetEase(Tween.EaseType.In);
+		t.TweenProperty(_characterModel, "scale", b, 0.11f)
+			.SetTrans(Tween.TransitionType.Back).SetEase(Tween.EaseType.Out);
 	}
 
 	private void PlayBiteDamageFlashVisual()
@@ -521,19 +604,63 @@ public partial class PlayerController : CharacterBody3D
 	/// <summary>
 	/// Kilven torjunta XZ-kartiossa: katssuunta Mixamo/hahmomallissa on usein <c>-Basis.Z</c> (ei sama kuin miekan facing-kartio).
 	/// </summary>
-	private bool IsShieldBlockFacingArc(Vector3 origin, Vector3 worldPoint, float halfAngleDeg)
+	private bool IsShieldBlockFacingArc(Vector3 origin, Vector3 worldPoint, float halfAngleDeg, bool flipShieldFacing180 = false)
+	{
+		// Mixamo / CharacterBody: tyypillisesti katsomissuunta = maailman -Basis.Z; flipShieldFacing180 = +Z (EnemyLevel2).
+		var forward = flipShieldFacing180
+			? _characterModel.GlobalTransform.Basis.Z
+			: -_characterModel.GlobalTransform.Basis.Z;
+		forward.Y = 0f;
+		if (forward.LengthSquared() < 1e-8f) return true;
+		forward = forward.Normalized();
+		return IsShieldBlockFacingArcWithForward(origin, worldPoint, halfAngleDeg, forward);
+	}
+
+	/// <summary>XZ-kartio mielivaltaisella etuakselilla (hahmo tai kamera).</summary>
+	private bool IsShieldBlockFacingArcWithForward(Vector3 origin, Vector3 worldPoint, float halfAngleDeg, Vector3 forwardWorldXZ)
 	{
 		var to = worldPoint - origin;
 		to.Y = 0f;
 		if (to.LengthSquared() < 1e-8f) return true;
 		to = to.Normalized();
-		// Mixamo / CharacterBody: katsomissuunta on paikallinen -Z → maailmassa -Basis.Z.
-		var forward = -_characterModel.GlobalTransform.Basis.Z;
-		forward.Y = 0f;
-		if (forward.LengthSquared() < 1e-8f) return true;
-		forward = forward.Normalized();
+		forwardWorldXZ.Y = 0f;
+		if (forwardWorldXZ.LengthSquared() < 1e-8f) return true;
+		forwardWorldXZ = forwardWorldXZ.Normalized();
 		float cosLimit = Mathf.Cos(Mathf.DegToRad(halfAngleDeg));
-		return to.Dot(forward) >= cosLimit;
+		return to.Dot(forwardWorldXZ) >= cosLimit;
+	}
+
+	/// <summary>Sama “taso eteen” kuin liikkeessä: kameran -Z XZ:ssä, fallback hahmon suuntaan.</summary>
+	private Vector3 GetCameraFlatForwardForShield()
+	{
+		var cam = GetViewport()?.GetCamera3D();
+		if (cam != null && cam.IsInsideTree())
+		{
+			Vector3 f = -cam.GlobalTransform.Basis.Z;
+			f.Y = 0f;
+			if (f.LengthSquared() >= 1e-8f)
+				return f.Normalized();
+		}
+
+		Vector3 fb = -_characterModel.GlobalTransform.Basis.Z;
+		fb.Y = 0f;
+		return fb.LengthSquared() >= 1e-8f ? fb.Normalized() : new Vector3(0f, 0f, -1f);
+	}
+
+	/// <summary>
+	/// Kameran “katso”-akseli XZ:ssä, käänetty niin että osoittaa uhkaa kohti (ei pois), kun kamera on putken sivulla.
+	/// </summary>
+	private Vector3 GetCameraFlatShieldForwardTowardThreat(Vector3 threatWorldPosition)
+	{
+		Vector3 f = GetCameraFlatForwardForShield();
+		var toThreat = threatWorldPosition - GlobalPosition;
+		toThreat.Y = 0f;
+		if (toThreat.LengthSquared() < 1e-10f)
+			return f;
+		toThreat = toThreat.Normalized();
+		if (f.Dot(toThreat) < 0f)
+			f = -f;
+		return f;
 	}
 	
 	/// <summary>
@@ -939,11 +1066,11 @@ public partial class PlayerController : CharacterBody3D
 		// Haetaan tarvittavat nodet scene-puusta
 		_mesh = GetNode<MeshInstance3D>("MeshInstance3D");
 		_characterModel = GetNode<Node3D>("gameover_character");
+		_characterModelBaseScale = _characterModel.Scale;
 		if (!Mathf.IsZeroApprox(HahmonPohjanOffsetY))
 			_characterModel.Position += new Vector3(0f, HahmonPohjanOffsetY, 0f);
 		_healthComponent = GetNode<HealthComponent>("HealthComponent");
 		_swordSFX = GetNodeOrNull<AudioStreamPlayer>("SwordSFX");
-		_damageSFX = GetNodeOrNull<AudioStreamPlayer>("DamageSFX");
 
 		// Kytketään HealthComponentin signaalit tähän skriptiin
 		_healthComponent.HealthChanged += OnHealthChanged;
@@ -986,10 +1113,6 @@ public partial class PlayerController : CharacterBody3D
 		_shield = GetNodeOrNull<Node3D>("gameover_character/Skeleton3D/ShieldAttachment");
 		_swordMeshVisual = _sword?.GetNodeOrNull<Node3D>("miekka");
 
-		// Piilotetaan aseet oletuksena — tulevat näkyviin SwordShield-tilassa (miekka erikseen, jotta joystick-bone säilyy)
-		SetSwordMeshVisible(false);
-		if (_shield != null) _shield.Visible = false;
-
 		_handJoystickSceneRoot = GetNodeOrNull("joystick");
 		// joystick.glb on scene-juurella vain siksi että se voidaan Reparentata käteen — älä näytä pelaajan spawnapisteessä.
 		if (_handJoystickSceneRoot != null)
@@ -1028,6 +1151,9 @@ public partial class PlayerController : CharacterBody3D
 		{
 			GD.PrintErr("MeshTangentFix: " + ex.Message);
 		}
+
+		SetupBackWeaponCarry();
+		RefreshWeaponCarryVisuals();
 
 		// Piilotetaan ylimääräiset Tripo3D-meshet (jätetään vain ensimmäinen näkyviin)
 		// Tripo3D generoi joskus useita mesh-nodeja — tämä piilottaa ylimääräiset
@@ -1134,8 +1260,7 @@ public partial class PlayerController : CharacterBody3D
 			if (_isSitting)
 			{
 				_weaponDrawTimer = 0f;
-				SetSwordMeshVisible(false);
-				if (_shield != null) _shield.Visible = false;
+				RefreshWeaponCarryVisuals();
 				PlayAnim("mixamo_com_004");
 			}
 			else
@@ -1143,10 +1268,7 @@ public partial class PlayerController : CharacterBody3D
 				if (_weaponMode == WeaponMode.SwordShield)
 					BeginWeaponEquipVisualDelay();
 				else
-				{
-					SetSwordMeshVisible(false);
-					if (_shield != null) _shield.Visible = false;
-				}
+					RefreshWeaponCarryVisuals();
 				PlayAnim(IsSwordWeaponMode() ? "mixamo_com_007" : "mixamo_com");
 			}
 
@@ -1174,8 +1296,7 @@ public partial class PlayerController : CharacterBody3D
 				if (_weaponMode == WeaponMode.Normal)
 				{
 					_weaponDrawTimer = 0f;
-					SetSwordMeshVisible(false);
-					if (_shield != null) _shield.Visible = false;
+					RefreshWeaponCarryVisuals();
 					PlayAnim("mixamo_com");
 					PlayWeaponToggleFeedback(false);
 				}
@@ -1632,8 +1753,7 @@ public partial class PlayerController : CharacterBody3D
 		_lightAnalogPreviousFrame = 0f;
 		_weaponDrawTimer = 0f;
 
-		SetSwordMeshVisible(false);
-		if (_shield != null) _shield.Visible = false;
+		RefreshWeaponCarryVisuals();
 
 		_isDroneMode = false;
 		RefreshHandJoystickVisibility();
@@ -1778,8 +1898,7 @@ public partial class PlayerController : CharacterBody3D
 		_isBlocking      = false;
 		_weaponDrawTimer = 0f;
 
-		SetSwordMeshVisible(false);
-		if (_shield        != null) _shield.Visible        = false;
+		RefreshWeaponCarryVisuals();
 		RefreshHandJoystickVisibility();
 
 		PlayAnim("mixamo_com_004"); // istumisanimaatio
@@ -1801,9 +1920,7 @@ public partial class PlayerController : CharacterBody3D
 		}
 		else
 		{
-			SetSwordMeshVisible(false);
-			if (_shield != null)
-				_shield.Visible = false;
+			RefreshWeaponCarryVisuals();
 			PlayAnim("mixamo_com");
 		}
 

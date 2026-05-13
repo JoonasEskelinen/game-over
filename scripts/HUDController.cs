@@ -68,7 +68,7 @@ public partial class HUDController : CanvasLayer
 			PlayLifeLostHudPulse();
 	}
 
-	/// <summary>Lyhyt “sydämet”-pulssi kun pelaaja menettää elämän (korvaa osan vanhan vahinkoäänen palautteesta).</summary>
+	/// <summary>Lyhyt “sydämet”-pulssi kun pelaaja menettää elämän.</summary>
 	private void PlayLifeLostHudPulse()
 	{
 		if (_livesRow == null || !IsInsideTree())

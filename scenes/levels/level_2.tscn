@@ -25,7 +25,9 @@
 [ext_resource type="Script" uid="uid://dnmeujjopilrt" path="res://scripts/levels/Level2SpecialCat.cs" id="19_l2cat"]
 [ext_resource type="Script" uid="uid://bf3c7hbco6l2y" path="res://scripts/levels/Level2CrateKokis.cs" id="20_crate"]
 [ext_resource type="Script" uid="uid://d3ec6u0ew5klr" path="res://scripts/levels/Level2BossExit.cs" id="21_l2exit"]
-[ext_resource type="Script" uid="uid://bxmusiclvloop01" path="res://scripts/levels/LevelMusicPlayer.cs" id="22_lvlbgm"]
+[ext_resource type="Script" uid="uid://cw6u05mm1rl3m" path="res://scripts/levels/LevelMusicPlayer.cs" id="22_lvlbgm"]
+[ext_resource type="PackedScene" uid="uid://drbca0bblact3" path="res://scenes/hazards/level2_ceiling_spider.tscn" id="26_l2cspn"]
+[ext_resource type="Script" uid="uid://cxaxxwa3fbaf" path="res://scripts/levels/Level2CeilingSpiderSpawner.cs" id="27_l2cspsp"]
 
 [sub_resource type="PhysicsMaterial" id="PhysicsMaterial_qsp8v"]
 
@@ -867,7 +869,6 @@ BossDanceCamFollowSpeed = 2.0
 transform = Transform3D(1.1, 0, 0, 0, 1.1, 0, 0, 0, 1.1, -114.77098, -0.073586024, 0)
 Juoksunopeus = 6.0
 SyvyysAlaraja = -14.0
-JoystickInHandAlwaysWhenSitting = true
 JoystickHandLocalPosition = Vector3(0, 0.3, 0.1)
 
 [node name="Level2SpecialCat" type="CharacterBody3D" parent="." unique_id=-1194923297]
@@ -892,6 +893,12 @@ environment = SubResource("Environment_ra442")
 [node name="EnemyLevel2Spawner" type="Node3D" parent="." unique_id=2100043000]
 script = ExtResource("6_spawner")
 EnemyScene = ExtResource("4_fiq81")
+
+[node name="Level2CeilingSpiderSpawner" type="Node3D" parent="." unique_id=2100043100]
+transform = Transform3D(2, 0, 0, 0, 2, 0, 0, 0, 2, 0, 0, 0)
+script = ExtResource("27_l2cspsp")
+SpiderScene = ExtResource("26_l2cspn")
+"SynnytysVäliMaxSekuntia" = 8.0
 
 [node name="BossLevel2" parent="." unique_id=2100042000 instance=ExtResource("5_boss2")]
 transform = Transform3D(1.5, 0, 0, 0, 1.5, 0, 0, 0, 1.5, 175, -0.073586024, 0)

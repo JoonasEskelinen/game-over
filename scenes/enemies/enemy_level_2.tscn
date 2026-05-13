@@ -9,8 +9,9 @@ height = 0.9616211
 
 [node name="EnemyLevel2" type="CharacterBody3D" unique_id=925950860]
 script = ExtResource("1_ej5xk")
-Speed = 4.0
+Speed = 5.5
 AttackRange = 1.0
+ChaseMinimumLeadOverPlayerSwordWalk = 1.25
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=370758772]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.3852373, 0)

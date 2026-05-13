@@ -5,6 +5,13 @@ public partial class EnemyLevel2 : CharacterBody3D
 {
 	[Export] public float Speed = 3.5f;
 	[Export] public float AttackRange = 1.2f;
+
+	/// <summary>
+	/// Jahtaessa kun pelaaja on miekka+kilpi-tilassa: vähintään <c>pelaajan Kävelynopeus + tämä</c> (m/s).
+	/// Estää tilanteen jossa lisko ei koskaan pääse iskuetäisyydelle jos pelaaja kävelee koko ajan.
+	/// </summary>
+	[Export] public float ChaseMinimumLeadOverPlayerSwordWalk = 1.15f;
+
 	/// <summary>R1 (3 vahinkoa) tappaa yhdellä iskulla; R2 tarvitsee kaksi osumaa (1+1).</summary>
 	[Export] public int Health = 2;
 
@@ -38,6 +45,12 @@ public partial class EnemyLevel2 : CharacterBody3D
 
 	[Export] public float PunchDamageWindupSeconds  = 0.35f;
 	[Export] public float PunchDamageMinAttackPhase = 0.38f;
+
+	/// <summary>
+	/// Metriä lisättynä <see cref="AttackRange"/>:iin kun ollaan jo lähitaistelussa — estää iskun katkeamisen
+	/// pienestä liikkeestä ja auttaa useaa vihollista pysymään iskutilassa (ei “juokse/run”-vaihtoa reunalla).
+	/// </summary>
+	[Export] public float MeleeExitSlack = 0.55f;
 
 	[Export] public float DeathTiltDuration  = 0.32f;
 	[Export] public float DeathSlideDuration = 0.24f;
@@ -90,6 +103,15 @@ public partial class EnemyLevel2 : CharacterBody3D
 	/// <summary>Käytössä EnemyLevel2Spawner (max elossa kerrallaan).</summary>
 	public bool IsAliveForSpawner() => !_isDead && IsInsideTree();
 
+	/// <summary>XZ-jahtausnopeus: miekka/kilpi -tilassa vähintään pelaajan kävely + lead, muuten <see cref="Speed"/>.</summary>
+	private float GetChasePlanarSpeed()
+	{
+		if (_playerController == null || !_playerController.IsSwordWeaponMode())
+			return Speed;
+		float floor = _playerController.Kävelynopeus + ChaseMinimumLeadOverPlayerSwordWalk;
+		return Mathf.Max(Speed, floor);
+	}
+
 	public override void _PhysicsProcess(double delta)
 	{
 		if (_isDead || !IsInsideTree()) return;
@@ -103,7 +125,11 @@ public partial class EnemyLevel2 : CharacterBody3D
 
 		float planarDist = PlanarDistTo(_player.GlobalPosition);
 		float heightDiff = Mathf.Abs(_player.GlobalPosition.Y - GlobalPosition.Y);
-		bool inMeleeRange = planarDist <= AttackRange && heightDiff <= 1.9f;
+		bool heightOk = heightDiff <= 1.9f;
+		// Hysteresis: sisään AttackRange, ulos vasta kun ylitetään AttackRange + slack (ei katkaise iskua millimetrillä).
+		float meleeEnter = AttackRange;
+		float meleeStay = AttackRange + Mathf.Max(0f, MeleeExitSlack);
+		bool inMeleeRange = heightOk && (_wasInMeleeRange ? planarDist <= meleeStay : planarDist <= meleeEnter);
 
 		if (inMeleeRange && !_wasInMeleeRange)
 		{
@@ -120,8 +146,9 @@ public partial class EnemyLevel2 : CharacterBody3D
 			if (toPlayer.LengthSquared() > 0.01f)
 			{
 				var dir = toPlayer.Normalized();
-				velocity.X = dir.X * Speed;
-				velocity.Z = dir.Z * Speed;
+				float chase = GetChasePlanarSpeed();
+				velocity.X = dir.X * chase;
+				velocity.Z = dir.Z * chase;
 			}
 			FacePlayer();
 
@@ -221,9 +248,14 @@ public partial class EnemyLevel2 : CharacterBody3D
 	{
 		if (_playerController == null || _player == null || !_player.IsInsideTree()) return;
 
-		if (_playerController.IsBlockingEffectiveAgainst(GlobalPosition))
+		// Torjuntatarkistus: sama logiikka kuin EnemyLevel1 susella (hahmon -Basis.Z = suunta pelaaja liikkuessa).
+		// Uhkapiste liskon ja pelaajan välissä — epäonnistuu vain jos pelaaja kääntyy poispäin.
+		Vector3 threat = GlobalPosition.Lerp(_player.GlobalPosition, 0.35f);
+		// Kilven kartio: hahmon +Z vastaa “eteen” liskon + sivukameran tilanteessa (-Z antoi torjunnan vain selin).
+		if (_playerController.IsBlockingEffectiveAgainst(threat, -1f, flipShieldFacing180: true))
 		{
-			GD.Print("Isku torjuttu kilpellä!");
+			GD.Print("EnemyLevel2: isku torjuttu kilpellä!");
+			_playerController.NotifyBossLevel1StrikeBlocked();
 			return;
 		}
 
@@ -258,10 +290,10 @@ public partial class EnemyLevel2 : CharacterBody3D
 		{
 			var flashMat = new StandardMaterial3D
 			{
-				ShadingMode             = BaseMaterial3D.ShadingModeEnum.Unshaded,
-				AlbedoColor             = new Color(1f, 0.82f, 0.82f),
-				EmissionEnabled         = true,
-				Emission                = new Color(1f, 0.35f, 0.35f),
+				ShadingMode              = BaseMaterial3D.ShadingModeEnum.Unshaded,
+				AlbedoColor              = new Color(1f, 0.82f, 0.82f),
+				EmissionEnabled          = true,
+				Emission                 = new Color(1f, 0.35f, 0.35f),
 				EmissionEnergyMultiplier = 2.2f,
 			};
 			foreach (var g in geos)
@@ -305,7 +337,6 @@ public partial class EnemyLevel2 : CharacterBody3D
 		var col = GetNodeOrNull<CollisionShape3D>("CollisionShape3D");
 		if (col != null) col.Disabled = true;
 
-		// Soita death-animaatio jos löytyy
 		if (_animationPlayer != null && GodotObject.IsInstanceValid(_animationPlayer))
 			_animationPlayer.Play("death");
 
