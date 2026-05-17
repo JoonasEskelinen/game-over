@@ -17,7 +17,7 @@ script = ExtResource("1_rp718")
 "Kävelynopeus" = 2.0
 HypynAlkuvauhti = 8.0
 JoystickInHandAlwaysWhenSitting = true
-"MiekkaKilpiNäkyviinViive" = 0.45
+"MiekkaKilpiNäkyviinViive" = 0.15
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1116881556]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.641089, 0)

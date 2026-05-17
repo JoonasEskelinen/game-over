@@ -1184,6 +1184,8 @@ public partial class PlayerController : CharacterBody3D
 
 		// Arcade-prop kerros 5 (Level1ArcadePhysicsSetup: bitmask 16) — pelaaja törmää, bossin syöksy-maski 1 ei.
 		SetCollisionMaskValue(5, true);
+		// Level2BossExit: reiän näkymätön täyte — vain pelaaja (ei Level2SpecialCat kerros 8=128).
+		SetCollisionMaskValue(9, true);
 
 		RefreshHandJoystickVisibility();
 

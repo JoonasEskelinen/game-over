@@ -213,6 +213,7 @@ transform = Transform3D(1.1, 0, 0, 0, 1.1, 0, 0, 0, 1.1, 0.014350295, -0.2374842
 Juoksunopeus = 5.5
 HypynAlkuvauhti = 7.0
 SyvyysAlaraja = -14.0
+JoystickInHandAlwaysWhenSitting = false
 
 [node name="Camera3D" type="Camera3D" parent="." unique_id=1312101267]
 transform = Transform3D(1, 0, 0, 0, 0.9848158, 0.17360279, 0, -0.17360279, 0.9848158, 0, 3, 12)

@@ -21,7 +21,16 @@ public partial class LevelExit : Area3D
 		_triggered = true;
 		GD.Print($"Kenttä läpäisty! Siirrytään: {NextScene}");
 
-		// TODO: lisää läpäisyanimaatio / fade-out ennen scene-vaihtoa
+		Callable.From(DeferredChangeScene).CallDeferred();
+	}
+
+	private void DeferredChangeScene()
+	{
+		if (!IsInsideTree() || GetTree() == null)
+		{
+			_triggered = false;
+			return;
+		}
 		GetTree().ChangeSceneToFile(NextScene);
 	}
 }

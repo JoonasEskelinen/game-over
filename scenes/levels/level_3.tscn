@@ -105,7 +105,6 @@ transform = Transform3D(1.1, 0, 0, 0, 1.1, 0, 0, 0, 1.1, -28.05812, -9.681442, 0
 Juoksunopeus = 6.0
 SyvyysAlaraja = -14.0
 HahmonPohjanOffsetY = 0.2
-JoystickInHandAlwaysWhenSitting = true
 MiekkaIskuSuuntaPuolikulma = 65.0
 
 [node name="Level3SpecialDrone" type="CharacterBody3D" parent="." unique_id=2065127777]

@@ -42,7 +42,11 @@ public partial class HudJoystickPreview : Control
 		{
 			Name = "HudJoySubViewport",
 			RenderTargetUpdateMode = SubViewport.UpdateMode.Always,
-			TransparentBg = false,
+			// OwnWorld3D=true: oma erillinen 3D-maailma — ilman tätä viewport jakaa pelimaiseman World3D:n
+			// ja kamera näyttää kentän (putken/luolan liitoskohta world-origon lähellä).
+			OwnWorld3D = true,
+			// TransparentBg=true: läpinäkyvä tausta — joystick kelluu HUD:issa ilman taustaruutua.
+			TransparentBg = true,
 			HandleInputLocally = false,
 			Size = new Vector2I(Mathf.Max(32, (int)ViewportWidth), Mathf.Max(32, (int)ViewportHeight)),
 			Msaa3D = Viewport.Msaa.Disabled,
@@ -77,16 +81,14 @@ public partial class HudJoystickPreview : Control
 				GD.PrintErr("HudJoystickPreview: StickPivot ei löytynyt — PlaneMesh-taustaa ei piiloteta.");
 		}
 
-		if (ApplyMeshTangentFix)
+		// Aina generoidaan tangentit GLB-meshille: normaalikartta vaatii ne, ilman niitä malli voi renderöityä mustana.
+		try
 		{
-			try
-			{
-				MeshTangentFix.ApplyToSubtree(inst);
-			}
-			catch (System.Exception ex)
-			{
-				GD.PrintErr("HudJoystickPreview MeshTangentFix: " + ex.Message);
-			}
+			MeshTangentFix.ApplyToSubtree(inst);
+		}
+		catch (System.Exception ex)
+		{
+			GD.PrintErr("HudJoystickPreview MeshTangentFix: " + ex.Message);
 		}
 
 		_previewCam = new Camera3D
@@ -143,14 +145,19 @@ public partial class HudJoystickPreview : Control
 		var w3d = _viewport.World3D;
 		if (w3d == null)
 		{
-			GD.PrintErr("HudJoystickPreview: SubViewport.World3D puuttuu — HUD-joystickin tausta voi näyttää väärältä.");
+			GD.PrintErr("HudJoystickPreview: SubViewport.World3D puuttuu — HUD-joystickin valaistus voi puuttua.");
 			return;
 		}
 
+		// TransparentBg=true: taustaa ei tarvita. Asetetaan vain ambient-valo jotta mallin
+		// varjopuolet eivät ole täysin mustia (läpinäkyvän taustan kanssa ne erottuisivat rumasti).
 		if (w3d.Environment == null)
 			w3d.Environment = new Godot.Environment();
-		w3d.Environment.BackgroundMode = Godot.Environment.BGMode.ClearColor;
-		w3d.Environment.BackgroundColor = new Color(0.06f, 0.06f, 0.08f, 1f);
+		w3d.Environment.BackgroundMode = Godot.Environment.BGMode.Color;
+		w3d.Environment.BackgroundColor = new Color(0f, 0f, 0f, 0f);
+		w3d.Environment.AmbientLightSource = Godot.Environment.AmbientSource.Color;
+		w3d.Environment.AmbientLightColor = new Color(0.6f, 0.6f, 0.65f, 1f);
+		w3d.Environment.AmbientLightEnergy = 0.5f;
 	}
 
 	private void BindViewportTextureDeferred()
@@ -159,9 +166,9 @@ public partial class HudJoystickPreview : Control
 			|| !_display.IsInsideTree() || !_viewport.IsInsideTree())
 			return;
 
-		var vtex = new ViewportTexture();
-		vtex.ViewportPath = _display.GetPathTo(_viewport);
-		_display.Texture = vtex;
+		// GetTexture() on suora viite SubViewportin renderteksturiin — luotettavampi kuin
+		// ViewportTexture + NodePath, joka vaatii polun suhteessa scene-juureen eikä _displaystä.
+		_display.Texture = _viewport.GetTexture();
 	}
 
 	private void OnDisplayResized() => SyncViewportSizeToDisplay();

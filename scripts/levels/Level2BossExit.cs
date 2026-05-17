@@ -2,11 +2,14 @@ using Godot;
 
 /// <summary>
 /// Level 2: PipeB:n päätyseinään (Wall_End) ilmestyy aukko bossin kuoltua.
-/// Poistuminen: pelaaja (<see cref="PlayerController"/>) tai erikoiskissa (<see cref="Level2SpecialCat"/>)
-/// astuu laukaisualueelle → sama latausruutu kuin level 1 → <see cref="NextScene"/>.
+/// Poistuminen: vain <see cref="Level2SpecialCat"/> joystick-tilassa (<see cref="PlayerController.IsSpecialWeaponJoystickContextActive"/>)
+/// laukaisualueella → sama latausruutu kuin level 1 → <see cref="NextScene"/>.
 /// </summary>
 public partial class Level2BossExit : Node3D
 {
+	/// <summary>Godot 3D physics layer 9 (1-based). Pelaajan <c>CollisionMask</c> sisältää tämän; <see cref="Level2SpecialCat"/> ei → kissa mahtuu reiästä.</summary>
+	public const uint HolePlayerBlockerPhysicsLayer = 1u << 8;
+
 	[Export] public string NextScene = "res://scenes/levels/level_3.tscn";
 
 	/// <summary>Suhteessa tähän Node3D:hen — PipeB on sibling, ei lapsi.</summary>
@@ -23,6 +26,11 @@ public partial class Level2BossExit : Node3D
 
 	/// <summary>Yläreuna-aukon pitää peittää skaalattu kissa (~1.44 m korkea kapseli).</summary>
 	[Export] public float HoleMaxYLocal = 0.12f;
+
+	/// <summary>PipeB-paikallinen laukaisinalue (Wall_End jälkeen) — säädettävissä kentässä.</summary>
+	[Export] public Vector3 ExitAreaPositionLocalPipeB = new(181.6f, 0.55f, 0f);
+
+	[Export] public Vector3 ExitAreaHalfExtents = new(2.5f, 1.4f, 1.35f);
 
 	private const string LoadingScreenPath = "res://scenes/ui/loading_screen.tscn";
 
@@ -124,6 +132,7 @@ public partial class Level2BossExit : Node3D
 		}
 
 		AddHoleQuad(frameRoot, hz, yLo, yHi);
+		AddInvisiblePlayerOnlyHoleBlocker(frameRoot, hz, yLo, yHi);
 
 		// Iso laukaisin PipeB-tilassa seinän ulkopuolella (Jolt + Area -maskit vaihtelevat).
 		var pipeB = GetParent()?.GetNodeOrNull<Node3D>("PipeB");
@@ -139,10 +148,14 @@ public partial class Level2BossExit : Node3D
 			_exitArea.BodyEntered += OnExitBodyEntered;
 			pipeB.AddChild(_exitArea);
 			// Wall_End ≈ x=180; ohut seinä — törmäysaukko jälkeen kissan kuuluu kävellä tähän (maailma ≈ PipeB).
-			_exitArea.Position = new Vector3(181.6f, 0.55f, 0f);
+			_exitArea.Position = ExitAreaPositionLocalPipeB;
+			var he = ExitAreaHalfExtents;
+			he.X = Mathf.Max(he.X, 0.25f);
+			he.Y = Mathf.Max(he.Y, 0.25f);
+			he.Z = Mathf.Max(he.Z, 0.25f);
 			var exitShape = new CollisionShape3D
 			{
-				Shape = new BoxShape3D { Size = new Vector3(5f, 2.8f, 4.5f) },
+				Shape = new BoxShape3D { Size = he * 2f },
 			};
 			_exitArea.AddChild(exitShape);
 		}
@@ -184,6 +197,27 @@ public partial class Level2BossExit : Node3D
 		parent.AddChild(sb);
 	}
 
+	/// <summary>
+	/// Täyttää aukon näkymättömällä laatikolla vain kerroksella <see cref="HolePlayerBlockerPhysicsLayer"/>.
+	/// Pelaajan maskissa pitää olla sama bitti (<see cref="PlayerController"/> _Ready).
+	/// </summary>
+	private static void AddInvisiblePlayerOnlyHoleBlocker(Node3D parent, float hz, float yLo, float yHi)
+	{
+		float h = Mathf.Max(yHi - yLo, 0.12f);
+		var sb = new StaticBody3D
+		{
+			Name = "HolePlayerBlocker",
+			CollisionLayer = HolePlayerBlockerPhysicsLayer,
+			CollisionMask = 0u,
+		};
+		sb.Position = new Vector3(0f, (yLo + yHi) * 0.5f, 0f);
+		sb.AddChild(new CollisionShape3D
+		{
+			Shape = new BoxShape3D { Size = new Vector3(0.48f, h, hz * 2f) },
+		});
+		parent.AddChild(sb);
+	}
+
 	private static void AddHoleQuad(Node3D parent, float hz, float yLo, float yHi)
 	{
 		float h = yHi - yLo;
@@ -220,18 +254,34 @@ public partial class Level2BossExit : Node3D
 	{
 		if (_exiting)
 			return;
-		if (body is not PlayerController && body is not Level2SpecialCat)
+		// Vain erikoiskissa joystick-tilassa (istuu + joystick); pelaaja ei laukaise siirtymää.
+		if (body is not Level2SpecialCat)
 			return;
-		_exiting = true;
+		var player = GetTree()?.GetFirstNodeInGroup("player") as PlayerController;
+		if (player == null || !GodotObject.IsInstanceValid(player) || !player.IsSpecialWeaponJoystickContextActive())
+			return;
 
 		if (!ResourceLoader.Exists(NextScene))
 		{
 			GD.PrintErr($"Level2BossExit: seuraavaa kenttää ei löydy: {NextScene}");
-			_exiting = false;
 			return;
 		}
 
+		_exiting = true;
 		GameState.Instance.PendingLoadScenePath = NextScene;
+		// Ei ChangeSceneToFile suoraan BodyEntered / fysiikkakutsussa — Godot + Jolt varoittaa.
+		Callable.From(DeferredChangeToNextLevel).CallDeferred();
+	}
+
+	private void DeferredChangeToNextLevel()
+	{
+		if (!IsInsideTree() || GetTree() == null)
+		{
+			_exiting = false;
+			GameState.Instance.PendingLoadScenePath = "";
+			return;
+		}
+
 		Error err = GetTree().ChangeSceneToFile(LoadingScreenPath);
 		if (err != Error.Ok)
 		{

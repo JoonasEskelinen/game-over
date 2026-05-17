@@ -28,6 +28,7 @@
 [ext_resource type="Script" uid="uid://cw6u05mm1rl3m" path="res://scripts/levels/LevelMusicPlayer.cs" id="22_lvlbgm"]
 [ext_resource type="PackedScene" uid="uid://drbca0bblact3" path="res://scenes/hazards/level2_ceiling_spider.tscn" id="26_l2cspn"]
 [ext_resource type="Script" uid="uid://cxaxxwa3fbaf" path="res://scripts/levels/Level2CeilingSpiderSpawner.cs" id="27_l2cspsp"]
+[ext_resource type="Script" uid="uid://cgowcvfw01tpv" path="res://scripts/levels/Level2CatJoystickHint.cs" id="28_l2hint"]
 
 [sub_resource type="PhysicsMaterial" id="PhysicsMaterial_qsp8v"]
 
@@ -485,19 +486,19 @@ mesh = SubResource("BoxMesh_cave_side")
 surface_material_override/0 = SubResource("mat_cave")
 
 [node name="RockPath_Round_Thin2" parent="Cave/Wall_ZNeg" unique_id=1866167824 instance=ExtResource("7_wikm6")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 29.779026, -3.4911385, 8.205462)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 29.779026, -3.7474031, 8.205462)
 
 [node name="RockPath_Round_Thin3" parent="Cave/Wall_ZNeg" unique_id=1499348967 instance=ExtResource("7_wikm6")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 29.762981, -3.4911385, 10.093979)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 29.762981, -3.7681098, 10.093979)
 
 [node name="RockPath_Round_Thin4" parent="Cave/Wall_ZNeg" unique_id=953515492 instance=ExtResource("7_wikm6")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 29.828804, -3.491138, 11.984344)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 29.828804, -3.7923307, 11.984344)
 
 [node name="Rock_Medium_32" parent="Cave/Wall_ZNeg" unique_id=893396899 instance=ExtResource("8_1c1qw")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.5067196, -3.1843557, 5.9007616)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.5067196, -3.1843557, 5.1010838)
 
 [node name="Rock_Medium_33" parent="Cave/Wall_ZNeg" unique_id=2048070984 instance=ExtResource("8_1c1qw")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8.901821, -3.1843557, 7.7658167)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8.901821, -3.1843557, 4.8142824)
 
 [node name="Rock_Medium_34" parent="Cave/Wall_ZNeg" unique_id=2021025676 instance=ExtResource("8_1c1qw")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 26.177132, -3.1843557, 3.3116655)
@@ -841,8 +842,14 @@ surface_material_override/0 = SubResource("mat_cave")
 
 [node name="HUD" parent="." unique_id=499664610 instance=ExtResource("1_j2425")]
 
+[node name="Level2CatJoystickHint" type="CanvasLayer" parent="." unique_id=2100043200]
+layer = 18
+script = ExtResource("28_l2hint")
+
 [node name="Level2BossExit" type="Node3D" parent="." unique_id=2100045001]
 script = ExtResource("21_l2exit")
+HoleHalfWidthZ = 0.68
+ExitAreaHalfExtents = Vector3(2.35, 1.25, 1.15)
 
 [node name="Camera3D" type="Camera3D" parent="." unique_id=1832840748]
 transform = Transform3D(1, 0, 0, 0, 0.9848158, 0.17360279, 0, -0.17360279, 0.9848158, -105, 3.6, 13.5)
@@ -893,12 +900,22 @@ environment = SubResource("Environment_ra442")
 [node name="EnemyLevel2Spawner" type="Node3D" parent="." unique_id=2100043000]
 script = ExtResource("6_spawner")
 EnemyScene = ExtResource("4_fiq81")
+FirstSpawnAtPlayerX = -98.0
+SpawnAheadOfPlayer = 14.0
+SpawnAheadVariance = 2.5
+SpawnZHalfRange = 2.35
 
 [node name="Level2CeilingSpiderSpawner" type="Node3D" parent="." unique_id=2100043100]
-transform = Transform3D(2, 0, 0, 0, 2, 0, 0, 0, 2, 0, 0, 0)
 script = ExtResource("27_l2cspsp")
 SpiderScene = ExtResource("26_l2cspn")
-"SynnytysVäliMaxSekuntia" = 8.0
+"SynnytysVäliMinSekuntia" = 3.8
+"SynnytysVäliMaxSekuntia" = 5.2
+"EnsimmäisenSpiderinLisäAlkuviiveSekunteina" = 5.5
+"VähintäänMetriXPelaajanEteen" = 9.0
+SynnytysXSatunnainenMetri = 15.0
+SynnytysXPutkenKeskelleSekoitus = 0.26
+SynnytysZTavoitePelaajanZSekoitus = 0.78
+SynnytysZKohtiKameraaOffsetMetri = 0.35
 
 [node name="BossLevel2" parent="." unique_id=2100042000 instance=ExtResource("5_boss2")]
 transform = Transform3D(1.5, 0, 0, 0, 1.5, 0, 0, 0, 1.5, 175, -0.073586024, 0)

@@ -180,15 +180,26 @@ public partial class Level1ExitHole : Node3D
 	private void OnBodyEntered(Node3D body)
 	{
 		if (_exiting || body is not PlayerController) return;
-		_exiting = true;
 		if (!ResourceLoader.Exists(NextScene))
 		{
 			GD.PrintErr($"Level1ExitHole: seuraavaa kenttää ei löydy: {NextScene}");
-			_exiting = false;
 			return;
 		}
+		_exiting = true;
 		GD.Print($"Level1ExitHole: pelaaja putosi reikään → latausruutu → {NextScene}");
 		GameState.Instance.PendingLoadScenePath = NextScene;
+		Callable.From(DeferredChangeToNextLevel).CallDeferred();
+	}
+
+	private void DeferredChangeToNextLevel()
+	{
+		if (!IsInsideTree() || GetTree() == null)
+		{
+			_exiting = false;
+			GameState.Instance.PendingLoadScenePath = "";
+			return;
+		}
+
 		Error err = GetTree().ChangeSceneToFile(LoadingScreenPath);
 		if (err != Error.Ok)
 		{

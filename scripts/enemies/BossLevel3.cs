@@ -29,6 +29,17 @@ public partial class BossLevel3 : Node3D
 		_visual = GetNodeOrNull<Node3D>("Visual");
 		if (_hurt != null)
 			_hurt.BodyEntered += OnHurtBodyEntered;
+
+		// puijontorni.glb + normal map: varmistus jos importista puuttuvat tangentin (runtime ArrayMesh).
+		Callable.From(DeferredMeshTangentFixOnTowerRoot).CallDeferred();
+	}
+
+	/// <summary>GLB-juuri on yleensä kaksi tasoa ylös (TowerBossRockThrower → puijontorni instance).</summary>
+	private void DeferredMeshTangentFixOnTowerRoot()
+	{
+		var towerRoot = GetParent()?.GetParent();
+		if (towerRoot != null)
+			MeshTangentFix.ApplyToSubtree(towerRoot);
 	}
 
 	private void OnHurtBodyEntered(Node3D body)

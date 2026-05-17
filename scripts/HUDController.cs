@@ -14,6 +14,9 @@ public partial class HUDController : CanvasLayer
 	private int _boss1HudLastCur = int.MinValue;
 	private int _boss1HudLastMax;
 
+	private enum BossBarTitleStyleKind { Default, ShadowFang, Level2 }
+	private BossBarTitleStyleKind _bossBarTitleStyle = BossBarTitleStyleKind.Default;
+
 	// Värit
 	private static readonly Color _hpGreen      = new(0.15f, 0.85f, 0.25f, 1f);
 	private static readonly Color _hpRed        = new(0.85f, 0.12f, 0.12f, 1f);
@@ -24,6 +27,15 @@ public partial class HUDController : CanvasLayer
 	private static readonly Color _bossBg       = new(0.08f, 0.08f, 0.08f, 0.85f);
 	private static readonly Color _bossGold     = new(0.95f, 0.70f, 0.05f, 1f);
 	private static readonly Color _bossL1TitleCol  = new(0.82f, 0.70f, 0.42f, 1f);
+	/// <summary>Shadow Fang — kuunvalo / hopea, tumma purppura ääriviiva.</summary>
+	private static readonly Color _bossL1StyledTitleCol        = new(0.88f, 0.84f, 0.96f, 1f);
+	private static readonly Color _bossL1StyledOutlineCol       = new(0.10f, 0.05f, 0.16f, 0.94f);
+	private static readonly Color _bossL1StyledShadowCol        = new(0.35f, 0.02f, 0.12f, 0.38f);
+	/// <summary>Level 2 boss — sähköinen otsikko HUDissa.</summary>
+	private static readonly Color _bossL2TitleCol        = new(0.72f, 0.96f, 1f, 1f);
+	private static readonly Color _bossL2TitleOutlineCol = new(0.04f, 0.12f, 0.18f, 0.92f);
+	private const int _bossTitleFontSizeDefault = 11;
+	private const int _bossTitleFontSizeStyledBoss = 16;
 	private static readonly Color _borderColor  = new(0.25f, 0.25f, 0.25f, 1f);
 	private static readonly Color _heartFull    = new(0.95f, 0.18f, 0.22f, 1f);
 	private static readonly Color _heartEmpty   = new(0.22f, 0.22f, 0.26f, 0.55f);
@@ -186,9 +198,68 @@ public partial class HUDController : CanvasLayer
 		_bossBarTitle.OffsetBottom = 20;
 		_bossBarTitle.ZIndex = 9;
 		_bossBarTitle.HorizontalAlignment = HorizontalAlignment.Right;
-		_bossBarTitle.AddThemeFontSizeOverride("font_size", 11);
-		_bossBarTitle.AddThemeColorOverride("font_color", _bossL1TitleCol);
+		ApplyBossBarTitleStyleDefault();
 		AddChild(_bossBarTitle);
+	}
+
+	private void ApplyBossBarTitleStyleDefault()
+	{
+		if (_bossBarTitle == null) return;
+		_bossBarTitle.OffsetTop = 4;
+		_bossBarTitle.OffsetBottom = 20;
+		_bossBarTitle.AddThemeFontSizeOverride("font_size", _bossTitleFontSizeDefault);
+		_bossBarTitle.AddThemeColorOverride("font_color", _bossL1TitleCol);
+		_bossBarTitle.AddThemeConstantOverride("outline_size", 0);
+		_bossBarTitle.AddThemeColorOverride("font_outline_color", Colors.Transparent);
+		_bossBarTitle.AddThemeColorOverride("font_shadow_color", Colors.Transparent);
+		_bossBarTitle.AddThemeConstantOverride("shadow_offset_x", 0);
+		_bossBarTitle.AddThemeConstantOverride("shadow_offset_y", 0);
+		if (_bossHealthBar != null)
+		{
+			_bossHealthBar.OffsetTop = 22;
+			_bossHealthBar.OffsetBottom = 44;
+		}
+		_bossBarTitleStyle = BossBarTitleStyleKind.Default;
+	}
+
+	private void ApplyBossBarTitleStyleShadowFang()
+	{
+		if (_bossBarTitle == null) return;
+		_bossBarTitle.OffsetTop = -2;
+		_bossBarTitle.OffsetBottom = 22;
+		_bossBarTitle.AddThemeFontSizeOverride("font_size", _bossTitleFontSizeStyledBoss);
+		_bossBarTitle.AddThemeColorOverride("font_color", _bossL1StyledTitleCol);
+		_bossBarTitle.AddThemeConstantOverride("outline_size", 3);
+		_bossBarTitle.AddThemeColorOverride("font_outline_color", _bossL1StyledOutlineCol);
+		_bossBarTitle.AddThemeColorOverride("font_shadow_color", _bossL1StyledShadowCol);
+		_bossBarTitle.AddThemeConstantOverride("shadow_offset_x", 2);
+		_bossBarTitle.AddThemeConstantOverride("shadow_offset_y", 2);
+		if (_bossHealthBar != null)
+		{
+			_bossHealthBar.OffsetTop = 26;
+			_bossHealthBar.OffsetBottom = 48;
+		}
+		_bossBarTitleStyle = BossBarTitleStyleKind.ShadowFang;
+	}
+
+	private void ApplyBossBarTitleStyleLevel2()
+	{
+		if (_bossBarTitle == null) return;
+		_bossBarTitle.OffsetTop = -2;
+		_bossBarTitle.OffsetBottom = 22;
+		_bossBarTitle.AddThemeFontSizeOverride("font_size", _bossTitleFontSizeStyledBoss);
+		_bossBarTitle.AddThemeColorOverride("font_color", _bossL2TitleCol);
+		_bossBarTitle.AddThemeConstantOverride("outline_size", 3);
+		_bossBarTitle.AddThemeColorOverride("font_outline_color", _bossL2TitleOutlineCol);
+		_bossBarTitle.AddThemeColorOverride("font_shadow_color", new Color(0f, 0f, 0f, 0.45f));
+		_bossBarTitle.AddThemeConstantOverride("shadow_offset_x", 1);
+		_bossBarTitle.AddThemeConstantOverride("shadow_offset_y", 2);
+		if (_bossHealthBar != null)
+		{
+			_bossHealthBar.OffsetTop = 26;
+			_bossHealthBar.OffsetBottom = 48;
+		}
+		_bossBarTitleStyle = BossBarTitleStyleKind.Level2;
 	}
 
 	private void RestoreDefaultBossBarTheme()
@@ -274,6 +345,8 @@ public partial class HUDController : CanvasLayer
 		if (boss1 != null && GodotObject.IsInstanceValid(boss1)
 			&& boss1.IsInsideTree() && !boss1.IsBossDead)
 		{
+			if (_bossBarTitleStyle != BossBarTitleStyleKind.ShadowFang)
+				ApplyBossBarTitleStyleShadowFang();
 			_bossHealthBar.Visible = true;
 			if (_bossBarTitle != null)
 			{
@@ -298,15 +371,22 @@ public partial class HUDController : CanvasLayer
 			_boss1HudLastCur = int.MinValue;
 			RestoreDefaultBossBarTheme();
 
-			_bossHealthBar.Visible = true;
-			if (_bossBarTitle != null)
-			{
-				_bossBarTitle.Text = "Boss — Level 2";
-				_bossBarTitle.Visible = true;
-			}
+			if (_bossBarTitleStyle != BossBarTitleStyleKind.Level2)
+				ApplyBossBarTitleStyleLevel2();
+
+			bool showHud = IsBossLevel2RoughlyVisibleInPlayerView(boss2, _player);
 			int maxHp = Mathf.Max(1, boss2.GetBossMaxHealth());
 			_bossHealthBar.MaxValue = maxHp;
 			_bossHealthBar.Value = Mathf.Clamp(boss2.GetBossCurrentHealth(), 0, maxHp);
+			_bossHealthBar.Visible = showHud;
+			if (_bossBarTitle != null)
+			{
+				string display = string.IsNullOrWhiteSpace(boss2.HudDisplayName)
+					? "Volt Viper"
+					: boss2.HudDisplayName.Trim();
+				_bossBarTitle.Text = display;
+				_bossBarTitle.Visible = showHud;
+			}
 		}
 		else if (boss3 != null && GodotObject.IsInstanceValid(boss3)
 			&& boss3.IsInsideTree() && !boss3.IsBossDead)
@@ -315,6 +395,8 @@ public partial class HUDController : CanvasLayer
 			_boss1HudLastCur = int.MinValue;
 			RestoreDefaultBossBarTheme();
 
+			if (_bossBarTitleStyle != BossBarTitleStyleKind.Default)
+				ApplyBossBarTitleStyleDefault();
 			_bossHealthBar.Visible = true;
 			if (_bossBarTitle != null)
 			{
@@ -333,6 +415,52 @@ public partial class HUDController : CanvasLayer
 			if (_bossBarTitle != null)
 				_bossBarTitle.Visible = false;
 		}
+	}
+
+	/// <summary>
+	/// Level 2 boss: HUD vain kun pelaajan aktiivisen kameran näkymässä (käännetty kohteeseen, ruudun sisällä marginaalilla).
+	/// </summary>
+	private static bool IsBossLevel2RoughlyVisibleInPlayerView(BossLevel2 boss, PlayerController player)
+	{
+		if (player == null || !GodotObject.IsInstanceValid(player) || !player.IsInsideTree())
+			return false;
+
+		var vp = player.GetViewport();
+		var cam = vp?.GetCamera3D();
+		if (cam == null)
+			return false;
+
+		var rect = vp.GetVisibleRect();
+		const float marginPx = 72f;
+		if (IsWorldPointInCameraView(cam, rect, boss.GlobalPosition + Vector3.Up * 0.35f, marginPx))
+			return true;
+		if (IsWorldPointInCameraView(cam, rect, boss.GlobalPosition + Vector3.Up * 1.35f, marginPx))
+			return true;
+		if (IsWorldPointInCameraView(cam, rect, boss.GlobalPosition + Vector3.Up * 2.35f, marginPx))
+			return true;
+
+		return false;
+	}
+
+	private static bool IsWorldPointInCameraView(Camera3D cam, Rect2 viewportRect, Vector3 worldPoint, float marginPx)
+	{
+		Vector3 to = worldPoint - cam.GlobalPosition;
+		if (to.LengthSquared() < 1e-6f)
+			return true;
+
+		// Kamera katsoo paikallista -Z:ää.
+		if (to.Dot(-cam.GlobalTransform.Basis.Z) < 0.2f)
+			return false;
+
+		Vector2 sp = cam.UnprojectPosition(worldPoint);
+		if (!float.IsFinite(sp.X) || !float.IsFinite(sp.Y))
+			return false;
+
+		float x0 = viewportRect.Position.X - marginPx;
+		float x1 = viewportRect.Position.X + viewportRect.Size.X + marginPx;
+		float y0 = viewportRect.Position.Y - marginPx;
+		float y1 = viewportRect.Position.Y + viewportRect.Size.Y + marginPx;
+		return sp.X >= x0 && sp.X <= x1 && sp.Y >= y0 && sp.Y <= y1;
 	}
 
 	private static BossLevel1 FindActiveBossLevel1(SceneTree tree)

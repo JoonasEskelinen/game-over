@@ -6,7 +6,7 @@ using Godot;
 // ═══════════════════════════════════════════════════════════════════════════════
 // Pelisuunnittelu:
 //   • Boss ei liiku — haaste on ajallinen: satunnainen vasara voi laueta milloin tahansa.
-//   • Pelaaja vahingoittaa bossia vain R1-miekalla (R2 ei vaikuta).
+//   • Pelaaja vahingoittaa bossia vain R1-miekalla (R2 ei vaikuta; tunnistus vahinko ≥ 3).
 //   • Vasaran sähköalue vähentää HP:ta (HealthComponent), ei R1-latauspalkkia; kilpi ei torju tätä.
 //
 // Tekninen rakenne:
@@ -29,6 +29,9 @@ public partial class BossLevel2 : CharacterBody3D
 	/// <summary>Bossin jäljellä oleva elämäpisteet (vähenee TakeDamage-kutsuilla).</summary>
 	[Export] public int BossTerveys = 10;
 
+	/// <summary>Nimi HUD:n boss-palkin yläpuolella (tyhjä = "Volt Viper").</summary>
+	[Export] public string HudDisplayName = "Volt Viper";
+
 	/// <summary>Mixamo-idle FBX — lähde clipille "idle" (loop).</summary>
 	[Export] public string OdotusAnimaatioPolku   = "res://assets/models/level2_BossEnemy/Idle.fbx";
 	/// <summary>Hammer-animaatio — lähde clipille "hammer" (kertatoisto).</summary>
@@ -42,10 +45,13 @@ public partial class BossLevel2 : CharacterBody3D
 	/// Maailmanpisteiden korkeudet (metriä bossin juuresta ylös) joissa testataan miekan osumaa.
 	/// Korkea hahmo → useampi piste välttää "väliin jääviä" osumia.
 	/// </summary>
-	[Export] public float[] MiekkaIskuKoetuskorkeudet = { 0.4f, 1.0f, 1.6f };
+	[Export] public float[] MiekkaIskuKoetuskorkeudet = { 0.35f, 0.75f, 1.1f, 1.45f };
 
 	/// <summary>Lisäviive sekunteina lyönnin osumaikkunan alkuun (PlayerControllerin ikkunaan).</summary>
 	[Export] public float   MiekkaIskuAktivoitumisaika = 0f;
+
+	/// <summary>Lisätään <see cref="PlayerController.GetMeleeHitProximityMax"/>:iin (isompi hahmo / sivukamera).</summary>
+	[Export] public float MiekkaIskuLisäLäheisyys = 0.55f;
 
 	// ─── Inspector: kuolema ─────────────────────────────────────────────────────
 
@@ -58,10 +64,10 @@ public partial class BossLevel2 : CharacterBody3D
 	[Export] public float VasaraVäliMinSekuntia = 1.8f;
 	[Export] public float VasaraVäliMaxSekuntia = 5.5f;
 
-	/// <summary>Maksimietäisyys XZ-tasossa: pelaajan on oltava tämän sisällä, jotta vasara voi osua.</summary>
-	[Export] public float VasaraIskuKantamaTasossa = 2.85f;
+	/// <summary>Maksimietäisyys XZ-tasossa: pelaajan on oltava tämän sisällä, jotta vasara voi osua (ympyrä bossin juuren ympärillä).</summary>
+	[Export] public float VasaraIskuKantamaTasossa = 3.25f;
 	/// <summary>Pystysuuntainen toleranssi pelaajan ja bossin välillä (metriä).</summary>
-	[Export] public float VasaraIskuMaksimiKorkeus = 1.95f;
+	[Export] public float VasaraIskuMaksimiKorkeus = 2.15f;
 
 	/// <summary>
 	/// HP-vahinko per osuma. Jos 0, käytetään pelaajan MaxHealth/3 (sama tyyli kuin liskon isku).
@@ -77,6 +83,7 @@ public partial class BossLevel2 : CharacterBody3D
 
 	/// <summary>
 	/// Maan iskurenkaan säde (XZ). 0 = sama kuin <see cref="VasaraIskuKantamaTasossa"/>.
+	/// VFX ja vahinko käyttävät samaa sädettä; bossin juuri on aina ympyrän keskipiste maailmassa.
 	/// </summary>
 	[Export] public float VasaraIskuRenkaanSade = 0f;
 
@@ -117,7 +124,7 @@ public partial class BossLevel2 : CharacterBody3D
 	private bool _isDead = false;
 
 	/// <summary>
-	/// Estää saman miekkalyönnin useita osumia yhteen swingiin (PlayerController.TryClaimEnemyMeleeHit).
+	/// Estää saman R1-swingin useita osumia bossiin (cleave-varaus + oma lippu).
 	/// </summary>
 	private bool _hasBeenHitThisSwing = false;
 
@@ -175,6 +182,9 @@ public partial class BossLevel2 : CharacterBody3D
 	{
 		PlayIdleAnim();
 		AttachHammerToHandBone();
+		var vasaraNd = FindChild("vasara", true, false);
+		if (vasaraNd != null)
+			MeshTangentFix.ApplyToSubtree(vasaraNd);
 	}
 
 	/// <summary>
@@ -239,7 +249,7 @@ public partial class BossLevel2 : CharacterBody3D
 	// Fysiikka (_PhysicsProcess)
 	// ═══════════════════════════════════════════════════════════════════════════
 	// Boss ei aseta vaakalentoa — vain painovoima. Kasvot pelaajaan, satunnainen hammer,
-	// vasaran HP-tarkistus animaation vaiheessa, ja sama miekan osumalogiikka kuin muilla vihollisilla.
+	// vasaran HP-tarkistus animaation vaiheessa, ja R1-miekan osuma (cleave + vahinko ≥ 3).
 	// ═══════════════════════════════════════════════════════════════════════════
 
 	public override void _PhysicsProcess(double delta)
@@ -274,22 +284,28 @@ public partial class BossLevel2 : CharacterBody3D
 		if (_hammerAnimActive && _animationPlayer?.CurrentAnimation == "hammer")
 			ProcessHammerImpactWindow();
 
-		// Pelaaja lyö bossia: vain R1 (raskas); miekan ikkuna + probe-pisteet + yksi osuma per swing (TryClaim)
-		if (_playerController != null && _playerController.IsMeleeAttackActive()
-			&& _playerController.IsHeavyMeleeAttackActive())
+		// Pelaaja lyö bossia: vain R1 (vahinko 3). Älä tarkista vain IsHeavyMeleeAttackActive() — blendissä clip-lippu voi olla hetken väärä.
+		// R1 käyttää TryClaimEnemyHeavyCleaveHit (sama globaali kuin liskot), ei TryClaimEnemyMeleeHit.
+		if (_playerController != null && _playerController.IsMeleeAttackActive())
 		{
-			float animTime = _playerController.GetAttackAnimationTime();
-			float hitFrom  = _playerController.GetMeleeStrikeWindowStart() + MiekkaIskuAktivoitumisaika;
-
-			if (animTime >= hitFrom && !_hasBeenHitThisSwing)
+			if (_playerController.GetMeleeAttackDamage() >= 3)
 			{
-				var probes = MiekkaIskuKoetuskorkeudet ?? new float[] { 1.0f };
-				foreach (float h in probes)
+				float animTime = _playerController.GetAttackAnimationTime();
+				float hitFrom  = _playerController.GetMeleeStrikeWindowStart() + MiekkaIskuAktivoitumisaika;
+
+				if (animTime >= hitFrom && !_hasBeenHitThisSwing)
 				{
-					Vector3 p = GlobalPosition + Vector3.Up * h;
-					if (_playerController.CanApplyMeleeHitAtWorldPoint(p)
-						&& _playerController.TryClaimEnemyMeleeHit())
+					float proxMax = _playerController.GetMeleeHitProximityMax() + MiekkaIskuLisäLäheisyys;
+					var probes    = MiekkaIskuKoetuskorkeudet ?? new float[] { 1.0f };
+					foreach (float h in probes)
 					{
+						Vector3 p = GlobalPosition + Vector3.Up * h;
+						if (!_playerController.CanApplyMeleeHitAtWorldPoint(p, proxMax))
+							continue;
+						// Sama cleave-kuorma kuin EnemyLevel1/2 (max 2 osumaa / R1-swing koko kentällä)
+						if (!_playerController.TryClaimEnemyHeavyCleaveHit(2))
+							break;
+
 						TakeDamage(_playerController.GetMeleeAttackDamage());
 						_playerController.NotifyMeleeHitLanded();
 						_hasBeenHitThisSwing = true;
@@ -298,11 +314,10 @@ public partial class BossLevel2 : CharacterBody3D
 				}
 			}
 		}
-		else
+		else if (_playerController != null && !_playerController.IsMeleeAttackActive())
 		{
-			// Lyönti ei käynnissä → sallitaan uusi swing seuraavalle iskulle
 			_hasBeenHitThisSwing = false;
-			_playerController?.ClearEnemyHitThisSwing();
+			_playerController.ClearEnemyHitThisSwing();
 		}
 
 		Velocity = velocity;
@@ -405,10 +420,10 @@ public partial class BossLevel2 : CharacterBody3D
 		};
 		plane.MaterialOverride = shockMat;
 		plane.RotationDegrees = new Vector3(-90f, 0f, 0f);
-		plane.Position = Vector3.Up * VasaraIskuVfxKorkeus;
+		plane.Position = Vector3.Zero;
 		root.AddChild(plane);
 
-		// Rengaspartikkelit: sähkökipinät ylöspäin renkaan varrelta
+		// Rengaspartikkelit: tasaisemmin ulospäin XZ:ssä (ei vain ylös), boss keskellä
 		var sparks = new GpuParticles3D { Name = "ShockSparks" };
 		int amt = Mathf.Clamp(VasaraIskuSahkoPartikkeliMaara, 16, 96);
 		sparks.Amount = amt;
@@ -418,18 +433,19 @@ public partial class BossLevel2 : CharacterBody3D
 		sparks.LocalCoords = true;
 		sparks.Position = new Vector3(0f, 0.06f, 0f);
 
+		float innerR = Mathf.Clamp(r * 0.22f, 0.08f, r * 0.45f);
 		var pm = new ParticleProcessMaterial
 		{
 			EmissionShape = ParticleProcessMaterial.EmissionShapeEnum.Ring,
 			EmissionRingRadius = r,
-			EmissionRingInnerRadius = Mathf.Max(0.1f, r * 0.58f),
-			EmissionRingHeight = 0.14f,
+			EmissionRingInnerRadius = innerR,
+			EmissionRingHeight = 0.12f,
 			EmissionRingAxis = Vector3.Up,
 			Direction = Vector3.Up,
-			Spread = 32f,
-			InitialVelocityMin = 2f,
-			InitialVelocityMax = 6.2f,
-			Gravity = new Vector3(0f, -11f, 0f),
+			Spread = 165f,
+			InitialVelocityMin = 1.2f,
+			InitialVelocityMax = 5.5f,
+			Gravity = new Vector3(0f, -9f, 0f),
 			ScaleMin = 0.05f,
 			ScaleMax = 0.16f,
 		};
@@ -444,16 +460,24 @@ public partial class BossLevel2 : CharacterBody3D
 			{
 				LightColor = new Color(0.45f, 0.92f, 1f),
 				LightEnergy = VasaraIskuValoEnergia,
-				OmniRange = r * 1.2f,
+				OmniRange = r * 1.15f,
 				ShadowEnabled = false,
 				Position = new Vector3(0f, 0.35f, 0f),
 			};
 			root.AddChild(pulse);
 		}
 
-		AddChild(root);
-		root.GlobalPosition = new Vector3(GlobalPosition.X, GlobalPosition.Y, GlobalPosition.Z);
-		root.Scale = new Vector3(0.08f, 1f, 0.08f);
+		// Kiinnitä tasoon bossin juuren alle: ei peri bossin Y-rotaatiota → ympyrä tasainen joka suuntaan
+		Node mount = GetTree()?.CurrentScene ?? GetParent();
+		if (mount == null)
+			return;
+		mount.AddChild(root);
+		Vector3 shockPos = GlobalPosition;
+		shockPos.Y += VasaraIskuVfxKorkeus;
+		root.GlobalTransform = new Transform3D(Basis.Identity, shockPos);
+
+		const float startScale = 0.1f;
+		root.Scale = Vector3.One * startScale;
 
 		float dur = Mathf.Max(0.15f, VasaraIskuVfxKesto);
 		var tw = CreateTween();
@@ -581,10 +605,28 @@ public partial class BossLevel2 : CharacterBody3D
 			slow.Timeout += () => { if (Engine.TimeScale < 1f) Engine.TimeScale = 1f; };
 		}
 
+		// Älä skaalaa CharacterBody3D-juurta nollaan — Jolt: singular basis / invalid transform.
+		var model = GetNodeOrNull<Node3D>("Model");
+		var hammer = FindChild("vasara", true, false) as Node3D;
+
 		var tween = CreateTween();
 		tween.TweenInterval(1.2f);
-		tween.TweenProperty(this, "scale", Vector3.Zero, KuolemanKutistumisenKesto)
-			.SetTrans(Tween.TransitionType.Cubic).SetEase(Tween.EaseType.In);
+		if (model != null)
+		{
+			tween.TweenProperty(model, "scale", Vector3.Zero, KuolemanKutistumisenKesto)
+				.SetTrans(Tween.TransitionType.Cubic).SetEase(Tween.EaseType.In);
+			if (hammer != null)
+				tween.Parallel().TweenProperty(hammer, "scale", Vector3.Zero, KuolemanKutistumisenKesto)
+					.SetTrans(Tween.TransitionType.Cubic).SetEase(Tween.EaseType.In);
+		}
+		else if (hammer != null)
+		{
+			tween.TweenProperty(hammer, "scale", Vector3.Zero, KuolemanKutistumisenKesto)
+				.SetTrans(Tween.TransitionType.Cubic).SetEase(Tween.EaseType.In);
+		}
+		else
+			tween.TweenInterval(0f);
+
 		tween.TweenCallback(Callable.From(() => QueueFree()));
 	}
 

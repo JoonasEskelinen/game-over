@@ -4,18 +4,18 @@
 [ext_resource type="PackedScene" uid="uid://c8qeh5n8auygm" path="res://assets/models/spider/spider.glb" id="2_glb"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_spider"]
-radius = 0.21
-height = 0.42
+radius = 0.3
+height = 0.58
 
 [node name="Level2CeilingSpider" type="CharacterBody3D" unique_id=1578796954]
-floor_snap_length = 0.12
 script = ExtResource("1_script")
-Visuaalikoko = 0.2
+Visuaalikoko = 0.34
+MinKorkeusLattiasta = 1.02
 
 [node name="SpiderModel" type="Node3D" parent="." unique_id=105147813]
 
 [node name="Spider" parent="SpiderModel" unique_id=1846804401 instance=ExtResource("2_glb")]
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=10532335]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.14, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.2, 0)
 shape = SubResource("CapsuleShape3D_spider")

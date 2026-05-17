@@ -3,8 +3,9 @@ using Godot;
 /// <summary>
 /// Joystick GLB voi tulla meshinä ilman tangenteja; normaalikartta + forward+-shader vaativat tangentin.
 /// Poistetaan normaalikartta materiaalista (visuaali lähes sama, ei varoitusta).
+/// Huom: on tarkoituksella Node3D (ei Node) jotta SetJoystickAttachTreeVisible-cast toimii oikein.
 /// </summary>
-public partial class JoystickTangentSafeMaterials : Node
+public partial class JoystickTangentSafeMaterials : Node3D
 {
 	public override void _Ready()
 	{
