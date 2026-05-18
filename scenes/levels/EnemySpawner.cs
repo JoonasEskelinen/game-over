@@ -213,12 +213,12 @@ public partial class EnemySpawner : Node3D
 		if (enemy is EnemyLevel1 script)
 		{
 			bool fastEnemy = GD.RandRange(0, 4) == 0;
-			script.Speed = fastEnemy
+			script.Juoksunopeus = fastEnemy
 				? (float)GD.RandRange(MaxSpeed, MaxSpeed * 1.5f)
 				: (float)GD.RandRange(MinSpeed, MaxSpeed);
- 
+
 			if (fastEnemy)
-				GD.Print($"EnemySpawner: nopea vihollinen! Nopeus: {script.Speed:F1}");
+				GD.Print($"EnemySpawner: nopea vihollinen! Nopeus: {script.Juoksunopeus:F1}");
 		}
  
 		// Lisätään ryhmään "enemy" — IsNormalEncounterComplete() laskee tätä ryhmää

@@ -32,12 +32,14 @@ public partial class EnemyLevel3Spawner : Node3D
 	/// <summary>Pieni siirto osumapisteestä ulos pinnan normaalin suuntaan (ohut CSG-tie + kallistus).</summary>
 	[Export] public float SurfaceBiasAlongNormal = 0.06f;
 
-	/// <summary>Lisä-Y jalkojen kohdistuksen jälkeen (hienosäätö editorissa).</summary>
+	/// <summary>Lisä siirto pintaa pitkin normaalin suuntaan (hienosäätö editorissa).</summary>
 	[Export] public float SpawnGroundYOffset = 0.08f;
 
 	[Export] public float MinWalkableNormalDotUp = 0.35f;
 
 	private Node3D _player;
+	private Node3D _roadRoot;
+	private Node3D _uphillRoadDeck;
 	private float _nextSpawnThresholdX;
 	private int _totalSpawned;
 
@@ -45,6 +47,15 @@ public partial class EnemyLevel3Spawner : Node3D
 	{
 		_nextSpawnThresholdX = FirstSpawnAtPlayerX;
 		_player = GetTree().GetFirstNodeInGroup("player") as Node3D;
+		ResolveRoadGeometry();
+	}
+
+	private void ResolveRoadGeometry()
+	{
+		_roadRoot = GetParent()?.GetNodeOrNull<Node3D>("World/UphillRoadRoot");
+		_uphillRoadDeck = Level3UphillRoadSurface.FindRoadPlaneNode(_roadRoot);
+		if (_uphillRoadDeck == null || !Level3UphillRoadSurface.TryGetCsgBoxSize(_uphillRoadDeck, out _))
+			GD.PushWarning("EnemyLevel3Spawner: UphillRoad CSGBox3D puuttuu tai size ei luettavissa — käytetään sädettä.");
 	}
 
 	public override void _Process(double delta)
@@ -82,18 +93,22 @@ public partial class EnemyLevel3Spawner : Node3D
 		GetParent().AddChild(enemy);
 		enemy.GlobalPosition = new Vector3(spawnX, _player.GlobalPosition.Y + 8f, spawnZ);
 
-		float surfaceY = TryRaycastSurfaceY(spawnX, spawnZ);
-		AlignCharacterFeetToSurfaceY(enemy, surfaceY + SpawnGroundYOffset);
+		Vector3 footTarget = ResolveSpawnFootWorld(spawnX, spawnZ);
+		AlignCharacterFeetToWorldPoint(enemy, footTarget);
 
 		_totalSpawned++;
 		GD.Print($"EnemyLevel3Spawner: spawn {_totalSpawned}/{TotalEnemiesToSpawn} x≈{spawnX:F0} z≈{spawnZ:F1} y≈{enemy.GlobalPosition.Y:F2}.");
 	}
 
-	private float TryRaycastSurfaceY(float spawnX, float spawnZ)
+	private Vector3 ResolveSpawnFootWorld(float spawnX, float spawnZ)
 	{
+		if (_uphillRoadDeck != null && GodotObject.IsInstanceValid(_uphillRoadDeck)
+		    && Level3UphillRoadSurface.TrySampleTopFaceWorldAtXZ(_uphillRoadDeck, spawnX, spawnZ, out Vector3 deck, out Vector3 deckN))
+			return deck + deckN * SurfaceBiasAlongNormal + deckN * SpawnGroundYOffset;
+
 		var world = GetWorld3D();
 		if (world == null)
-			return _player.GlobalPosition.Y;
+			return new Vector3(spawnX, _player.GlobalPosition.Y, spawnZ);
 
 		var from = new Vector3(spawnX, RaycastTopY, spawnZ);
 		var to = from + Vector3.Down * 120f;
@@ -103,10 +118,12 @@ public partial class EnemyLevel3Spawner : Node3D
 			exclude.Add(pco.GetRid());
 
 		if (!TryRaycastRoadSurface(world.DirectSpaceState, from, to, exclude, out Vector3 hitPos, out Vector3 hitNormal))
-			return _player.GlobalPosition.Y;
+			return new Vector3(spawnX, _player.GlobalPosition.Y, spawnZ);
 
-		hitPos += hitNormal.Normalized() * SurfaceBiasAlongNormal;
-		return hitPos.Y;
+		Vector3 n = hitNormal.Normalized();
+		if (n.Dot(Vector3.Up) < 0f)
+			n = -n;
+		return hitPos + n * SurfaceBiasAlongNormal + n * SpawnGroundYOffset;
 	}
 
 	private bool TryRaycastRoadSurface(
@@ -137,7 +154,7 @@ public partial class EnemyLevel3Spawner : Node3D
 				? ((Vector3)nrmObj).Normalized()
 				: Vector3.Up;
 
-			if (hitNormal.Dot(Vector3.Up) >= MinWalkableNormalDotUp && ColliderLooksLikeLevel3Road(hit))
+			if (hitNormal.Dot(Vector3.Up) >= MinWalkableNormalDotUp && Level3UphillRoadSurface.ColliderIsLevel3RoadDeck(hit))
 				return true;
 
 			if (hit.TryGetValue("collider", out var colVar) && colVar.Obj is CollisionObject3D co)
@@ -149,51 +166,31 @@ public partial class EnemyLevel3Spawner : Node3D
 		return false;
 	}
 
-	private static bool ColliderLooksLikeLevel3Road(Godot.Collections.Dictionary hit)
+
+	/// <summary>
+	/// Siirtää hahmoa niin että kapselin alin piste (maailmakoordinaatit) osuu <paramref name="targetFootWorld"/>-kohtaan.
+	/// Kaltevalla tiellä pelkkä Y-korjaus vääristää sijainnin.
+	/// </summary>
+	private static void AlignCharacterFeetToWorldPoint(CharacterBody3D body, Vector3 targetFootWorld)
 	{
-		if (IsUnderUphillRoadRoot(hit))
-			return true;
-		if (!hit.TryGetValue("collider", out var colVar) || colVar.Obj is not Node node)
-			return false;
-		string path = node.GetPath().ToString();
-		return path.Contains("UphillRoad", StringComparison.Ordinal)
-		       || path.Contains("RoundaboutDeck", StringComparison.Ordinal);
+		Vector3 foot = GetCapsuleBottomWorld(body);
+		body.GlobalPosition += targetFootWorld - foot;
 	}
 
-	private static bool IsUnderUphillRoadRoot(Godot.Collections.Dictionary hit)
-	{
-		if (!hit.TryGetValue("collider", out var colVar) || colVar.Obj is not Node node)
-			return false;
-		for (Node n = node; n != null; n = n.GetParent())
-		{
-			if (n.Name == "UphillRoadRoot")
-				return true;
-		}
-		return false;
-	}
-
-	private static void AlignCharacterFeetToSurfaceY(CharacterBody3D body, float targetFeetGlobalY)
-	{
-		float feetY = GetCapsuleBottomGlobalY(body);
-		float dy = targetFeetGlobalY - feetY;
-		body.GlobalPosition += new Vector3(0f, dy, 0f);
-	}
-
-	private static float GetCapsuleBottomGlobalY(CharacterBody3D body)
+	private static Vector3 GetCapsuleBottomWorld(CharacterBody3D body)
 	{
 		if (body.GetNodeOrNull("CollisionShape3D") is not CollisionShape3D shapeNode)
-			return body.GlobalPosition.Y;
+			return body.GlobalPosition;
 		if (shapeNode.Shape is not CapsuleShape3D cap)
-			return body.GlobalPosition.Y;
+			return body.GlobalPosition;
 
 		Transform3D gt = shapeNode.GlobalTransform;
 		float half = cap.Height * 0.5f;
 		Vector3 yAxis = gt.Basis.Y;
 		if (yAxis.LengthSquared() < 1e-8f)
-			return body.GlobalPosition.Y;
+			return body.GlobalPosition;
 		yAxis = yAxis.Normalized();
-		Vector3 bottom = gt.Origin - yAxis * half;
-		return bottom.Y;
+		return gt.Origin - yAxis * half;
 	}
 
 	private int CountAliveEnemies()

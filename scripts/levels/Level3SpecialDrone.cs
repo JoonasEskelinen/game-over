@@ -141,8 +141,9 @@ public partial class Level3SpecialDrone : CharacterBody3D
 			UpdateHoverTargetFromGround();
 		}
 
-		// Oikea tat Y — sama InputMap kuin kameran orbit (level 3:ssa kamera ei lue tätä side-scroll -tilassa)
-		float lookY = Input.GetAxis("cam_look_up", "cam_look_down");
+		// Oikea tat Y — sama InputMap kuin kameran orbit (level 3:ssa kamera ei lue tätä side-scroll -tilassa).
+		// Miinus: tat ylös = dronen nosto, alas = lasku (orbit-akseli oli päinvastoin).
+		float lookY = -Input.GetAxis("cam_look_up", "cam_look_down");
 		_manualHeightOffset += lookY * KorkeusSäätöNopeus * dt;
 		_manualHeightOffset = Mathf.Clamp(_manualHeightOffset, KorkeusSäätöMinOffset, KorkeusSäätöMaxOffset);
 

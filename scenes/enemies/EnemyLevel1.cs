@@ -1,76 +1,108 @@
 using System.Collections.Generic;
 using Godot;
 
+/// <summary>
+/// Tason 1 susivihollinen: jahtaa pelaajaa, siirtyy purema-animaatioon lähietäisyydessä,
+/// aiheuttaa puremavaikutukset tietyllä rytmillä ja rekisteröi miekan osumat.
+/// </summary>
 public partial class EnemyLevel1 : CharacterBody3D
 {
-	[Export] public float Speed = 3.35f;
-	/// <summary>XZ-etäisyys pelaajaan, jolloin ZombieNeckBite alkaa (pienempi = pitää päästä lähemmäs). Jos jää vain juoksuun, nosta hieman.</summary>
-	[Export] public float AttackRange = 1.42f;
+	// --- Liike ja juoksu ---
 
-	/// <summary>
-	/// Lisämetrejä AttackRangeen: purema/animaatio ei katkea jos pelaaja liikkuu hieman juuri rajalla (hysteresis).
-	/// </summary>
-	[Export] public float AttackStickMargin = 0.42f;
+	[ExportGroup("Liike")]
+	/// <summary>Juoksunopeus (m/s) jahtaustilassa.</summary>
+	[Export] public float Juoksunopeus = 3.35f;
 
-	/// <summary>
-	/// Kun purema-animaatio pyörii, laajempi “pysy puremassa”-vyöhyke (m) — estää että pieni hipsutus katkaisee animin.
-	/// </summary>
-	[Export] public float BiteStickMarginDuringAttack = 1.35f;
+	[ExportGroup("Esteet ja juoksun suunta")]
+	/// <summary>Eteenpäin ammutun säteen pituus (m): törmääkö seinään juoksusuunnassa.</summary>
+	[Export] public float EsteSäteenPituus = 0.65f;
+	/// <summary>Säteen lähtökorkeus juuresta (m), jotta tarkistus osuu vartalon korkeudelle.</summary>
+	[Export] public float EsteSäteenAlkuKorkeus = 0.35f;
 
-	/// <summary>Purematilassa sallittu korkeusero pelaajaan (m) — hieman löysempi kuin <c>1.9f</c> vain sticky-tarkistuksessa.</summary>
-	[Export] public float BiteHeightToleranceDuringAttack = 2.35f;
-
-	/// <summary>Puremavaurion XZ-säde = <see cref="AttackRange"/> + tämä (m) — sama kuin “näkyvä purema”, ei vain tiukka AttackRange.</summary>
-	[Export] public float BiteDamagePlanarExtra = 0.38f;
-
-	/// <summary>Puremavaurion max korkeusero pelaajaan (m).</summary>
-	[Export] public float BiteDamageHeightTolerance = 2.05f;
-
-	/// <summary>Juoksu: säde eteenpäin törmäystarkistukseen (m).</summary>
-	[Export] public float MoveObstacleRayLength = 0.65f;
-
-	/// <summary>Juoksu: säteen alku Y juuresta.</summary>
-	[Export] public float MoveObstacleRayOriginY = 0.35f;
-
-	/// <summary>Kun näin lähellä pelaajaa, hidastetaan lähestymistä (estää “orbitointia” reunalla).</summary>
-	[Export] public float ApproachSlowdownStartDistance = 1.15f;
-
+	[ExportGroup("Lähestyminen")]
+	/// <summary>Kun pelaaja on tätä lähempänä (m), nopeutta hidastetaan — vähentää “kiertämistä” reunalla.</summary>
+	[Export] public float LähestymisHidastusAlku = 1.15f;
 	/// <summary>Miniminopeuskerroin hidastusvyöhykkeellä (0–1).</summary>
-	[Export] public float ApproachSlowdownMinFactor = 0.22f;
-	[Export] public int Health = 1;
-	[Export] public string AttackAnimPath = "res://assets/models/level1_susi/susiWithoutskin/ZombieNeckBite.fbx";
+	[Export] public float LähestymisHidastusMinKerroin = 0.22f;
 
-	/// <summary>Pääosuma-akselin korkeus GlobalPositionista (nelijalkainen: rintakehä).</summary>
-	[Export] public float HitCenterYOffset = 0.68f;
+	// --- Purema ja puremavyöhyke ---
 
-	/// <summary>Metriä <see cref="HitCenterYOffset"/> suuntaan (ylös) — osumapisteet rintakehän korkeudella, ei vain juuressa.</summary>
-	[Export] public float[] SwordHitProbeOffsetsFromHitCenter = { -0.22f, 0f, 0.28f, 0.52f };
+	[ExportGroup("Purema: etäisyydet")]
+	/// <summary>
+	/// XZ-etäisyys pelaajaan (m), jolloin siirrytään purema-animaatioon.
+	/// Pienempi arvo = pitää päästä lähemmäs. Jos susi jää vain juoksemaan, nosta hieman.
+	/// </summary>
+	[Export] public float PuremanTilaEtäisyys = 1.42f;
 
-	/// <summary>Lisäviive sekunteina GetMeleeStrikeWindowStart()-ajan päälle (säätö).</summary>
-	[Export] public float SwordHitActivationTime = 0f;
+	/// <summary>
+	/// Lisämetrejä <see cref="PuremanTilaEtäisyys"/>:ään: purema ei katkea, jos pelaaja liikkuu hieman rajalla (hysteresis).
+	/// </summary>
+	[Export] public float PuremanHystereesi = 0.42f;
 
-	/// <summary>Vain R1: lisäviive osumaikkunan alkuun (esim. 0.06–0.12). R2 käyttää vain SwordHitActivationTime.</summary>
+	/// <summary>
+	/// Pureman aikana laajempi “pysy kiinni”-vyöhyke (m) — estää animaation katkeamisen pienestä hipsutuksesta.
+	/// </summary>
+	[Export] public float PuremanLaajennettuHystereesi = 1.35f;
+
+	/// <summary>
+	/// Purematilassa sallittu korkeusero pelaajaan (m) — löysempi kuin perus ~1.9 m vain sticky-tarkistuksessa.
+	/// </summary>
+	[Export] public float PuremanKorkeusToleranssi = 2.35f;
+
+	[ExportGroup("Purema: vahinko")]
+	/// <summary>Pureman XZ-säde = <see cref="PuremanTilaEtäisyys"/> + tämä (m) — vastaa näkyvää puremaa, ei pelkkää tiukkaa etäisyyttä.</summary>
+	[Export] public float PuremanVahinkoTasoLisä = 0.38f;
+
+	/// <summary>Puremavaurion enimmäiskorkeusero pelaajaan (m).</summary>
+	[Export] public float PuremanVahinkoKorkeusToleranssi = 2.05f;
+
+	/// <summary>
+	/// Sekunteja purema-animaation alusta ennen ensimmäistä vahinkoa (puree “osuu” vasta tämän jälkeen).
+	/// </summary>
+	[Export] public float PuremanVahinkoAloitusViive = 0.38f;
+
+	/// <summary>
+	/// Vahinko vain kun hyökkäysanimaatio on edennyt vähintään näin paljon (0–1). Estää osuman animaation alkuosassa.
+	/// </summary>
+	[Export] public float PuremanVahinkoMinAnimVaihe = 0.36f;
+
+	[ExportGroup("Animaatio")]
+	/// <summary>Polku FBX-tiedostoon, josta purema-animaatio ladataan.</summary>
+	[Export] public string PuremaAnimPolku = "res://assets/models/level1_susi/susiWithoutskin/ZombieNeckBite.fbx";
+
+	// --- Miekan osuma ---
+
+	[ExportGroup("Miekan osuma: sijainti")]
+	/// <summary>Osumapisteiden korkeus juuresta (m) — nelijalkaiselle tyypillisesti rintakehä.</summary>
+	[Export] public float OsumaKeskikorkeus = 0.68f;
+
+	/// <summary>
+	/// Metrejä <see cref="OsumaKeskikorkeus"/>-pisteestä ylöspäin: useita koetinkorkeuksia (rintakehän eri kohdat).
+	/// </summary>
+	[Export] public float[] MiekkaOsumaKorkeusSiirtymät = { -0.22f, 0f, 0.28f, 0.52f };
+
+	[ExportGroup("Miekan osuma: ajoitus")]
+	/// <summary>Lisäviive sekunteina osumaikkunan alkuun (<c>GetMeleeStrikeWindowStart()</c> + tämä).</summary>
+	[Export] public float MiekkaOsumaViive = 0f;
+
+	/// <summary>Vain R1 (raskas): lisäviive osumaikkunan alkuun (esim. 0.06–0.12). R2 käyttää vain <see cref="MiekkaOsumaViive"/>.</summary>
 	[Export] public float RaskasIskuAktivoitumisenLisäviive = 0f;
 
-	/// <summary>R1: max etäisyys teräviivaan (m); laajentaa cleave-rekisteröintiä. 0 = pelaajan oletus.</summary>
+	/// <summary>R1: enimmäisetäisyys teräviivaan (m); laajentaa cleave-rekisteröintiä. 0 = pelaajan oletus.</summary>
 	[Export] public float RaskasIskuLäheisyysYlikirjoitus = 0.95f;
 
 	/// <summary>R1: montako EnemyLevel1:ää voi osua samaan swingiin.</summary>
 	[Export] public int RaskasIskuCleaveKohteet = 2;
 
-	[Export] public float DeathTiltDuration = 0.32f;
-	[Export] public float DeathSlideDuration = 0.24f;
-	[Export] public float DeathShrinkDuration = 0.52f;
+	// --- Yleinen ja kuolema ---
 
-	/// <summary>
-	/// Sekuntia purema-animaation alusta ennen ensimmäistä vahinkoa (puree "osuu" eikä heti kun anim käynnistyy).
-	/// </summary>
-	[Export] public float BiteDamageWindupSeconds = 0.38f;
+	[ExportGroup("Tila")]
+	[Export] public int Elämäpisteet = 1;
 
-	/// <summary>
-	/// Puremavaurio vain kun hyökkäysanimaatio on edennyt vähintään näin paljon (0–1). Estää vahingon animaation alkuosassa.
-	/// </summary>
-	[Export] public float BiteDamageMinAttackPhase = 0.36f;
+	[ExportGroup("Kuoleman animaatio")]
+	[Export] public float KuolemanKallistusKesto = 0.32f;
+	[Export] public float KuolemanLiuutusKesto = 0.24f;
+	[Export] public float KuolemanKutistumisKesto = 0.52f;
 
 	private Node3D _player;
 	private PlayerController _playerController;
@@ -79,7 +111,7 @@ public partial class EnemyLevel1 : CharacterBody3D
 	private float _biteTimer;
 	private float _biteInterval = 2.5f;
 	private bool _wasInStickyMelee;
-	/// <summary>True kun ollaan vielä "purentatilassa" vaikka pelaaja olisi hipsuttanut hieman AttackRange ulkopuolelle.</summary>
+	/// <summary>Tosi, kun ollaan vielä purematilassa vaikka pelaaja olisi hieman <see cref="PuremanTilaEtäisyys"/>-vyöhykkeen ulkopuolella.</summary>
 	private bool _inExtendedMelee;
 	private Vector3 _prevChasePos;
 	private float _chaseStuckTimer;
@@ -93,7 +125,7 @@ public partial class EnemyLevel1 : CharacterBody3D
 		FloorSnapLength = 0.22f;
 		FloorMaxAngle = Mathf.DegToRad(50f);
 		SafeMargin = 0.11f;
-		// Level1ArcadePhysicsSetup: arcade-prop kerros (bitmask 16) + pelaaja + maailma
+		// Level1ArcadePhysicsSetup: arcade-prop-kerros (bitmask 16) + pelaaja + maailma
 		CollisionMask |= 16u;
 
 		_player = GetTree().GetFirstNodeInGroup("player") as Node3D;
@@ -103,7 +135,7 @@ public partial class EnemyLevel1 : CharacterBody3D
 
 		if (_animationPlayer != null)
 		{
-			LoadAnim(AttackAnimPath, "mixamo_com", "attack", loop: true);
+			LoadAnim(PuremaAnimPolku, "mixamo_com", "attack", loop: true);
 			_animationPlayer.Play("mixamo_com");
 
 			var lib = _animationPlayer.GetAnimationLibrary("");
@@ -133,15 +165,15 @@ public partial class EnemyLevel1 : CharacterBody3D
 		float heightDiff = Mathf.Abs(_player.GlobalPosition.Y - GlobalPosition.Y);
 		bool attackAnim = _animationPlayer != null && _animationPlayer.CurrentAnimation == "attack";
 		float stickMargin = (attackAnim || _inExtendedMelee)
-			? Mathf.Max(AttackStickMargin, BiteStickMarginDuringAttack)
-			: AttackStickMargin;
-		float stickDist = AttackRange + Mathf.Max(0f, stickMargin);
+			? Mathf.Max(PuremanHystereesi, PuremanLaajennettuHystereesi)
+			: PuremanHystereesi;
+		float stickDist = PuremanTilaEtäisyys + Mathf.Max(0f, stickMargin);
 		float heightTol = (attackAnim || _inExtendedMelee)
-			? Mathf.Max(1.9f, BiteHeightToleranceDuringAttack)
+			? Mathf.Max(1.9f, PuremanKorkeusToleranssi)
 			: 1.9f;
 		bool stickyMelee = planarDist <= stickDist && heightDiff <= heightTol;
 
-		// Sticky-vyöhyke = purematila (ei vaadi että strictMelee olisi käynyt ensin — estää juoksuloopin reunalla).
+		// Sticky-vyöhyke = purematila (ei vaadi tiukkaa etäisyyttä ensin — estää juoksuloopin reunalla).
 		if (stickyMelee)
 			_inExtendedMelee = true;
 		else if (!stickyMelee)
@@ -152,7 +184,7 @@ public partial class EnemyLevel1 : CharacterBody3D
 		if (inBiteMode && !_wasInStickyMelee)
 		{
 			float maxWindup = Mathf.Max(0.55f, _biteInterval * 0.92f);
-			float windup = Mathf.Clamp(BiteDamageWindupSeconds, 0.2f, maxWindup);
+			float windup = Mathf.Clamp(PuremanVahinkoAloitusViive, 0.2f, maxWindup);
 			_biteTimer = windup;
 		}
 
@@ -199,7 +231,7 @@ public partial class EnemyLevel1 : CharacterBody3D
 		if (_playerController != null && _playerController.IsMeleeAttackActive())
 		{
 			float animTime = _playerController.GetAttackAnimationTime();
-			float hitFrom = _playerController.GetMeleeStrikeWindowStart() + SwordHitActivationTime;
+			float hitFrom = _playerController.GetMeleeStrikeWindowStart() + MiekkaOsumaViive;
 			bool heavy = _playerController.IsHeavyMeleeAttackActive();
 			if (heavy && RaskasIskuAktivoitumisenLisäviive > 0f)
 				hitFrom += RaskasIskuAktivoitumisenLisäviive;
@@ -207,7 +239,7 @@ public partial class EnemyLevel1 : CharacterBody3D
 			if (animTime >= hitFrom && !_hasBeenHitThisSwing)
 			{
 				Vector3 bodyBase = GlobalPosition;
-				var offsets = SwordHitProbeOffsetsFromHitCenter;
+				var offsets = MiekkaOsumaKorkeusSiirtymät;
 				if (offsets == null || offsets.Length == 0)
 					offsets = new[] { 0f };
 
@@ -217,7 +249,7 @@ public partial class EnemyLevel1 : CharacterBody3D
 
 				for (int i = 0; i < offsets.Length; i++)
 				{
-					Vector3 p = bodyBase + Vector3.Up * (HitCenterYOffset + offsets[i]);
+					Vector3 p = bodyBase + Vector3.Up * (OsumaKeskikorkeus + offsets[i]);
 					bool can = proxOverride >= 0f
 						? _playerController.CanApplyMeleeHitAtWorldPoint(p, proxOverride)
 						: _playerController.CanApplyMeleeHitAtWorldPoint(p);
@@ -239,7 +271,7 @@ public partial class EnemyLevel1 : CharacterBody3D
 		}
 		else
 		{
-			// Lyonti loppui — nollataan omat ja pelaajan swingivaraus
+			// Lyönti loppui — nollataan omat ja pelaajan swingivaraus
 			_hasBeenHitThisSwing = false;
 			_playerController?.ClearEnemyHitThisSwing();
 		}
@@ -256,7 +288,7 @@ public partial class EnemyLevel1 : CharacterBody3D
 
 	private bool CanApplyBiteDamageByAnimPhase()
 	{
-		if (_animationPlayer == null || BiteDamageMinAttackPhase <= 0.01f)
+		if (_animationPlayer == null || PuremanVahinkoMinAnimVaihe <= 0.01f)
 			return true;
 		if (_animationPlayer.CurrentAnimation != "attack")
 			return false;
@@ -264,7 +296,7 @@ public partial class EnemyLevel1 : CharacterBody3D
 		if (len <= 0.02)
 			return true;
 		float phase = (float)(_animationPlayer.CurrentAnimationPosition / len);
-		return phase >= BiteDamageMinAttackPhase;
+		return phase >= PuremanVahinkoMinAnimVaihe;
 	}
 
 	private void TurnTowardsPlayer()
@@ -284,8 +316,8 @@ public partial class EnemyLevel1 : CharacterBody3D
 
 		float planarDist = PlanarDistanceTo(_player.GlobalPosition);
 		float heightDiff = Mathf.Abs(_player.GlobalPosition.Y - GlobalPosition.Y);
-		float maxPlanar = AttackRange + Mathf.Max(0f, BiteDamagePlanarExtra);
-		if (planarDist > maxPlanar || heightDiff > BiteDamageHeightTolerance)
+		float maxPlanar = PuremanTilaEtäisyys + Mathf.Max(0f, PuremanVahinkoTasoLisä);
+		if (planarDist > maxPlanar || heightDiff > PuremanVahinkoKorkeusToleranssi)
 			return;
 
 		Vector3 threat = GlobalPosition.Lerp(_player.GlobalPosition, 0.35f);
@@ -298,7 +330,7 @@ public partial class EnemyLevel1 : CharacterBody3D
 		var health = _player.GetNodeOrNull<HealthComponent>("HealthComponent");
 		if (health == null) { GD.PrintErr("HealthComponent puuttuu!"); return; }
 
-		// ~1/3 max-HP per purema → kolme osumaa vie yhden elämän kun MaxHealth = 3 (aiemmin ~39% = 2 puremaa).
+		// Noin 1/3 max-HP per purema → kolme osumaa vie yhden elämän, kun MaxHealth = 3.
 		int biteDamage = Mathf.Max(1, Mathf.CeilToInt(health.MaxHealth / 3f));
 		health.TakeDamage(biteDamage);
 		_playerController?.NotifyLevel1BiteHit();
@@ -317,12 +349,12 @@ public partial class EnemyLevel1 : CharacterBody3D
 
 	private float ComputeChaseSpeed(float planarDistToPlayer)
 	{
-		float start = Mathf.Max(AttackRange * 0.85f, ApproachSlowdownStartDistance);
+		float start = Mathf.Max(PuremanTilaEtäisyys * 0.85f, LähestymisHidastusAlku);
 		if (planarDistToPlayer >= start)
-			return Speed;
+			return Juoksunopeus;
 		float t = Mathf.Clamp(planarDistToPlayer / Mathf.Max(0.05f, start), 0f, 1f);
-		float factor = Mathf.Lerp(ApproachSlowdownMinFactor, 1f, t);
-		return Speed * factor;
+		float factor = Mathf.Lerp(LähestymisHidastusMinKerroin, 1f, t);
+		return Juoksunopeus * factor;
 	}
 
 	private Vector3 AdjustChaseDirectionForObstacles(Vector3 dirNorm)
@@ -336,8 +368,8 @@ public partial class EnemyLevel1 : CharacterBody3D
 		if (space == null)
 			return dirNorm;
 
-		float rayLen = Mathf.Max(0.25f, MoveObstacleRayLength);
-		Vector3 from = GlobalPosition + Vector3.Up * MoveObstacleRayOriginY;
+		float rayLen = Mathf.Max(0.25f, EsteSäteenPituus);
+		Vector3 from = GlobalPosition + Vector3.Up * EsteSäteenAlkuKorkeus;
 		if (!RayChaseBlocked(space, from, dirNorm, rayLen))
 			return dirNorm;
 
@@ -401,6 +433,9 @@ public partial class EnemyLevel1 : CharacterBody3D
 		GlobalPosition += accum.Normalized() * Mathf.Clamp(dt * 5f, 0f, 0.18f);
 	}
 
+	/// <summary>
+	/// Jos susi ei liiku juoksun aikana tarpeeksi pitkään, annetaan pieni sivuttaisnudge (jumituksen purku).
+	/// </summary>
 	private void TrackChaseStuckAndNudge(float dt)
 	{
 		Vector2 cur = new(GlobalPosition.X, GlobalPosition.Z);
@@ -433,13 +468,13 @@ public partial class EnemyLevel1 : CharacterBody3D
 		return _camera;
 	}
 
-	/// <summary>Välitön visuaalinen palaute miekkaosumahetkellä — ennen kuolemaa.</summary>
+	/// <summary>Kutsutaan miekan osuman yhteydessä: ruututärinä, välähdys ja lyhyt animaatiosulku.</summary>
 	private void OnSwordHitFeedback()
 	{
 		// 1. Ruututärinä
 		GetOrFindCamera()?.ShakeImpulse(0.20f, 0.24f);
 
-		// 2. Hit flash: hetkellinen valkoinen/punainen siluetti (50 ms peliaika)
+		// 2. Hit flash: hetkellinen vaalea/punainen siluetti (~50 ms peliaikaa)
 		var geos = new List<GeometryInstance3D>();
 		CollectGeometryInstances(this, geos);
 		if (geos.Count > 0)
@@ -466,7 +501,7 @@ public partial class EnemyLevel1 : CharacterBody3D
 			}));
 		}
 
-		// 3. Vihollisen hit-stop: jäädyttää animaatio 60 ms
+		// 3. Lyhyt hit-stop: animaation nopeus nollaan ~60 ms
 		if (_animationPlayer != null && GodotObject.IsInstanceValid(_animationPlayer))
 		{
 			_animationPlayer.SpeedScale = 0f;
@@ -483,9 +518,9 @@ public partial class EnemyLevel1 : CharacterBody3D
 	public void TakeDamage(int amount)
 	{
 		if (_isDead) return;
-		Health -= amount;
+		Elämäpisteet -= amount;
 		OnSwordHitFeedback();
-		if (Health <= 0) Die();
+		if (Elämäpisteet <= 0) Die();
 	}
 
 	private void Die()
@@ -507,7 +542,7 @@ public partial class EnemyLevel1 : CharacterBody3D
 				away = away.Normalized();
 		}
 
-		// Slow motion: 70 ms reaaliaikaa, riippumaton TimeScalesta
+		// Slow motion: ~70 ms reaaliaikaa, ei riipu TimeScalesta
 		Engine.TimeScale = 0.15f;
 		if (IsInsideTree())
 		{
@@ -519,25 +554,23 @@ public partial class EnemyLevel1 : CharacterBody3D
 		float rollZ = (float)GD.RandRange(-28.0, 28.0);
 		Vector3 tilt = visual.RotationDegrees + new Vector3(86f, rollY, rollZ);
 
-		// Kickback: nopea loikka poispäin → sitten kaatuminen alas
+		// Potkaisu poispäin, sitten liuku alas
 		Vector3 basePos = visual.IsInsideTree() ? visual.GlobalPosition : visual.Position;
 		Vector3 kickPos  = basePos  + new Vector3(away.X * 0.45f,  0.10f, away.Z * 0.45f);
 		Vector3 slidePos = kickPos  + new Vector3(away.X * 0.10f, -0.38f, away.Z * 0.10f);
 
 		var tween = CreateTween();
 
-		// Rinnakkainen alkuisku: scale-punch + tilt + kickback alkaa yhtä aikaa
 		tween.SetParallel(true);
 		tween.TweenProperty(visual, "scale", new Vector3(1.13f, 1.13f, 1.13f), 0.05f)
 			.SetTrans(Tween.TransitionType.Sine).SetEase(Tween.EaseType.Out);
-		tween.TweenProperty(visual, "rotation_degrees", tilt, DeathTiltDuration)
+		tween.TweenProperty(visual, "rotation_degrees", tilt, KuolemanKallistusKesto)
 			.SetTrans(Tween.TransitionType.Sine).SetEase(Tween.EaseType.Out);
 		tween.TweenProperty(visual, "global_position", kickPos, 0.07f)
 			.SetTrans(Tween.TransitionType.Sine).SetEase(Tween.EaseType.Out);
 		tween.SetParallel(false);
 
-		// Kaatumisliuku
-		tween.TweenProperty(visual, "global_position", slidePos, DeathSlideDuration)
+		tween.TweenProperty(visual, "global_position", slidePos, KuolemanLiuutusKesto)
 			.SetTrans(Tween.TransitionType.Quad).SetEase(Tween.EaseType.In);
 
 		var geos = new List<GeometryInstance3D>();
@@ -545,7 +578,7 @@ public partial class EnemyLevel1 : CharacterBody3D
 		if (geos.Count > 0)
 		{
 			tween.SetParallel(true);
-			tween.TweenProperty(visual, "scale", Vector3.Zero, DeathShrinkDuration)
+			tween.TweenProperty(visual, "scale", Vector3.Zero, KuolemanKutistumisKesto)
 				.SetTrans(Tween.TransitionType.Cubic).SetEase(Tween.EaseType.In);
 			tween.TweenMethod(
 				Callable.From<float>(a =>
@@ -556,12 +589,12 @@ public partial class EnemyLevel1 : CharacterBody3D
 							g.Transparency = a;
 					}
 				}),
-				0f, 1f, DeathShrinkDuration);
+				0f, 1f, KuolemanKutistumisKesto);
 			tween.SetParallel(false);
 		}
 		else
 		{
-			tween.TweenProperty(visual, "scale", Vector3.Zero, DeathShrinkDuration)
+			tween.TweenProperty(visual, "scale", Vector3.Zero, KuolemanKutistumisKesto)
 				.SetTrans(Tween.TransitionType.Cubic).SetEase(Tween.EaseType.In);
 		}
 
@@ -576,6 +609,7 @@ public partial class EnemyLevel1 : CharacterBody3D
 			CollectGeometryInstances(child, list);
 	}
 
+	/// <summary>Lataa animaation ulkoisesta FBX:stä nykyisen AnimationPlayerin kirjastoon.</summary>
 	private void LoadAnim(string path, string sourceName, string targetName, bool loop = false)
 	{
 		var scene = GD.Load<PackedScene>(path);

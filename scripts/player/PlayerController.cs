@@ -756,7 +756,7 @@ public partial class PlayerController : CharacterBody3D
 	{
 		if (!_isAttacking || _animationPlayer == null) return 0f;
 		// Älä rajoita animaation nimellä — ensimmäisellä framella / blendissä nimi voi vaihdella
-		// ja osumaikkuna (EnemyLevel1 SwordHitActivationTime) jäisi koskaan täyttymättä.
+		// ja osumaikkuna (EnemyLevel1 MiekkaOsumaViive) jäisi koskaan täyttymättä.
 		float pos = (float)_animationPlayer.CurrentAnimationPosition;
 		// R2: blendissä pos voi pysyä nollassa — käytä myös fysiikkakelloa (kasvaa _PhysicsProcessissa).
 		if (_meleeStrikeClip == "mixamo_com_005")

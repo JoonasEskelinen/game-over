@@ -282,11 +282,12 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7.529998, -0.13904151, -4.56
 [node name="EnemySpawner" type="Node3D" parent="." unique_id=899631862]
 script = ExtResource("15_wtwp4")
 EnemyScene = ExtResource("16_iwr0g")
+TotalNormalEnemiesToSpawn = 10
 
 [node name="Level1ExploreMusic" type="Node" parent="." unique_id=156060371]
 script = ExtResource("23_lvlmusic")
 MusicResourcePath = "res://assets/audio/music/level1_explore.ogg"
-VolumeDb = -8.0
+VolumeDb = -6.0
 StopWhenBossGroupAppears = true
 
 [node name="Level1BossDirector" type="Node" parent="." unique_id=156060372]

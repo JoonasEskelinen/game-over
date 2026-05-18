@@ -76,3 +76,12 @@
 {"sessionId":"1be988","hypothesisId":"H1","timestamp":1778691245662,"message":"spin_trigger","data":{"planarDist":4,98,"effSpinRange":5,00}}
 {"sessionId":"1be988","hypothesisId":"H4","timestamp":1778691246242,"message":"spin_miss_too_far","data":{"dist":2,94,"maxHitRange":2,80}}
 {"sessionId":"1be988","hypothesisId":"H2","timestamp":1778691246833,"message":"ReturnToDance","data":{"anchorAtCurrent":false,"distToPlayer":0,38}}
+{"sessionId":"1be988","hypothesisId":"H1","timestamp":1779087008122,"message":"spin_trigger","data":{"planarDist":3,86,"effSpinRange":5,00}}
+{"sessionId":"1be988","hypothesisId":"H4","timestamp":1779087008703,"message":"spin_miss_too_far","data":{"dist":2,94,"maxHitRange":2,80}}
+{"sessionId":"1be988","hypothesisId":"H2","timestamp":1779087009294,"message":"ReturnToDance","data":{"anchorAtCurrent":false,"distToPlayer":5,05}}
+{"sessionId":"1be988","hypothesisId":"H1","timestamp":1779087021624,"message":"spin_trigger","data":{"planarDist":4,84,"effSpinRange":5,00}}
+{"sessionId":"1be988","hypothesisId":"H4","timestamp":1779087022204,"message":"spin_miss_too_far","data":{"dist":2,94,"maxHitRange":2,80}}
+{"sessionId":"1be988","hypothesisId":"H2","timestamp":1779087022794,"message":"ReturnToDance","data":{"anchorAtCurrent":false,"distToPlayer":2,29}}
+{"sessionId":"1be988","hypothesisId":"H1","timestamp":1779087034386,"message":"spin_trigger","data":{"planarDist":3,31,"effSpinRange":5,00}}
+{"sessionId":"1be988","hypothesisId":"H4","timestamp":1779087034967,"message":"spin_miss_too_far","data":{"dist":2,94,"maxHitRange":2,80}}
+{"sessionId":"1be988","hypothesisId":"H2","timestamp":1779087035557,"message":"ReturnToDance","data":{"anchorAtCurrent":false,"distToPlayer":0,17}}

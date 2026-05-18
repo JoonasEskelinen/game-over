@@ -12,11 +12,14 @@ height = 1.17
 collision_layer = 2
 collision_mask = 19
 script = ExtResource("1_euuwm")
-Speed = 4.35
-AttackRange = 1.3
-AttackStickMargin = 0.32
-HitCenterYOffset = 0.58
-SwordHitActivationTime = 0.1
+Juoksunopeus = 4.35
+"PuremanTilaEtäisyys" = 1.1
+PuremanHystereesi = 0.32
+PuremanVahinkoAloitusViive = 0.1
+OsumaKeskikorkeus = 0.58
+MiekkaOsumaViive = 0.1
+"RaskasIskuAktivoitumisenLisäviive" = 0.3
+KuolemanKutistumisKesto = 0.72
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1311952832]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.685, 0)

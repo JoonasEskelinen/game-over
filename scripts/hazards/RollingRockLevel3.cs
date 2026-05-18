@@ -14,14 +14,14 @@ public partial class RollingRockLevel3 : RigidBody3D
 	public float PendingSpeedScale = 1f;
 
 	/// <summary>Kiven pallovanteen säde (CollisionShape3D:n SphereShape3D) — käytetään vierintänopeuden laskuun.</summary>
-	[Export] public float RollRadius = 0.38f;
+	[Export] public float RollRadius = 0.44f;
 	/// <summary>Kuinka suuri kulmanopeus on suhteessa ideaalivierintään (v/r). Pienempi = hitaampi, hillitympi pyöriminen.</summary>
 	[Export] public float RollSpinScale = 0.14f;
 	/// <summary>0 = ei tasoitusta, 1 = kova kiinnitys ideaalivierintään. Pieni arvo tasoittaa "legopalikka"-tummaa.</summary>
 	[Export] public float RollAngularAlign = 0.11f;
 	[Export] public float MaxRollOmega = 12f;
-	[Export] public float MinTiltDegrees = 5f;
-	[Export] public float MaxTiltDegrees = 12f;
+	[Export] public float MinTiltDegrees = 0f;
+	[Export] public float MaxTiltDegrees = 3f;
 
 	private Node3D _roadRoot;
 	private Area3D _hitArea;

@@ -21,6 +21,7 @@
 [ext_resource type="Script" uid="uid://cw6u05mm1rl3m" path="res://scripts/levels/LevelMusicPlayer.cs" id="18_lvlbgm"]
 [ext_resource type="Script" uid="uid://tdh57ghrgew8" path="res://scripts/levels/Level3SpecialDrone.cs" id="19_l3drone"]
 [ext_resource type="PackedScene" uid="uid://cfvc3deuhghto" path="res://scenes/hazards/Level3DroneBomb.tscn" id="20_l3bomb"]
+[ext_resource type="Script" uid="uid://dla3rp7vmjqg2" path="res://scripts/levels/Level3RoadCenterDashes.cs" id="21_l3cndsh"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_l3drone"]
 radius = 0.22
@@ -42,10 +43,6 @@ sky = SubResource("Sky_0qepi")
 albedo_color = Color(0.13, 0.13, 0.14, 1)
 metallic = 0.03
 roughness = 0.9
-
-[sub_resource type="StandardMaterial3D" id="MatLaneYellow"]
-albedo_color = Color(0.78, 0.65, 0.08, 1)
-roughness = 0.7
 
 [sub_resource type="StandardMaterial3D" id="MatGrassBank"]
 albedo_color = Color(0.18, 0.42, 0.16, 1)
@@ -117,7 +114,7 @@ HoverGroundClearance = 3.5
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Level3SpecialDrone" unique_id=2065127778]
 shape = SubResource("CapsuleShape3D_l3drone")
 
-[node name="Level3GroundAlign" type="Node" parent="." unique_id=1569803156]
+[node name="Level3MaaKohdistus" type="Node" parent="." unique_id=1569803156]
 script = ExtResource("13_l3align")
 
 [node name="HUD" parent="." unique_id=499664610 instance=ExtResource("2_0ljxa")]
@@ -171,10 +168,8 @@ material_override = SubResource("MatAsphalt")
 use_collision = true
 size = Vector3(132, 0.3, 10.5)
 
-[node name="CenterLine" type="CSGBox3D" parent="World/UphillRoadRoot" unique_id=3001002]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.17, 0)
-material_override = SubResource("MatLaneYellow")
-size = Vector3(131.5, 0.04, 0.22)
+[node name="CenterLineDashes" type="Node3D" parent="World/UphillRoadRoot" unique_id=3001002]
+script = ExtResource("21_l3cndsh")
 
 [node name="ForestEmbankment" type="CSGBox3D" parent="World/UphillRoadRoot" unique_id=3001004]
 transform = Transform3D(1.0000002, 0, 0, 0, 1.0000002, 0, 0, 0, 1, 0.072989516, 0.24053708, -7.9703236)

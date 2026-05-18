@@ -7,13 +7,13 @@ using Godot;
 /// </summary>
 public partial class Level3GroundAlign : Node
 {
-	[Export] public float RaycastTopY = 120f;
-	[Export] public float RaycastDepth = 250f;
-	[Export] public float SurfaceBiasAlongNormal = 0.06f;
+	[Export] public float SäteenAlkukohtaY = 120f;
+	[Export] public float SäteenPituusAlas = 250f;
+	[Export] public float PintaBiasNormaalilla = 0.06f;
 	/// <summary>Hyväksy osuma vain jos normaali on suunnilleen ylös (ohittaa pystyseinät).</summary>
-	[Export] public float MinWalkableNormalDotUp = 0.28f;
+	[Export] public float MinKäveltävyyskynnys = 0.28f;
 	/// <summary>Jos tarkka tie-osuma epäonnistuu, viimeinen yritys: ensimmäinen käveltävä osuma (lievempi kulma).</summary>
-	[Export] public float FallbackMinNormalDotUp = 0.12f;
+	[Export] public float VarakävelyKynnys = 0.12f;
 
 	private bool _snapped;
 
@@ -54,21 +54,21 @@ public partial class Level3GroundAlign : Node
 		}
 
 		Vector3 p = player.GlobalPosition;
-		var from = new Vector3(p.X, RaycastTopY, p.Z);
-		var to = from + Vector3.Down * RaycastDepth;
+		var from = new Vector3(p.X, SäteenAlkukohtaY, p.Z);
+		var to = from + Vector3.Down * SäteenPituusAlas;
 
 		var exclude = new Godot.Collections.Array<Rid> { player.GetRid() };
 
 		if (!TryRaycastRoadSurface(world.DirectSpaceState, from, to, exclude, out Vector3 hitPos, out Vector3 hitNormal))
 		{
-			if (!TryRaycastFirstWalkableHit(world.DirectSpaceState, from, to, exclude, FallbackMinNormalDotUp, out hitPos, out hitNormal))
+			if (!TryRaycastFirstWalkableHit(world.DirectSpaceState, from, to, exclude, VarakävelyKynnys, out hitPos, out hitNormal))
 			{
 				if (!TryFallbackSnapFromRoadRoot(levelRoot, player, out hitPos, out hitNormal))
 					return;
 			}
 		}
 
-		hitPos += hitNormal.Normalized() * SurfaceBiasAlongNormal;
+		hitPos += hitNormal.Normalized() * PintaBiasNormaalilla;
 
 		float feetY = GetCapsuleBottomGlobalY(player);
 		float targetFeetY = hitPos.Y;
@@ -110,7 +110,7 @@ public partial class Level3GroundAlign : Node
 				? ((Vector3)nrmObj).Normalized()
 				: Vector3.Up;
 
-			if (hitNormal.Dot(Vector3.Up) >= MinWalkableNormalDotUp &&
+			if (hitNormal.Dot(Vector3.Up) >= MinKäveltävyyskynnys &&
 			    ColliderLooksLikeLevel3Road(hit))
 				return true;
 
