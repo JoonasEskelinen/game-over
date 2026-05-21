@@ -85,7 +85,9 @@ public partial class EnemyLevel1 : CharacterBody3D
 	/// <summary>Lisäviive sekunteina osumaikkunan alkuun (<c>GetMeleeStrikeWindowStart()</c> + tämä).</summary>
 	[Export] public float MiekkaOsumaViive = 0f;
 
-	/// <summary>Vain R1 (raskas): lisäviive osumaikkunan alkuun (esim. 0.06–0.12). R2 käyttää vain <see cref="MiekkaOsumaViive"/>.</summary>
+	/// <summary>
+	/// Vain R1: viive osumaikkunan alusta (sek). Jos &gt; 0, korvaa <see cref="MiekkaOsumaViive"/> raskaassa iskussa (ei päällekkäistä viivettä).
+	/// </summary>
 	[Export] public float RaskasIskuAktivoitumisenLisäviive = 0f;
 
 	/// <summary>R1: enimmäisetäisyys teräviivaan (m); laajentaa cleave-rekisteröintiä. 0 = pelaajan oletus.</summary>
@@ -184,7 +186,7 @@ public partial class EnemyLevel1 : CharacterBody3D
 		if (inBiteMode && !_wasInStickyMelee)
 		{
 			float maxWindup = Mathf.Max(0.55f, _biteInterval * 0.92f);
-			float windup = Mathf.Clamp(PuremanVahinkoAloitusViive, 0.2f, maxWindup);
+			float windup = Mathf.Clamp(PuremanVahinkoAloitusViive, 0f, maxWindup);
 			_biteTimer = windup;
 		}
 
@@ -231,10 +233,12 @@ public partial class EnemyLevel1 : CharacterBody3D
 		if (_playerController != null && _playerController.IsMeleeAttackActive())
 		{
 			float animTime = _playerController.GetAttackAnimationTime();
-			float hitFrom = _playerController.GetMeleeStrikeWindowStart() + MiekkaOsumaViive;
-			bool heavy = _playerController.IsHeavyMeleeAttackActive();
-			if (heavy && RaskasIskuAktivoitumisenLisäviive > 0f)
-				hitFrom += RaskasIskuAktivoitumisenLisäviive;
+			bool heavy = _playerController.IsHeavyMeleeAttackActive()
+				|| (_playerController.GetMeleeAttackDamage() >= 3 && _playerController.IsMeleeAttackActive());
+			float osumaViive = heavy && RaskasIskuAktivoitumisenLisäviive > 0f
+				? RaskasIskuAktivoitumisenLisäviive
+				: MiekkaOsumaViive;
+			float hitFrom = _playerController.GetMeleeStrikeWindowStart() + Mathf.Max(0f, osumaViive);
 
 			if (animTime >= hitFrom && !_hasBeenHitThisSwing)
 			{
@@ -469,10 +473,11 @@ public partial class EnemyLevel1 : CharacterBody3D
 	}
 
 	/// <summary>Kutsutaan miekan osuman yhteydessä: ruututärinä, välähdys ja lyhyt animaatiosulku.</summary>
-	private void OnSwordHitFeedback()
+	private void OnSwordHitFeedback(int damage)
 	{
-		// 1. Ruututärinä
-		GetOrFindCamera()?.ShakeImpulse(0.20f, 0.24f);
+		bool heavy = damage >= 3;
+		// 1. Ruututärinä (R1 vahvempi kuin R2)
+		GetOrFindCamera()?.ShakeImpulse(heavy ? 0.28f : 0.20f, heavy ? 0.32f : 0.24f);
 
 		// 2. Hit flash: hetkellinen vaalea/punainen siluetti (~50 ms peliaikaa)
 		var geos = new List<GeometryInstance3D>();
@@ -482,10 +487,10 @@ public partial class EnemyLevel1 : CharacterBody3D
 			var flashMat = new StandardMaterial3D
 			{
 				ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded,
-				AlbedoColor = new Color(1f, 0.82f, 0.82f),
+				AlbedoColor = heavy ? new Color(1f, 0.72f, 0.72f) : new Color(1f, 0.82f, 0.82f),
 				EmissionEnabled = true,
-				Emission = new Color(1f, 0.35f, 0.35f),
-				EmissionEnergyMultiplier = 2.2f,
+				Emission = heavy ? new Color(1f, 0.22f, 0.22f) : new Color(1f, 0.35f, 0.35f),
+				EmissionEnergyMultiplier = heavy ? 2.85f : 2.2f,
 			};
 			foreach (var g in geos)
 				if (GodotObject.IsInstanceValid(g))
@@ -501,12 +506,13 @@ public partial class EnemyLevel1 : CharacterBody3D
 			}));
 		}
 
-		// 3. Lyhyt hit-stop: animaation nopeus nollaan ~60 ms
+		// 3. Lyhyt hit-stop: animaation nopeus nollaan (R1 hieman pidempi)
+		float hitStop = heavy ? 0.085f : 0.06f;
 		if (_animationPlayer != null && GodotObject.IsInstanceValid(_animationPlayer))
 		{
 			_animationPlayer.SpeedScale = 0f;
 			var animFreeze = CreateTween();
-			animFreeze.TweenInterval(0.06f);
+			animFreeze.TweenInterval(hitStop);
 			animFreeze.TweenCallback(Callable.From(() =>
 			{
 				if (GodotObject.IsInstanceValid(_animationPlayer))
@@ -519,7 +525,7 @@ public partial class EnemyLevel1 : CharacterBody3D
 	{
 		if (_isDead) return;
 		Elämäpisteet -= amount;
-		OnSwordHitFeedback();
+		OnSwordHitFeedback(amount);
 		if (Elämäpisteet <= 0) Die();
 	}
 

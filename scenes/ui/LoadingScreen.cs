@@ -1,23 +1,17 @@
 using Godot;
 
 /// <summary>
-/// Näytetään päävalikosta — lataa <see cref="GameState.PendingLoadScenePath"/> säikeessä
-/// ja vaihtaa kenttään kun valmis (spinner + edistymispalkki pyörivät latauksen ajan).
+/// Lataa <see cref="GameState.PendingLoadScenePath"/> taustasäikeessä ja vaihtaa kenttään kun valmis.
+/// Spinner + edistymispalkki ovat autoload- <see cref="LoadingOverlay"/> -kerroksella (pyöivät scene-vaihtojen yli).
 /// </summary>
 public partial class LoadingScreen : Control
 {
 	private string _scenePath;
-	private ProgressBar _progress;
-	private TextureRect _spinner;
-	private Label _statusLabel;
-	private bool _loadFinished;
 	private bool _failureHandled;
 
 	public override void _Ready()
 	{
-		_progress     = GetNodeOrNull<ProgressBar>("Overlay/Center/Column/ProgressBar");
-		_spinner      = GetNodeOrNull<TextureRect>("Overlay/Center/Column/Spinner");
-		_statusLabel = GetNodeOrNull<Label>("Overlay/Center/Column/StatusLabel");
+		LoadingOverlay.Instance?.ShowOverlay();
 
 		_scenePath = GameState.Instance.PendingLoadScenePath;
 		GameState.Instance.PendingLoadScenePath = "";
@@ -25,6 +19,7 @@ public partial class LoadingScreen : Control
 		if (string.IsNullOrEmpty(_scenePath))
 		{
 			GD.PrintErr("LoadingScreen: PendingLoadScenePath puuttuu — palataan valikkoon.");
+			LoadingOverlay.Instance?.HideOverlay();
 			GetTree().ChangeSceneToFile("res://scenes/ui/main_menu.tscn");
 			return;
 		}
@@ -34,69 +29,90 @@ public partial class LoadingScreen : Control
 		{
 			GD.PrintErr($"LoadingScreen: LoadThreadedRequest epäonnistui ({err}) — synkroninen fallback.");
 			var packed = GD.Load<PackedScene>(_scenePath);
+			LoadingOverlay.Instance?.ScheduleHideAfterFrames(4);
 			if (packed != null)
 				GetTree().ChangeSceneToPacked(packed);
 			else
+			{
+				LoadingOverlay.Instance?.HideOverlay();
 				GetTree().ChangeSceneToFile("res://scenes/ui/main_menu.tscn");
+			}
 			return;
 		}
 
-		if (_progress != null)
+		RunLoadAsync();
+	}
+
+	private async void RunLoadAsync()
+	{
+		while (IsInsideTree() && !_failureHandled)
 		{
-			_progress.Value = 0;
-			_progress.MaxValue = 100;
+			await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+
+			if (string.IsNullOrEmpty(_scenePath))
+				return;
+
+			var progressArr = new Godot.Collections.Array();
+			ResourceLoader.ThreadLoadStatus status =
+				ResourceLoader.LoadThreadedGetStatus(_scenePath, progressArr);
+
+			switch (status)
+			{
+				case ResourceLoader.ThreadLoadStatus.InProgress:
+					if (progressArr.Count > 0)
+					{
+						float p = progressArr[0].AsSingle();
+						LoadingOverlay.Instance?.SetProgress(p * 100f);
+					}
+					break;
+
+				case ResourceLoader.ThreadLoadStatus.Loaded:
+					await FinishLoadedAsync();
+					return;
+
+				case ResourceLoader.ThreadLoadStatus.Failed:
+				case ResourceLoader.ThreadLoadStatus.InvalidResource:
+					HandleLoadFailure(status);
+					return;
+			}
 		}
 	}
 
-	public override void _Process(double delta)
+	private async System.Threading.Tasks.Task FinishLoadedAsync()
 	{
-		if (_loadFinished || string.IsNullOrEmpty(_scenePath))
+		LoadingOverlay.Instance?.SetProgress(100f);
+
+		var packed = ResourceLoader.LoadThreadedGet(_scenePath) as PackedScene;
+		_scenePath = "";
+
+		if (packed == null)
+		{
+			GD.PrintErr("LoadingScreen: PackedScene puuttuu.");
+			LoadingOverlay.Instance?.HideOverlay();
+			GetTree().ChangeSceneToFile("res://scenes/ui/main_menu.tscn");
+			return;
+		}
+
+		for (int i = 0; i < 2; i++)
+			await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+
+		LoadingOverlay.Instance?.ScheduleHideAfterFrames(4);
+		GetTree().ChangeSceneToPacked(packed);
+	}
+
+	private void HandleLoadFailure(ResourceLoader.ThreadLoadStatus status)
+	{
+		if (_failureHandled)
 			return;
 
-		if (_spinner != null)
-			_spinner.Rotation += (float)(delta * 1.25);
-
-		var progressArr = new Godot.Collections.Array();
-		ResourceLoader.ThreadLoadStatus status =
-			ResourceLoader.LoadThreadedGetStatus(_scenePath, progressArr);
-
-		switch (status)
+		_failureHandled = true;
+		_scenePath = "";
+		GD.PrintErr($"LoadingScreen: Lataus epäonnistui ({status}).");
+		LoadingOverlay.Instance?.SetStatus("Lataus epäonnistui — palataan valikkoon.");
+		GetTree().CreateTimer(1.2).Timeout += () =>
 		{
-			case ResourceLoader.ThreadLoadStatus.InProgress:
-				if (_progress != null && progressArr.Count > 0)
-				{
-					float p = progressArr[0].AsSingle();
-					_progress.Value = Mathf.Clamp(p * 100.0, 0, 100);
-				}
-				break;
-
-			case ResourceLoader.ThreadLoadStatus.Loaded:
-				_loadFinished = true;
-				if (_progress != null)
-					_progress.Value = 100;
-				var packed = ResourceLoader.LoadThreadedGet(_scenePath) as PackedScene;
-				if (packed != null)
-					GetTree().ChangeSceneToPacked(packed);
-				else
-				{
-					GD.PrintErr("LoadingScreen: PackedScene puuttuu.");
-					GetTree().ChangeSceneToFile("res://scenes/ui/main_menu.tscn");
-				}
-				break;
-
-			case ResourceLoader.ThreadLoadStatus.Failed:
-			case ResourceLoader.ThreadLoadStatus.InvalidResource:
-				if (_failureHandled)
-					break;
-				_failureHandled = true;
-				_loadFinished = true;
-				SetProcess(false);
-				GD.PrintErr($"LoadingScreen: Lataus epäonnistui ({status}) polulle: {_scenePath}");
-				if (_statusLabel != null)
-					_statusLabel.Text = "Lataus epäonnistui — palataan valikkoon.";
-				GetTree().CreateTimer(1.2).Timeout += () =>
-					GetTree().ChangeSceneToFile("res://scenes/ui/main_menu.tscn");
-				break;
-		}
+			LoadingOverlay.Instance?.HideOverlay();
+			GetTree().ChangeSceneToFile("res://scenes/ui/main_menu.tscn");
+		};
 	}
 }

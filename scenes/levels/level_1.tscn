@@ -211,7 +211,6 @@ shape = SubResource("BoxShape3D_s8va5")
 [node name="Player" parent="." unique_id=1514760592 instance=ExtResource("1_ksju7")]
 transform = Transform3D(1.1, 0, 0, 0, 1.1, 0, 0, 0, 1.1, 0.014350295, -0.23748426, 1.0009072)
 Juoksunopeus = 5.5
-HypynAlkuvauhti = 7.0
 SyvyysAlaraja = -14.0
 JoystickInHandAlwaysWhenSitting = false
 
@@ -224,6 +223,7 @@ FollowSpeed = 12.0
 Offset = Vector3(2, 2, 3)
 MinPitchDeg = -45.0
 MaxPitchDeg = 45.0
+MouseLookEnabled = false
 BossDanceLookAtYOffset = 1.15
 BossDanceCamDistance = 3.85
 BossDanceCamFrontHeightM = 1.25
@@ -284,7 +284,7 @@ script = ExtResource("15_wtwp4")
 EnemyScene = ExtResource("16_iwr0g")
 MinSpeed = 3.0
 MaxSpeed = 5.0
-TotalNormalEnemiesToSpawn = 7
+TotalNormalEnemiesToSpawn = 10
 
 [node name="Level1ExploreMusic" type="Node" parent="." unique_id=156060371]
 script = ExtResource("23_lvlmusic")

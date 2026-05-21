@@ -31,6 +31,13 @@ public partial class GameState : Node
 	/// </summary>
 	public string PendingLoadScenePath { get; set; } = "";
 
+	/// <summary>Asettaa ladattavan kentän ja näyttää spinner-overlayn ennen latausruutua.</summary>
+	public void BeginSceneLoad(string scenePath)
+	{
+		PendingLoadScenePath = scenePath;
+		LoadingOverlay.Instance?.ShowOverlay();
+	}
+
 	// ─────────────────────────────────────────────
 
 	public override void _Ready()

@@ -1,7 +1,6 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene load_steps=2 format=3 uid="uid://dohj0sk7umtne"]
 
-[ext_resource type="Script" path="res://scenes/ui/LoadingScreen.cs" id="1_script"]
-[ext_resource type="Texture2D" path="res://assets/textures/loading.png" id="2_loading"]
+[ext_resource type="Script" uid="uid://b5mowbcq1oytv" path="res://scenes/ui/LoadingScreen.cs" id="1_script"]
 
 [node name="LoadingScreen" type="Control"]
 layout_mode = 3
@@ -11,48 +10,3 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_script")
-
-[node name="Overlay" type="ColorRect" parent="."]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-color = Color(0.04, 0.05, 0.08, 0.96)
-
-[node name="Center" type="CenterContainer" parent="Overlay"]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-
-[node name="Column" type="VBoxContainer" parent="Overlay/Center"]
-custom_minimum_size = Vector2(320, 0)
-layout_mode = 2
-theme_override_constants/separation = 20
-alignment = 1
-
-[node name="StatusLabel" type="Label" parent="Overlay/Center/Column"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.92, 0.93, 0.96, 1)
-theme_override_font_sizes/font_size = 22
-text = "Ladataan..."
-horizontal_alignment = 1
-
-[node name="Spinner" type="TextureRect" parent="Overlay/Center/Column"]
-custom_minimum_size = Vector2(120, 120)
-layout_mode = 2
-size_flags_horizontal = 4
-texture = ExtResource("2_loading")
-expand_mode = 1
-stretch_mode = 5
-pivot_offset = Vector2(60, 60)
-
-[node name="ProgressBar" type="ProgressBar" parent="Overlay/Center/Column"]
-custom_minimum_size = Vector2(280, 14)
-layout_mode = 2
-max_value = 100.0
-show_percentage = false

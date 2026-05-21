@@ -13,6 +13,8 @@ public partial class CameraFollow : Camera3D
 	[Export] public Vector3 Offset = new(2f, 3.5f, 12f);
 	[ExportGroup("Orbit")]
 	[Export] public float PivotHeight = 1.35f;
+	/// <summary>Oikea tatti (<c>cam_look_*</c>). Pois päältä kiinteällä kulmalla (esim. level_1).</summary>
+	[Export] public bool OrbitStickEnabled = true;
 	[Export] public float LookSensitivity = 2.35f;
 	[Export] public float MinPitchDeg = -58f;
 	[Export] public float MaxPitchDeg = 78f;
@@ -330,7 +332,7 @@ public partial class CameraFollow : Camera3D
 			_yaw = Mathf.DegToRad(SideScrollerYawDeg);
 			_pitch = Mathf.Clamp(Mathf.DegToRad(SideScrollerPitchDeg), _minPitchRad, _maxPitchRad);
 		}
-		else if (!lockOrbit)
+		else if (!lockOrbit && OrbitStickEnabled)
 		{
 			float ax = Input.GetAxis("cam_look_left", "cam_look_right");
 			float ay = Input.GetAxis("cam_look_up", "cam_look_down");

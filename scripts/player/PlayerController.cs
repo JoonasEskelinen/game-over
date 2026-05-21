@@ -19,9 +19,6 @@ public partial class PlayerController : CharacterBody3D
 	/// <summary>Juoksunopeus normaalitilassa (ilman asetta).</summary>
 	[Export] public float Juoksunopeus = 8.0f;
 
-	/// <summary>Hypyn alkuvauhti ylöspäin.</summary>
-	[Export] public float HypynAlkuvauhti = 10.0f;
-
 	/// <summary>Painovoiman voimakkuus — isompi arvo = nopeampi putoaminen.</summary>
 	[Export] public float Painovoima = 28.0f;
 
@@ -49,12 +46,6 @@ public partial class PlayerController : CharacterBody3D
 	/// 0 = välitön kääntyminen, suurempi arvo = pehmeämpi.
 	/// </summary>
 	[Export] public float SuunnanPehmennys { get; set; } = 18f;
-
-	/// <summary>
-	/// Viive hypyn painalluksesta ponnistukseen (sekunteina).
-	/// Säädä kunnes sopii animaation kanssa yhteen.
-	/// </summary>
-	[Export] public float HypynLämmittelyviive = 0.35f;
 
 	/// <summary>
 	/// Siirtää gameover_character-mallia paikallisesti Y-suunnassa (metriä). Negatiivinen = jalat lähemmäs maata.
@@ -111,12 +102,6 @@ public partial class PlayerController : CharacterBody3D
 
 	/// <summary>True kun L2 on pohjassa ja pelaaja on SwordShield-tilassa.</summary>
 	private bool _isBlocking = false;
-
-	/// <summary>True hypyn viiveaikana (ennen ponnistusta).</summary>
-	private bool _isWindingUp = false;
-
-	/// <summary>Laskee hypyn viiveen.</summary>
-	private float _jumpTimer = 0f;
 
 	/// <summary>Hahmon nykyinen katselusuunta Y-akselilla (radiaaneina). Käytetään pehmeyskääntymiseen.</summary>
 	private float _facingYaw;
@@ -257,8 +242,18 @@ public partial class PlayerController : CharacterBody3D
 		if (_characterModel == null || !_characterModel.IsInsideTree() || !IsInsideTree())
 			return false;
 		float half = shieldHalfAngleDegreesOverride > 0f ? shieldHalfAngleDegreesOverride : KilpiTorjuntaPuolikulma;
+
+		// Kameran suunta: blokatessa ei voi kääntyä — uhka arvioidaan sen mukaan mihin pelaaja katsoo.
+		Vector3 camFwd = GetCameraFlatForwardForShield();
+		if (IsShieldBlockFacingArcWithForward(GlobalPosition, threatWorldPosition, half, camFwd))
+			return true;
+
 		return IsShieldBlockFacingArc(GlobalPosition, threatWorldPosition, half, flipShieldFacing180);
 	}
+
+	/// <summary>Live-kilpitarkistus (ei riipu _isBlocking-välimuistista — vihollinen voi ajaa ennen pelaajaa).</summary>
+	public bool IsShieldBlockHeldLive()
+		=> (Input.IsActionPressed("block") || Input.GetActionStrength("block") > 0.42f) && IsSwordWeaponMode();
 
 	/// <summary>Torjuttu isku (Boss L1 spin / isku) — ei HP-tappiota, kevyt palaute.</summary>
 	public void NotifyBossLevel1StrikeBlocked()
@@ -759,7 +754,7 @@ public partial class PlayerController : CharacterBody3D
 		// ja osumaikkuna (EnemyLevel1 MiekkaOsumaViive) jäisi koskaan täyttymättä.
 		float pos = (float)_animationPlayer.CurrentAnimationPosition;
 		// R2: blendissä pos voi pysyä nollassa — käytä myös fysiikkakelloa (kasvaa _PhysicsProcessissa).
-		if (_meleeStrikeClip == "mixamo_com_005")
+		if (_meleeStrikeClip == "mixamo_com_005" || _meleeStrikeClip == "mixamo_com_010")
 			return Mathf.Max(pos, _meleeSwingElapsed);
 		return pos;
 	}
@@ -1091,7 +1086,6 @@ public partial class PlayerController : CharacterBody3D
 			// Ensimmäinen parametri = tiedostopolku
 			// Toinen = animaation nimi FBX:ssä (Mixamo käyttää "mixamo_com")
 			// Kolmas = nimi jonka alla animaatio tallennetaan pelissä
-			LoadAnim("res://assets/models/animations/Jumping.fbx",                            "mixamo_com", "mixamo_com_001");
 			LoadAnim("res://assets/models/animations/Push Start.fbx",                         "mixamo_com", "mixamo_com_011", loop: true);
 			LoadAnim("res://assets/models/animations/Orc Walk.fbx",                           "mixamo_com", "mixamo_com_002");
 			LoadAnim("res://assets/models/animations/Running.fbx",                            "mixamo_com", "mixamo_com_003");
@@ -1226,29 +1220,6 @@ public partial class PlayerController : CharacterBody3D
 		// Lisätään painovoimaa kun pelaaja on ilmassa
 		if (!IsOnFloor())
 			velocity.Y -= Painovoima * (float)delta;
-
-		// ── Hyppy ──
-		// Hyppy on sallittu vain Normal- ja SwordShield-tiloissa (ei Sitting)
-		bool canJump = !_isSitting;
-
-		// Hypyn viiveajastin — odottaa animaation ponnistushetkeä
-		if (_isWindingUp)
-		{
-			_jumpTimer -= (float)delta;
-			if (_jumpTimer <= 0f)
-			{
-				_isWindingUp = false;
-				velocity.Y = HypynAlkuvauhti; // Ponnistus!
-			}
-		}
-
-		// Hyppy käynnistyy kun painetaan "jump" ja ollaan lattialla
-		if (Input.IsActionJustPressed("jump") && IsOnFloor() && !_isAttacking && !_isBlocking && canJump && !_isWindingUp)
-		{
-			PlayAnim("mixamo_com_001");
-			_isWindingUp = true;
-			_jumpTimer = HypynLämmittelyviive;
-		}
 
 		// ── Istuminen (sit) — erillinen syöte; joystick voidaan sitoa tähän myöhemmin
 		if (Input.IsActionJustPressed("sit"))
@@ -1423,7 +1394,7 @@ public partial class PlayerController : CharacterBody3D
 		}
 
 		// Slide lattian pintaa pitkin (estää "kellumisen" rinteillä)
-		if (IsOnFloor() && !_isWindingUp)
+		if (IsOnFloor())
 			wish = wish.Slide(GetFloorNormal());
 
 		// Tarttuessa (neliö pohjassa) liike rajoitetaan vain pöytää kohti.
@@ -1466,7 +1437,7 @@ public partial class PlayerController : CharacterBody3D
 
 		velocity.X = wish.X;
 		velocity.Z = wish.Z;
-		if (IsOnFloor() && !_isWindingUp && velocity.Y < HypynAlkuvauhti * 0.25f)
+		if (IsOnFloor())
 			velocity.Y = wish.Y;
 
 		// ── Hahmon kääntyminen ──
@@ -1508,10 +1479,9 @@ public partial class PlayerController : CharacterBody3D
 
 		// ── Liike-animaatiot ──
 		// Vaihdetaan animaatiota tilanteen mukaan
-		// Ei päällekirjoiteta hyppy- tai hyökkäysanimaatioita
-		bool jumpPlaying = _animationPlayer?.CurrentAnimation == "mixamo_com_001" || _isWindingUp;
+		// Ei päällekirjoiteta hyökkäysanimaatioita
 		bool grabPlaying = _grabbedBody != null && Input.IsActionPressed("grab");
-		if (IsOnFloor() && !_isAttacking && !_isBlocking && !jumpPlaying && !grabPlaying)
+		if (IsOnFloor() && !_isAttacking && !_isBlocking && !grabPlaying)
 		{
 			string target;
 			if (_isSitting)
@@ -1659,7 +1629,7 @@ public partial class PlayerController : CharacterBody3D
 
 	/// <summary>
 	/// Kutsutaan kun animaatio loppuu.
-	/// Nollaa hyökkäys- ja hyppytilan oikeaan aikaan.
+	/// Nollaa hyökkäystilan oikeaan aikaan.
 	/// </summary>
 	private void OnAnimationFinished(StringName animName)
 	{
@@ -1684,10 +1654,6 @@ public partial class PlayerController : CharacterBody3D
 			if (_animationPlayer != null)
 				_animationPlayer.SpeedScale = 1f;
 		}
-
-		// Hyppyanimaatio loppui — palataan idle:en
-		if (animName == "mixamo_com_001")
-			PlayAnim("mixamo_com");
 
 		// Tartunta (loop pois päältä / vapautus keskellä)
 		if (animName == "mixamo_com_011" && (_grabbedBody == null || !GodotObject.IsInstanceValid(_grabbedBody)))
@@ -1744,8 +1710,6 @@ public partial class PlayerController : CharacterBody3D
 		_meleeStrikeSfxPlayedThisSwing = false;
 		_grabbedBody   = null;
 		_isBlocking    = false;
-		_isWindingUp   = false;
-		_jumpTimer     = 0f;
 		_weaponMode = WeaponMode.Normal;
 		_isSitting  = false;
 		_heavyAttackCooldown = 0f;

@@ -268,7 +268,7 @@ public partial class Level2BossExit : Node3D
 		}
 
 		_exiting = true;
-		GameState.Instance.PendingLoadScenePath = NextScene;
+		GameState.Instance.BeginSceneLoad(NextScene);
 		// Ei ChangeSceneToFile suoraan BodyEntered / fysiikkakutsussa — Godot + Jolt varoittaa.
 		Callable.From(DeferredChangeToNextLevel).CallDeferred();
 	}
@@ -279,6 +279,7 @@ public partial class Level2BossExit : Node3D
 		{
 			_exiting = false;
 			GameState.Instance.PendingLoadScenePath = "";
+			LoadingOverlay.Instance?.HideOverlay();
 			return;
 		}
 
@@ -287,10 +288,12 @@ public partial class Level2BossExit : Node3D
 		{
 			GD.PrintErr($"Level2BossExit: loading_screen epäonnistui ({err}).");
 			GameState.Instance.PendingLoadScenePath = "";
+			LoadingOverlay.Instance?.ScheduleHideAfterFrames(4);
 			Error err2 = GetTree().ChangeSceneToFile(NextScene);
 			if (err2 != Error.Ok)
 			{
 				GD.PrintErr($"Level2BossExit: ChangeSceneToFile ({err2}): {NextScene}");
+				LoadingOverlay.Instance?.HideOverlay();
 				_exiting = false;
 			}
 		}

@@ -240,7 +240,7 @@ public partial class GameOver : Control
 	{
 		GameState.Instance.HasJoystick = false;
 		GameState.Instance.PersistHasJoystickToSave();
-		GameState.Instance.PendingLoadScenePath = "res://scenes/levels/level_1.tscn";
+		GameState.Instance.BeginSceneLoad("res://scenes/levels/level_1.tscn");
 		var err = GetTree().ChangeSceneToFile("res://scenes/ui/loading_screen.tscn");
 		if (err != Error.Ok)
 			GD.PrintErr($"GameOver: loading_screen epäonnistui: {err}");

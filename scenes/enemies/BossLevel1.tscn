@@ -4,15 +4,14 @@
 [ext_resource type="PackedScene" uid="uid://c4c5ccllmqb7u" path="res://assets/models/level1_BossEnemy/Dancing.fbx" id="2_4pk4r"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_boss"]
-radius = 2.4086914
-height = 5.643135
+radius = 1.0009766
+height = 5.17531
 
 [node name="BossLevel1" type="CharacterBody3D" unique_id=221002251]
-transform = Transform3D(1.5, 0, 0, 0, 1.5, 0, 0, 0, 1.5, 0, 0.30376124, 0)
+transform = Transform3D(1.5, 0, 0, 0, 1.5, 0, 0, 0, 1.5, 0, 0.9069519, 0)
 collision_layer = 2
 collision_mask = 3
 script = ExtResource("1_boss")
-"SpinOsumaEtäisyys" = 1.0
 TorjuntaHorjahdusVoima = 0.8
 "SyöksyKiertoKestoSekuntia" = 1.8
 TanssiKestoMinSekuntia = 4.5
@@ -20,12 +19,9 @@ TanssiKestoMaxSekuntia = 7.5
 "ViiveTanssinJälkeenSekuntia" = 3.0
 "SyöksyNopeus" = 9.0
 "SyöksyMaksimiKestoSekuntia" = 8.0
-MiekkaIskuAktivoitumisaika = 0.8
-JalatMaahanOffsetLattiasta = 0.0
-"JalatMaahanVisuaaliLattiaVälys" = 0.0
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1088415914]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.4491416, 1.687984, -0.009433342)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.4491416, 2.4332252, -0.009433342)
 shape = SubResource("CapsuleShape3D_boss")
 
 [node name="Dancing" parent="." unique_id=666478246 instance=ExtResource("2_4pk4r")]

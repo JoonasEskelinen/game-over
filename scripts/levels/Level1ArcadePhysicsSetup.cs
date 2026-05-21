@@ -37,6 +37,11 @@ public partial class Level1ArcadePhysicsSetup : Node3D
 
 	public override void _Ready()
 	{
+		Callable.From(RunSetup).CallDeferred();
+	}
+
+	private void RunSetup()
+	{
 		SetupRootProps();
 		SetupFloorProps();
 	}

@@ -187,7 +187,7 @@ public partial class Level1ExitHole : Node3D
 		}
 		_exiting = true;
 		GD.Print($"Level1ExitHole: pelaaja putosi reikään → latausruutu → {NextScene}");
-		GameState.Instance.PendingLoadScenePath = NextScene;
+		GameState.Instance.BeginSceneLoad(NextScene);
 		Callable.From(DeferredChangeToNextLevel).CallDeferred();
 	}
 
@@ -197,6 +197,7 @@ public partial class Level1ExitHole : Node3D
 		{
 			_exiting = false;
 			GameState.Instance.PendingLoadScenePath = "";
+			LoadingOverlay.Instance?.HideOverlay();
 			return;
 		}
 
@@ -205,10 +206,12 @@ public partial class Level1ExitHole : Node3D
 		{
 			GD.PrintErr($"Level1ExitHole: loading_screen epäonnistui ({err}) — synkroninen fallback.");
 			GameState.Instance.PendingLoadScenePath = "";
+			LoadingOverlay.Instance?.ScheduleHideAfterFrames(4);
 			Error err2 = GetTree().ChangeSceneToFile(NextScene);
 			if (err2 != Error.Ok)
 			{
 				GD.PrintErr($"Level1ExitHole: ChangeSceneToFile epäonnistui ({err2}): {NextScene}");
+				LoadingOverlay.Instance?.HideOverlay();
 				_exiting = false;
 			}
 		}
