@@ -10,6 +10,8 @@ public partial class BossLevel3 : Node3D
 	[Export] public int BossTerveysAlussa = 28;
 	[Export] public int PommiVahinkoPerOsuma = 7;
 	[Export] public string BossVahinkoÄäniPolku = "res://assets/audio/sfx/enemybosshit.mp3";
+	/// <summary>Pelaajan XZ-etäisyys bossiin — alle tämän vasta pommit vahingoittavat (ei cheese spawnista).</summary>
+	[Export] public float PelaajaAktivointiSädeXZ = 46f;
 
 	private int _hp;
 	private bool _dead;
@@ -44,13 +46,29 @@ public partial class BossLevel3 : Node3D
 
 	private void OnHurtBodyEntered(Node3D body)
 	{
-		if (_dead || body == null)
-			return;
-		if (body is not Level3DroneBomb bomb)
-			return;
+		if (body is Level3DroneBomb bomb)
+			TryApplyDroneBombHit(bomb);
+	}
+
+	/// <summary>Suora osuma tai läheisräjähdys — yksi pommi, yksi vahinko.</summary>
+	public bool TryApplyDroneBombHit(Level3DroneBomb bomb)
+	{
+		if (_dead || bomb == null || !IsDroneFightActiveForPlayer())
+			return false;
 		if (!bomb.TryConsumeBossHit())
-			return;
+			return false;
 		ApplyDamage(Mathf.Max(1, bomb.BossDamage > 0 ? bomb.BossDamage : PommiVahinkoPerOsuma));
+		return true;
+	}
+
+	private bool IsDroneFightActiveForPlayer()
+	{
+		var player = GetTree()?.GetFirstNodeInGroup("player") as Node3D;
+		if (player == null || !GodotObject.IsInstanceValid(player))
+			return false;
+		var a = new Vector2(GlobalPosition.X, GlobalPosition.Z);
+		var b = new Vector2(player.GlobalPosition.X, player.GlobalPosition.Z);
+		return a.DistanceTo(b) <= PelaajaAktivointiSädeXZ;
 	}
 
 	private void ApplyDamage(int amount)

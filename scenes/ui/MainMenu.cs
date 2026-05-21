@@ -3,68 +3,67 @@ using Godot;
 public partial class MainMenu : Control
 {
 	private Button[] _mainMenuButtons;
+	private Button _closeInstructionsButton;
+	private ScrollContainer _instructionsScroll;
 	private int _focusIndex;
 	private float _menuStickArmDelay;
 	private bool _stickNavLatched;
+	private bool _instructionsScrollLatched;
 
 	private const float StickNavThreshold = 0.45f;
-	private const float StickNeutralRelease = 0.22f;
+	private const float StickNeutralRelease = 0.15f;
 	private const float MenuStickArmDelaySec = 0.28f;
+	private const float InstructionsScrollSpeed = 480f;
+	private const float InstructionsScrollStep = 80f;
 
 	public override void _Ready()
 	{
 		_mainMenuButtons =
 		[
-			GetNode<Button>("VBoxContainer/NewGameButton"),
-			GetNode<Button>("VBoxContainer/InstructionsButton"),
-			GetNode<Button>("VBoxContainer/QuitButton"),
+			GetNode<Button>("CenterContainer/VBoxContainer/NewGameButton"),
+			GetNode<Button>("CenterContainer/VBoxContainer/InstructionsButton"),
+			GetNode<Button>("CenterContainer/VBoxContainer/QuitButton"),
 		];
+
+		_closeInstructionsButton =
+			GetNode<Button>("InstructionsPanel/CenterContainer/Panel/VBox/CloseInstructionsButton");
+		_instructionsScroll = GetNode<ScrollContainer>("InstructionsPanel/CenterContainer/Panel/VBox/Scroll");
 
 		for (int i = 0; i < _mainMenuButtons.Length; i++)
 		{
-			int idx = i;
-			var b = _mainMenuButtons[i];
-			b.FocusMode = FocusModeEnum.All;
-			b.FocusEntered += () => _focusIndex = idx;
+			var button = _mainMenuButtons[i];
+			button.FocusMode = FocusModeEnum.All;
 		}
 
-		// Eksplisiittinen ketju: vältä automaattisten naapurien + usean joypadin outoja yhdistelmiä (esim. PS5 + virtuaalilaite).
-		var btn0 = _mainMenuButtons[0];
-		var btn1 = _mainMenuButtons[1];
-		var btn2 = _mainMenuButtons[2];
-		var pathSelf0 = btn0.GetPathTo(btn0);
-		var pathSelf1 = btn1.GetPathTo(btn1);
-		var pathSelf2 = btn2.GetPathTo(btn2);
-		btn0.FocusNeighborTop = pathSelf0;
-		btn0.FocusNeighborBottom = btn0.GetPathTo(btn1);
-		btn0.FocusNeighborLeft = pathSelf0;
-		btn0.FocusNeighborRight = pathSelf0;
-		btn1.FocusNeighborTop = btn1.GetPathTo(btn0);
-		btn1.FocusNeighborBottom = btn1.GetPathTo(btn2);
-		btn1.FocusNeighborLeft = pathSelf1;
-		btn1.FocusNeighborRight = pathSelf1;
-		btn2.FocusNeighborTop = btn2.GetPathTo(btn1);
-		btn2.FocusNeighborBottom = pathSelf2;
-		btn2.FocusNeighborLeft = pathSelf2;
-		btn2.FocusNeighborRight = pathSelf2;
+		var newGameButton = _mainMenuButtons[0];
+		var instructionsButton = _mainMenuButtons[1];
+		var quitButton = _mainMenuButtons[2];
+		var pathSelf0 = newGameButton.GetPathTo(newGameButton);
+		var pathSelf1 = instructionsButton.GetPathTo(instructionsButton);
+		var pathSelf2 = quitButton.GetPathTo(quitButton);
+		newGameButton.FocusNeighborTop = pathSelf0;
+		newGameButton.FocusNeighborBottom = newGameButton.GetPathTo(instructionsButton);
+		newGameButton.FocusNeighborLeft = pathSelf0;
+		newGameButton.FocusNeighborRight = pathSelf0;
+		instructionsButton.FocusNeighborTop = instructionsButton.GetPathTo(newGameButton);
+		instructionsButton.FocusNeighborBottom = instructionsButton.GetPathTo(quitButton);
+		instructionsButton.FocusNeighborLeft = pathSelf1;
+		instructionsButton.FocusNeighborRight = pathSelf1;
+		quitButton.FocusNeighborTop = quitButton.GetPathTo(instructionsButton);
+		quitButton.FocusNeighborBottom = pathSelf2;
+		quitButton.FocusNeighborLeft = pathSelf2;
+		quitButton.FocusNeighborRight = pathSelf2;
 
-		GetNode<Button>("VBoxContainer/NewGameButton").Pressed += OnNewGamePressed;
-		GetNode<Button>("VBoxContainer/InstructionsButton").Pressed += OnInstructionsPressed;
-		GetNode<Button>("VBoxContainer/QuitButton").Pressed += OnQuitPressed;
+		newGameButton.Pressed += OnNewGamePressed;
+		instructionsButton.Pressed += OnInstructionsPressed;
+		quitButton.Pressed += OnQuitPressed;
+		_closeInstructionsButton.Pressed += OnCloseInstructionsPressed;
 
-		GetNode<Button>("InstructionsPanel/CenterContainer/Panel/VBox/CloseInstructionsButton").Pressed +=
-			OnCloseInstructionsPressed;
-
-		if (GetNodeOrNull<Control>("VBoxContainer/Spacer") is Control spacer)
-			spacer.FocusMode = FocusModeEnum.None;
-		GetNode<Control>("VBoxContainer").FocusMode = FocusModeEnum.None;
-
+		GetNode<Control>("CenterContainer/VBoxContainer").FocusMode = FocusModeEnum.None;
 		StripFocusFromNonButtons(GetNode("InstructionsPanel"));
-		var closeBtn = GetNode<Button>("InstructionsPanel/CenterContainer/Panel/VBox/CloseInstructionsButton");
-		closeBtn.FocusMode = FocusModeEnum.All;
+		_closeInstructionsButton.FocusMode = FocusModeEnum.None;
 
 		ApplyInstructionsText();
-
 		StripFocusFromDecorativeMainMenuControls();
 
 		_focusIndex = 0;
@@ -74,123 +73,174 @@ public partial class MainMenu : Control
 			Callable.From(GrabInitialMainMenuFocus).CallDeferred();
 	}
 
-	private void GrabInitialMainMenuFocus()
-	{
-		if (!IsInsideTree() || _mainMenuButtons == null || _mainMenuButtons.Length == 0)
-			return;
-		_mainMenuButtons[0].GrabFocus();
-		SyncFocusIndexFromFocusOwner();
-		_stickNavLatched = Mathf.Abs(ReadMenuVerticalAxis()) > StickNavThreshold;
-	}
-
-	private void StripFocusFromDecorativeMainMenuControls()
-	{
-		foreach (var path in new[] { "Backround", "DarkOverlay" })
-		{
-			if (GetNodeOrNull<Control>(path) is not Control c)
-				continue;
-			c.FocusMode = FocusModeEnum.None;
-			c.MouseFilter = Control.MouseFilterEnum.Ignore;
-		}
-	}
-
 	public override void _Process(double delta)
 	{
 		if (_menuStickArmDelay > 0f)
 			_menuStickArmDelay = Mathf.Max(0f, _menuStickArmDelay - (float)delta);
 
-		if (!HasJoypadConnected())
-			return;
-
 		if (GetNode<Control>("InstructionsPanel").Visible)
 		{
-			if (Input.IsActionJustPressed("jump"))
+			ProcessInstructionsScroll(delta);
+
+			if (HasJoypadConnected() && Input.IsActionJustPressed("jump"))
 			{
 				CloseInstructions();
 				GetViewport().SetInputAsHandled();
 			}
+
 			return;
 		}
 
-		SyncFocusIndexFromFocusOwner();
-		RecoverMainMenuFocusIfLost();
+		if (!HasJoypadConnected())
+			return;
 
 		if (_menuStickArmDelay <= 0f)
 			ProcessMainMenuStickNavigation();
+
+		EnforceMainMenuFocusForJoypad();
 
 		if (Input.IsActionJustPressed("jump"))
 			TryActivateFocusedMainMenuButton();
 	}
 
-	private void SyncFocusIndexFromFocusOwner()
+	public override void _UnhandledInput(InputEvent @event)
 	{
-		if (_mainMenuButtons == null)
-			return;
-		if (GetViewport().GuiGetFocusOwner() is not Button b)
-			return;
-		for (int i = 0; i < _mainMenuButtons.Length; i++)
+		if (GetNode<Control>("InstructionsPanel").Visible)
 		{
-			if (_mainMenuButtons[i] == b)
+			if (@event is InputEventKey keyEvent && keyEvent.Pressed && keyEvent.Keycode == Key.Escape)
 			{
-				_focusIndex = i;
-				return;
+				CloseInstructions();
+				GetViewport().SetInputAsHandled();
 			}
+			else if (@event.IsAction("ui_up") || @event.IsAction("ui_down")
+				|| @event.IsAction("ui_left") || @event.IsAction("ui_right"))
+			{
+				GetViewport().SetInputAsHandled();
+			}
+
+			return;
+		}
+
+		if (!HasJoypadConnected())
+			return;
+
+		if (@event.IsAction("ui_up") || @event.IsAction("ui_down")
+			|| @event.IsAction("ui_left") || @event.IsAction("ui_right"))
+		{
+			GetViewport().SetInputAsHandled();
 		}
 	}
 
-	/// <summary>
-	/// Yksi askel per tatin ulos–sisään -sykli; akseli InputMapista (move_forward / move_back), ei yksittäistä joypad-ID:tä.
-	/// </summary>
+	private void GrabInitialMainMenuFocus()
+	{
+		if (!IsInsideTree() || _mainMenuButtons == null || _mainMenuButtons.Length == 0)
+			return;
+
+		_focusIndex = 0;
+		_mainMenuButtons[0].GrabFocus();
+		_stickNavLatched = Mathf.Abs(ReadMenuVerticalAxis()) > StickNavThreshold;
+	}
+
+	private void StripFocusFromDecorativeMainMenuControls()
+	{
+		foreach (var path in new[] { "Background", "DarkOverlay" })
+		{
+			if (GetNodeOrNull<Control>(path) is not Control control)
+				continue;
+
+			control.FocusMode = FocusModeEnum.None;
+			control.MouseFilter = Control.MouseFilterEnum.Ignore;
+		}
+	}
+
+	private void ProcessInstructionsScroll(double delta)
+	{
+		if (_instructionsScroll == null)
+			return;
+
+		var scrollBar = _instructionsScroll.GetVScrollBar();
+		if (scrollBar.MaxValue <= scrollBar.MinValue + 0.5f)
+			return;
+
+		float stickY = ReadMenuVerticalAxis();
+		bool stickNeutral = Mathf.Abs(stickY) < StickNeutralRelease;
+		bool dpadNeutral = !Input.IsActionPressed("ui_down") && !Input.IsActionPressed("ui_up");
+
+		if (!stickNeutral)
+		{
+			scrollBar.Value = Mathf.Clamp(
+				scrollBar.Value + stickY * InstructionsScrollSpeed * (float)delta,
+				scrollBar.MinValue,
+				scrollBar.MaxValue);
+			_instructionsScrollLatched = true;
+			return;
+		}
+
+		if (stickNeutral && dpadNeutral)
+			_instructionsScrollLatched = false;
+
+		if (_instructionsScrollLatched)
+			return;
+
+		if (Input.IsActionJustPressed("ui_down"))
+		{
+			scrollBar.Value = Mathf.Min(scrollBar.MaxValue, scrollBar.Value + InstructionsScrollStep);
+			_instructionsScrollLatched = true;
+		}
+		else if (Input.IsActionJustPressed("ui_up"))
+		{
+			scrollBar.Value = Mathf.Max(scrollBar.MinValue, scrollBar.Value - InstructionsScrollStep);
+			_instructionsScrollLatched = true;
+		}
+	}
+
+	private void ResetInstructionsScroll()
+	{
+		if (_instructionsScroll == null)
+			return;
+
+		_instructionsScroll.ScrollVertical = 0;
+	}
+
+	private void EnforceMainMenuFocusForJoypad()
+	{
+		if (_mainMenuButtons == null || _mainMenuButtons.Length == 0)
+			return;
+
+		var expected = _mainMenuButtons[_focusIndex];
+		if (GetViewport().GuiGetFocusOwner() != expected)
+			expected.GrabFocus();
+	}
+
 	private void ProcessMainMenuStickNavigation()
 	{
 		float stickY = ReadMenuVerticalAxis();
-		bool beyond = Mathf.Abs(stickY) > StickNavThreshold;
-		if (beyond && !_stickNavLatched)
+		bool stickNeutral = Mathf.Abs(stickY) < StickNeutralRelease;
+		bool dpadNeutral = !Input.IsActionPressed("ui_down") && !Input.IsActionPressed("ui_up");
+
+		if (stickNeutral && dpadNeutral)
 		{
-			if (stickY < 0f)
-				MoveMainMenuFocus(-1);
-			else
-				MoveMainMenuFocus(1);
+			_stickNavLatched = false;
+			return;
+		}
+
+		if (_stickNavLatched)
+			return;
+
+		if (Input.IsActionJustPressed("ui_down") || stickY > StickNavThreshold)
+		{
+			MoveMainMenuFocus(1);
 			_stickNavLatched = true;
 		}
-		else if (!beyond && Mathf.Abs(stickY) < StickNeutralRelease)
-			_stickNavLatched = false;
-	}
-
-	public override void _UnhandledInput(InputEvent @event)
-	{
-		if (!GetNode<Control>("InstructionsPanel").Visible)
-			return;
-		if (@event is InputEventKey k && k.Pressed && k.Keycode == Key.Escape)
+		else if (Input.IsActionJustPressed("ui_up") || stickY < -StickNavThreshold)
 		{
-			CloseInstructions();
-			GetViewport().SetInputAsHandled();
+			MoveMainMenuFocus(-1);
+			_stickNavLatched = true;
 		}
 	}
 
 	private static bool HasJoypadConnected() => Input.GetConnectedJoypads().Count > 0;
 
-	private void RecoverMainMenuFocusIfLost()
-	{
-		if (_mainMenuButtons == null || _mainMenuButtons.Length == 0)
-			return;
-		if (GetViewport().GuiGetFocusOwner() is Button b)
-		{
-			foreach (var mb in _mainMenuButtons)
-			{
-				if (mb == b)
-					return;
-			}
-		}
-
-		_mainMenuButtons[Mathf.Clamp(_focusIndex, 0, _mainMenuButtons.Length - 1)].GrabFocus();
-		SyncFocusIndexFromFocusOwner();
-	}
-
-	/// <summary>
-	/// Käytä InputMapin move_forward / move_back (device -1, deadzone) — ei vain "ensimmäistä" joypad-ID:tä,
-	/// joka Windowsilla voi olla virtuaaliohjain ja vääristää päävalikon tattia.
-	/// </summary>
 	private static float ReadMenuVerticalAxis()
 		=> Input.GetAxis("move_forward", "move_back");
 
@@ -198,15 +248,15 @@ public partial class MainMenu : Control
 	{
 		if (_mainMenuButtons == null || _mainMenuButtons.Length == 0)
 			return;
+
 		_focusIndex = Mathf.Clamp(_focusIndex + delta, 0, _mainMenuButtons.Length - 1);
 		_mainMenuButtons[_focusIndex].GrabFocus();
-		SyncFocusIndexFromFocusOwner();
 	}
 
 	private void TryActivateFocusedMainMenuButton()
 	{
-		RecoverMainMenuFocusIfLost();
-		SyncFocusIndexFromFocusOwner();
+		EnforceMainMenuFocusForJoypad();
+
 		switch (_focusIndex)
 		{
 			case 0:
@@ -228,8 +278,9 @@ public partial class MainMenu : Control
 
 		if (node is BaseButton)
 			return;
-		if (node is Control c)
-			c.FocusMode = FocusModeEnum.None;
+
+		if (node is Control control)
+			control.FocusMode = FocusModeEnum.None;
 	}
 
 	private void ApplyInstructionsText()
@@ -262,19 +313,24 @@ public partial class MainMenu : Control
 	private void OpenInstructions()
 	{
 		GetNode<Control>("InstructionsPanel").Visible = true;
+		_closeInstructionsButton.FocusMode = FocusModeEnum.All;
 		_stickNavLatched = true;
-		GetNode<Button>("InstructionsPanel/CenterContainer/Panel/VBox/CloseInstructionsButton").GrabFocus();
+		_instructionsScrollLatched = true;
+		ResetInstructionsScroll();
+		Callable.From(ResetInstructionsScroll).CallDeferred();
+		_closeInstructionsButton.GrabFocus();
 	}
 
 	private void CloseInstructions()
 	{
 		GetNode<Control>("InstructionsPanel").Visible = false;
+		_closeInstructionsButton.FocusMode = FocusModeEnum.None;
 		_menuStickArmDelay = MenuStickArmDelaySec;
 		_stickNavLatched = true;
+
 		if (HasJoypadConnected() && _mainMenuButtons != null && _mainMenuButtons.Length > 0)
 		{
 			_mainMenuButtons[Mathf.Clamp(_focusIndex, 0, _mainMenuButtons.Length - 1)].GrabFocus();
-			SyncFocusIndexFromFocusOwner();
 		}
 	}
 
@@ -291,6 +347,7 @@ public partial class MainMenu : Control
 
 		"[b]Ohjain (DualSense / vastaava)[/b]\n" +
 		"• Päävalikko: [b]vasen tatti[/b] valitsee rivin, [b]Cross (X)[/b] vahvistaa ([i]jump[/i]).\n" +
+		"• Peliohjeet: [b]vasen tatti ylös/alas[/b] scrollaa tekstiä, [b]Cross[/b] tai [b]Esc[/b] sulkee.\n" +
 		"• Liike: [b]vasen tatti[/b]\n" +
 		"• Kamera: [b]oikea tatti[/b]\n" +
 		"• Hyppy: [b]Cross (Ristinäppäin)[/b]\n" +

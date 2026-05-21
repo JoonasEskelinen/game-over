@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://d1lwl0yd7ikli"]
 
 [ext_resource type="Script" uid="uid://bw77tqdnurqth" path="res://scenes/ui/GameOver.cs" id="1_60xr3"]
+[ext_resource type="Texture2D" uid="uid://dw72bm55lhtf2" path="res://assets/textures/IMG-20260319-WA0014.jpg" id="2_bg"]
 
 [sub_resource type="LabelSettings" id="LabelSettings_fu4wh"]
 font_size = 72
@@ -8,9 +9,6 @@ font_color = Color(1, 0.19, 0.19, 1)
 
 [sub_resource type="LabelSettings" id="LabelSettings_x6o8e"]
 font_size = 28
-
-[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_60xr3"]
-load_path = "res://.godot/imported/IMG-20260319-WA0014.jpg-f51dad00567bde3ea0f07292a38e2f74.ctex"
 
 [node name="GameOver" type="Control" unique_id=852999063]
 layout_mode = 3
@@ -21,6 +19,18 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_60xr3")
 
+[node name="Background" type="TextureRect" parent="." unique_id=891256856]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("2_bg")
+expand_mode = 1
+stretch_mode = 5
+
 [node name="Overlay" type="ColorRect" parent="." unique_id=1052221011]
 layout_mode = 1
 anchors_preset = 15
@@ -28,6 +38,8 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
+color = Color(0, 0, 0, 0)
 
 [node name="CenterContainer" type="CenterContainer" parent="." unique_id=781263707]
 layout_mode = 1
@@ -38,29 +50,29 @@ grow_horizontal = 2
 grow_vertical = 2
 
 [node name="VBoxContainer" type="VBoxContainer" parent="CenterContainer" unique_id=93215535]
+custom_minimum_size = Vector2(350, 0)
 layout_mode = 2
+theme_override_constants/separation = 16
 alignment = 1
 
 [node name="GameOverLabel" type="Label" parent="CenterContainer/VBoxContainer" unique_id=194100273]
 layout_mode = 2
 text = "GAME OVER"
 label_settings = SubResource("LabelSettings_fu4wh")
+horizontal_alignment = 1
 
 [node name="SubtitleLabel" type="Label" parent="CenterContainer/VBoxContainer" unique_id=468729635]
 layout_mode = 2
 text = "Kaikki elämät käytetty"
 label_settings = SubResource("LabelSettings_x6o8e")
+horizontal_alignment = 1
 
-[node name="RetryButton" type="Button" parent="CenterContainer/VBoxContainer" unique_id=798226842]
+[node name="NewGameButton" type="Button" parent="CenterContainer/VBoxContainer" unique_id=798226842]
+custom_minimum_size = Vector2(350, 65)
 layout_mode = 2
-text = "Retry"
+text = "Uusi peli"
 
 [node name="MainMenuButton" type="Button" parent="CenterContainer/VBoxContainer" unique_id=1956606536]
+custom_minimum_size = Vector2(350, 65)
 layout_mode = 2
-text = "Main Menu"
-
-[node name="TextureRect" type="TextureRect" parent="." unique_id=891256856]
-layout_mode = 0
-offset_right = 40.0
-offset_bottom = 40.0
-texture = SubResource("CompressedTexture2D_60xr3")
+text = "Päävalikko"

@@ -130,7 +130,7 @@ public partial class EnemyLevel3 : CharacterBody3D
 
 				string chaseClip = !string.IsNullOrEmpty(_moveClip) ? _moveClip : _strikeClip;
 				if (_animationPlayer != null && !string.IsNullOrEmpty(chaseClip)
-				    && _animationPlayer.CurrentAnimation != chaseClip)
+					&& _animationPlayer.CurrentAnimation != chaseClip)
 					_animationPlayer.Play(chaseClip);
 			}
 			else
@@ -139,7 +139,7 @@ public partial class EnemyLevel3 : CharacterBody3D
 				velocity.Z = 0f;
 
 				if (_animationPlayer != null && !string.IsNullOrEmpty(_strikeClip)
-				    && _animationPlayer.CurrentAnimation != _strikeClip)
+					&& _animationPlayer.CurrentAnimation != _strikeClip)
 					_animationPlayer.Play(_strikeClip);
 
 				_drainTimer -= dt;

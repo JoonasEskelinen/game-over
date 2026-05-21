@@ -3,11 +3,13 @@
 [ext_resource type="Script" path="res://scripts/enemies/BossLevel3.cs" id="1_script"]
 [ext_resource type="PackedScene" uid="uid://txqyy43ursth" path="res://assets/models/Level3_BossEnemy/boss_level3.glb" id="2_visual"]
 
-[sub_resource type="SphereShape3D" id="SphereShape3D_hurt"]
-radius = 2.75
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_hurt"]
+radius = 3.8
+height = 7.5
 
 [node name="BossLevel3" type="Node3D"]
 script = ExtResource("1_script")
+PelaajaAktivointiSädeXZ = 46.0
 
 [node name="Visual" parent="." instance=ExtResource("2_visual")]
 
@@ -17,5 +19,5 @@ monitoring = true
 monitorable = false
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="HurtArea"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.1, 0)
-shape = SubResource("SphereShape3D_hurt")
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.8, 0)
+shape = SubResource("CapsuleShape3D_hurt")

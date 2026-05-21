@@ -11,8 +11,6 @@
 [ext_resource type="PackedScene" uid="uid://dcl7fiqplg31j" path="res://assets/models/nature/glTF/CommonTree_4.gltf" id="10_t4"]
 [ext_resource type="Script" uid="uid://wmx8uef4qdaq" path="res://scripts/enemies/EnemyLevel3Spawner.cs" id="11_l3spawner"]
 [ext_resource type="PackedScene" uid="uid://6irff44v8env" path="res://scenes/enemies/Enemy_Level3.tscn" id="12_en_l3"]
-[ext_resource type="PackedScene" uid="uid://0aem52h3rph" path="res://assets/models/nature/glTF/Rock_Medium_3.gltf" id="12_t4txi"]
-[ext_resource type="PackedScene" uid="uid://c8spe10lgxrcu" path="res://assets/models/nature/glTF/Rock_Medium_1.gltf" id="13_apo5x"]
 [ext_resource type="Script" uid="uid://b7k3m2n8pqxw1" path="res://scripts/levels/Level3GroundAlign.cs" id="13_l3align"]
 [ext_resource type="Script" uid="uid://c7rockspwnl31" path="res://scripts/levels/Level3RollingRockSpawner.cs" id="14_rocksp"]
 [ext_resource type="PackedScene" uid="uid://butvkmvducgo3" path="res://scenes/hazards/RollingRockLevel3.tscn" id="15_rockscn"]
@@ -22,6 +20,8 @@
 [ext_resource type="Script" uid="uid://tdh57ghrgew8" path="res://scripts/levels/Level3SpecialDrone.cs" id="19_l3drone"]
 [ext_resource type="PackedScene" uid="uid://cfvc3deuhghto" path="res://scenes/hazards/Level3DroneBomb.tscn" id="20_l3bomb"]
 [ext_resource type="Script" uid="uid://dla3rp7vmjqg2" path="res://scripts/levels/Level3RoadCenterDashes.cs" id="21_l3cndsh"]
+[ext_resource type="Script" uid="uid://l3deckpkmrk1" path="res://scripts/levels/Level3DeckParkingMarkings.cs" id="22_l3deck"]
+[ext_resource type="Script" uid="uid://bf3c7hbco6l2y" path="res://scripts/levels/Level2CrateKokis.cs" id="22_o3ttr"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_l3drone"]
 radius = 0.22
@@ -108,7 +108,6 @@ MiekkaIskuSuuntaPuolikulma = 65.0
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -24, -8, 0)
 script = ExtResource("19_l3drone")
 BombScene = ExtResource("20_l3bomb")
-MoveSpeed = 10.0
 HoverGroundClearance = 3.5
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Level3SpecialDrone" unique_id=2065127778]
@@ -150,12 +149,14 @@ environment = SubResource("Environment_0ljxa")
 [node name="EnemyLevel3Spawner" type="Node3D" parent="." unique_id=3000999]
 script = ExtResource("11_l3spawner")
 EnemyScene = ExtResource("12_en_l3")
+TotalEnemiesToSpawn = 11
 
 [node name="Level3RollingRockSpawner" type="Node3D" parent="." unique_id=922737359]
 transform = Transform3D(0.8, 0, 0, 0, 0.8, 0, 0, 0, 0.8, 0, 0, 0)
 rotation_order = 5
 script = ExtResource("14_rocksp")
 KivienSkena = ExtResource("15_rockscn")
+"IlmestymisväliMaxSek" = 4.0
 
 [node name="World" type="Node3D" parent="." unique_id=1066280580]
 
@@ -170,6 +171,10 @@ size = Vector3(132, 0.3, 10.5)
 
 [node name="CenterLineDashes" type="Node3D" parent="World/UphillRoadRoot" unique_id=3001002]
 script = ExtResource("21_l3cndsh")
+
+[node name="Level3CrateKokis" type="Node3D" parent="World/UphillRoadRoot" unique_id=2067130333]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -18, 0.28, 0)
+script = ExtResource("22_o3ttr")
 
 [node name="ForestEmbankment" type="CSGBox3D" parent="World/UphillRoadRoot" unique_id=3001004]
 transform = Transform3D(1.0000002, 0, 0, 0, 1.0000002, 0, 0, 0, 1, 0.072989516, 0.24053708, -7.9703236)
@@ -246,37 +251,60 @@ height = 0.35
 sides = 48
 
 [node name="ParkingLot" type="Node3D" parent="World" unique_id=3001003]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 91.15391, 22.425, 0.075930595)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 91.15391, 22.685, 0.075930595)
 
 [node name="Bay1" type="CSGBox3D" parent="World/ParkingLot" unique_id=3001011]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5, 0, -2.85)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4.9, 0, -5.35)
 material_override = SubResource("MatParkingBay")
 size = Vector3(2.35, 0.06, 4.6)
 
 [node name="Bay2" type="CSGBox3D" parent="World/ParkingLot" unique_id=3001012]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -2.85)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.45, 0, -5.35)
 material_override = SubResource("MatParkingBay")
 size = Vector3(2.35, 0.06, 4.6)
 
 [node name="Bay3" type="CSGBox3D" parent="World/ParkingLot" unique_id=3001013]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 0, -2.85)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -5.35)
 material_override = SubResource("MatParkingBay")
 size = Vector3(2.35, 0.06, 4.6)
 
 [node name="Bay4" type="CSGBox3D" parent="World/ParkingLot" unique_id=3001014]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5, 0, 2.85)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.45, 0, -5.35)
 material_override = SubResource("MatParkingBay")
 size = Vector3(2.35, 0.06, 4.6)
 
 [node name="Bay5" type="CSGBox3D" parent="World/ParkingLot" unique_id=3001015]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 2.85)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.9, 0, -5.35)
 material_override = SubResource("MatParkingBay")
 size = Vector3(2.35, 0.06, 4.6)
 
 [node name="Bay6" type="CSGBox3D" parent="World/ParkingLot" unique_id=3001016]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 0, 2.85)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4.9, 0, 5.35)
 material_override = SubResource("MatParkingBay")
 size = Vector3(2.35, 0.06, 4.6)
+
+[node name="Bay7" type="CSGBox3D" parent="World/ParkingLot" unique_id=3001017]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.45, 0, 5.35)
+material_override = SubResource("MatParkingBay")
+size = Vector3(2.35, 0.06, 4.6)
+
+[node name="Bay8" type="CSGBox3D" parent="World/ParkingLot" unique_id=3001018]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 5.35)
+material_override = SubResource("MatParkingBay")
+size = Vector3(2.35, 0.06, 4.6)
+
+[node name="Bay9" type="CSGBox3D" parent="World/ParkingLot" unique_id=3001019]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.45, 0, 5.35)
+material_override = SubResource("MatParkingBay")
+size = Vector3(2.35, 0.06, 4.6)
+
+[node name="Bay10" type="CSGBox3D" parent="World/ParkingLot" unique_id=3001020]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.9, 0, 5.35)
+material_override = SubResource("MatParkingBay")
+size = Vector3(2.35, 0.06, 4.6)
+
+[node name="DeckParkingMarkings" type="Node3D" parent="World/ParkingLot" unique_id=3001021]
+script = ExtResource("22_l3deck")
 
 [node name="BackdropMetsaHill" type="CSGBox3D" parent="World" unique_id=524539407]
 transform = Transform3D(0.99965316, -0.026333958, 0, 0.026333958, 0.99965316, 0, 0, 0, 1, -0.74376076, 24.78106, -11.062906)
@@ -346,7 +374,7 @@ script = ExtResource("16_tboss")
 RollingRockScene = ExtResource("15_rockscn")
 
 [node name="BossLevel3" parent="World/puijontorni/TowerBossRockThrower" unique_id=1531585101 instance=ExtResource("17_boss3")]
-transform = Transform3D(0.14338696, 0, -0.13942799, 0, 0.19999993, 0, 0.13942799, 0, 0.14338696, -0.023478746, -0.20404315, 0.038704872)
+transform = Transform3D(0.14338696, 0, -0.13942799, 0, 0.19999993, 0, 0.13942799, 0, 0.14338696, -0.05858183, -0.06930506, 0.038704872)
 
 [node name="CommonTree_51" parent="World" unique_id=261912648 instance=ExtResource("10_t4")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 116.40967, 22.721554, -16.965181)
@@ -482,12 +510,6 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -54.8092, -20.217787, -6.7314
 
 [node name="CommonTree_34" parent="World" unique_id=703175393 instance=ExtResource("8_pimnq")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -20.572308, -14.249662, -3.920922)
-
-[node name="Rock_Medium_32" parent="World" unique_id=893396899 instance=ExtResource("12_t4txi")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 60.778797, 22.595837, -0.6681543)
-
-[node name="Rock_Medium_12" parent="World" unique_id=1272877208 instance=ExtResource("13_apo5x")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 62.494965, 22.98578, 3.0867531)
 
 [node name="CommonTree_32" parent="." unique_id=1580322418 instance=ExtResource("9_2bnyt")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 74.51583, 22.60729, 28.169888)

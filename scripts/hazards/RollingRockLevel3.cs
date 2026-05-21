@@ -11,7 +11,7 @@ public partial class RollingRockLevel3 : RigidBody3D
 	[Export] public float DespawnBelowY = -120f;
 
 	public Node3D PendingRoadRoot;
-	public float PendingSpeedScale = 1f;
+	public float PendingSpeedScale = 4f;
 
 	/// <summary>Kiven pallovanteen säde (CollisionShape3D:n SphereShape3D) — käytetään vierintänopeuden laskuun.</summary>
 	[Export] public float RollRadius = 0.44f;

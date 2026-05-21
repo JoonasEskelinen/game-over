@@ -1,8 +1,9 @@
 using Godot;
 
 /// <summary>
-/// Level 2: näyttää laatikon (laatikko.glb); miekalla osuessa laatikko katoaa ja ilmestyy kokis.glb.
+/// Kenttäbonus: laatikko (laatikko.glb); miekalla osuessa laatikko katoaa ja ilmestyy kokis.glb.
 /// Kokiksen kosketus antaa yhden elämän <see cref="HealthComponent.TryGrantExtraLife"/> jos elämiä on menetetty.
+/// Käytössä esim. level_2 ja level_3 (sijainti asetetaan scenessä tien päälle).
 /// </summary>
 public partial class Level2CrateKokis : Node3D
 {

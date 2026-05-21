@@ -18,8 +18,12 @@ public partial class Level3SpecialDrone : CharacterBody3D
 	[Export] public float ActivateHeightAbovePlayer = 4.5f;
 	[Export] public Vector3 ActivateSpawnOffset = new(0.6f, 0f, 0f);
 	[Export] public float VisualUniformScale = 1f;
-	[Export] public float PommiJäähdytysSek = 0.55f;
+	[Export] public float PommiJäähdytysSek = 0.9f;
 	[Export] public Vector3 PommiSpawnOffset = new(0f, -0.35f, 0f);
+	/// <summary>Kuinka kaukana pelaajasta dronen saa lentää (XZ) — estää pommit bossille kentän alusta.</summary>
+	[Export] public float MaxEtäisyysPelaajastaXZ = 24f;
+	/// <summary>Vain yksi elossa oleva pommi kerrallaan.</summary>
+	[Export] public int MaxAktiivisetPommit = 1;
 	[Export] public float PommiLiipaisinLaukaisu = 0.4f;
 	[Export] public float PommiLiipaisinPalautus = 0.26f;
 	[Export] public float PommiPikaVetoMinimi = 0.38f;
@@ -177,6 +181,7 @@ public partial class Level3SpecialDrone : CharacterBody3D
 		yVel = Mathf.Clamp(yVel, -MaxVerticalSpeed, MaxVerticalSpeed);
 		Velocity = new Vector3(wish.X, yVel, wish.Z);
 		MoveAndSlide();
+		ClampHorizontalDistanceFromPlayer();
 
 		if (_player.SyvyysliikeKäytössä)
 		{
@@ -241,9 +246,35 @@ public partial class Level3SpecialDrone : CharacterBody3D
 			_targetHoverY = _player.GlobalPosition.Y + ActivateHeightAbovePlayer + _manualHeightOffset;
 	}
 
+	private void ClampHorizontalDistanceFromPlayer()
+	{
+		if (_player == null || !GodotObject.IsInstanceValid(_player) || MaxEtäisyysPelaajastaXZ <= 0f)
+			return;
+		var delta = GlobalPosition - _player.GlobalPosition;
+		delta.Y = 0f;
+		float max = MaxEtäisyysPelaajastaXZ;
+		if (delta.LengthSquared() <= max * max)
+			return;
+		var clamped = _player.GlobalPosition + delta.Normalized() * max;
+		GlobalPosition = new Vector3(clamped.X, GlobalPosition.Y, clamped.Z);
+	}
+
+	private int CountActiveBombs()
+	{
+		int n = 0;
+		foreach (var node in GetTree().GetNodesInGroup("level3_drone_bomb"))
+		{
+			if (node is Level3DroneBomb b && GodotObject.IsInstanceValid(b) && b.IsInsideTree())
+				n++;
+		}
+		return n;
+	}
+
 	private void TryDropBomb()
 	{
 		if (_bombCooldown > 0f)
+			return;
+		if (MaxAktiivisetPommit > 0 && CountActiveBombs() >= MaxAktiivisetPommit)
 			return;
 
 		float analog = _player != null && GodotObject.IsInstanceValid(_player)

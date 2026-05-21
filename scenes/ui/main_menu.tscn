@@ -12,53 +12,53 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_fe2o3")
 
-[node name="Backround" type="TextureRect" parent="." unique_id=105870890]
+[node name="Background" type="TextureRect" parent="." unique_id=105870890]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
 texture = ExtResource("2_1g8jr")
+expand_mode = 1
 stretch_mode = 5
 
 [node name="DarkOverlay" type="ColorRect" parent="." unique_id=1325993758]
-layout_mode = 0
-offset_right = 40.0
-offset_bottom = 40.0
-
-[node name="VBoxContainer" type="VBoxContainer" parent="." unique_id=1920613102]
-custom_minimum_size = Vector2(350, 0)
 layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -175.0
-offset_top = -176.5
-offset_right = 175.0
-offset_bottom = 176.5
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
+color = Color(0, 0, 0, 0.45)
+
+[node name="CenterContainer" type="CenterContainer" parent="." unique_id=1920613102]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="CenterContainer" unique_id=1920613103]
+custom_minimum_size = Vector2(350, 0)
+layout_mode = 2
+theme_override_constants/separation = 16
 alignment = 1
 
-[node name="Spacer" type="Control" parent="VBoxContainer" unique_id=102411862]
-custom_minimum_size = Vector2(0, 50)
-layout_mode = 2
-
-[node name="NewGameButton" type="Button" parent="VBoxContainer" unique_id=1491678060]
-clip_contents = true
-custom_minimum_size = Vector2(100, 65)
+[node name="NewGameButton" type="Button" parent="CenterContainer/VBoxContainer" unique_id=1491678060]
+custom_minimum_size = Vector2(350, 65)
 layout_mode = 2
 text = "Uusi peli"
 
-[node name="InstructionsButton" type="Button" parent="VBoxContainer" unique_id=223856692]
+[node name="InstructionsButton" type="Button" parent="CenterContainer/VBoxContainer" unique_id=223856692]
 custom_minimum_size = Vector2(350, 65)
 layout_mode = 2
 text = "Peliohjeet"
 
-[node name="QuitButton" type="Button" parent="VBoxContainer" unique_id=2085955237]
+[node name="QuitButton" type="Button" parent="CenterContainer/VBoxContainer" unique_id=2085955237]
 custom_minimum_size = Vector2(350, 65)
 layout_mode = 2
 text = "Poistu"

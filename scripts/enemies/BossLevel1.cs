@@ -11,10 +11,10 @@ using Godot;
 ///
 /// BOSSIN KÄYTTÄYTYMINEN:
 /// 1. Dancing-vaihe: bossi tanssii paikallaan satunnaisen ajan
-/// 2. Charging-vaihe: reunalle → kierto kentällä → suora lähestyminen pelaajaan → spin
+/// 2. Charging-vaihe: reunalle TAI suoraan tanssipaikalta (yllätyssyöksy) → kierto / suora linjaus → spin
 /// 3. Bossi voi ottaa vahinkoa vain tanssiessaan (vahva isku R1 tappaa)
-/// 4. Spin osuu pelaajaan lähietäisyydellä — 1 HP ellei torjuta
-/// 5. Jos pelaaja torjuu kilvellä, bossi horjahtaa taaksepäin.
+/// 4. Spin osuu pelaajaan lähietäisyydellä — 1 HP ellei torjuta kilvellä (miekka+kilpi)
+/// 5. Kilven torjunta: bossi pomppaa ylöspäin — selkeä onnistumispalaute
 /// </summary>
 public partial class BossLevel1 : CharacterBody3D
 {
@@ -59,18 +59,23 @@ public partial class BossLevel1 : CharacterBody3D
 	/// <summary>Nopeus (m/s) jolla bossi liikkuu pelaajaa kohti spin-animaation aikana.</summary>
 	[Export] public float SpinHyökkäysNopeus = 6.0f;
 
-	/// <summary>Vahinko rekisteröityy vain jos pelaaja on tämän sisällä spin-kontaktihetkellä.
-	/// Suurempi kuin trigger-etäisyys koska bossi liikkuu animaation aikana.</summary>
-	[Export] public float SpinOsumaEtäisyys = 4.5f;
+	/// <summary>Lisäetäisyys (m) kapselien ulkoreunan jälkeen — spin osuu kun pelaaja on tämän sisällä.</summary>
+	[Export] public float SpinOsumaEtäisyys = 1.0f;
 
-	/// <summary>Spin-animaation kohta (0–1) jolloin osuma / torjunta tarkistetaan.</summary>
-	[Export] public float SpinOsumaAnimFraaktio = 0.5f;
+	/// <summary>Spin-animaation kohta (0–1) jolloin ensimmäinen osumayritys tehdään (varmistus timerilla).</summary>
+	[Export] public float SpinOsumaAnimFraaktio = 0.45f;
 
-	/// <summary>Spin: kilven torjunnan kartion puolikulma (°). Kapeampi kuin aiempi leveä tila — torjunta vaatii tarkemman suunnan.</summary>
-	[Export] public float SpinTorjuntaKilpiPuolikulma = 46f;
+	/// <summary>Spin: osumaikkunan alku animaatiossa (0–1).</summary>
+	[Export] public float SpinOsumaIkkunaAlku = 0.22f;
 
-	/// <summary>Spin: uhkan XZ-piste lerppaa kohti pelaajaa (0–1). Pieni arvo = uhka pysyy bossin suunnassa (tiukempi kilpi).</summary>
-	[Export] public float SpinTorjuntaUhkaLerpPelaajaan = 0.18f;
+	/// <summary>Spin: osumaikkunan loppu animaatiossa (0–1).</summary>
+	[Export] public float SpinOsumaIkkunaLoppu = 0.88f;
+
+	/// <summary>Spin: kilven torjunnan kartion puolikulma (°). 0 = pelaajan oletuskilpi (<see cref="PlayerController.KilpiTorjuntaPuolikulma"/>).</summary>
+	[Export] public float SpinTorjuntaKilpiPuolikulma = 0f;
+
+	/// <summary>Spin: uhkan XZ-piste lerppaa kohti pelaajaa (0–1). Korkea = helpompi kilven suunta.</summary>
+	[Export] public float SpinTorjuntaUhkaLerpPelaajaan = 0.72f;
 
 	/// <summary>Torjuntahorjahduksen karkea siirtymä (m) — ei teleporttia; pieni arvo välttää &quot;kimpoamisen&quot;.</summary>
 	[Export] public float TorjuntaHorjahdusVoima = 1.35f;
@@ -80,6 +85,15 @@ public partial class BossLevel1 : CharacterBody3D
 
 	/// <summary>Palautumisviive horjahduksen jälkeen ennen tanssiin paluuta (s).</summary>
 	[Export] public float TorjuntaPalautumisViive = 0.35f;
+
+	/// <summary>Kilpi torjuu spin-hyökkäyksen: bossin alku-nopeus ylöspäin (m/s).</summary>
+	[Export] public float TorjuntaYlöspomppuNopeus = 9.5f;
+
+	/// <summary>Kilven torjunta: pieni työntö poispäin pelaajasta (m/s).</summary>
+	[Export] public float TorjuntaKilvestäHorisontaalinenTyöntö = 2.4f;
+
+	/// <summary>Kilven torjunta: pomppu kestää näin kauan ennen tanssiin paluuta (s).</summary>
+	[Export] public float TorjuntaYlöspomppuKesto = 0.78f;
 
 	/// <summary>Spin FBX:n pituus fallback (s) jos klipin pituus on 0.</summary>
 	[Export] public float SpinFallbackPituusSekuntia = 1.5f;
@@ -113,6 +127,21 @@ public partial class BossLevel1 : CharacterBody3D
 	/// <summary>Aika tanssin päättymisen ja kameran palautumisen jälkeen ennen juoksua (run).</summary>
 	[Export] public float ViiveTanssinJälkeenSekuntia = 1.0f;
 
+	/// <summary>Todennäköisyys (0–1): seuraava syöksy lähtee suoraan tanssipaikalta eikä areenan reunalta.</summary>
+	[Export] public float TanssistaSuoraSyöksyTodennäköisyys = 0.38f;
+
+	/// <summary>Yllätyssyöksy: tanssin minimikesto ennen laukaisua (s).</summary>
+	[Export] public float TanssistaSuoraSyöksyMinTanssiSekuntia = 1.5f;
+
+	/// <summary>Yllätyssyöksy: tanssin maksimikesto ennen pakotettua syöksyä (s).</summary>
+	[Export] public float TanssistaSuoraSyöksyMaxTanssiSekuntia = 3.2f;
+
+	/// <summary>Yllätyssyöksy: pelaajan XZ-etäisyys jolla syöksy voi laueta tanssin aikana.</summary>
+	[Export] public float TanssistaSuoraSyöksyLaukaisuEtäisyys = 10f;
+
+	/// <summary>Yllätyssyöksy: pelaaja näin lähellä tanssin aikana → välitön syöksy (ei odoteta timeria).</summary>
+	[Export] public float TanssistaSuoraSyöksyAggressiivinenEtäisyys = 6.5f;
+
 	/// <summary>Syöksyn nopeus.</summary>
 	[Export] public float SyöksyNopeus = 10.5f;
 
@@ -121,6 +150,9 @@ public partial class BossLevel1 : CharacterBody3D
 
 	/// <summary>Juoksuklipin SpeedScale syöksyvaiheessa.</summary>
 	[Export] public float JuoksuClipSpeedScaleLatauksessa = 0.68f;
+
+	/// <summary>Syöksyn suunnan pehmennyksen nopeus (suurempi = reaktionopeampi käännös).</summary>
+	[Export] public float SyöksyOhjausPehmennys = 9.5f;
 
 	/// <summary>Areenan puolisäde.</summary>
 	[Export] public float AreenanReunanPuolikas = 13.5f;
@@ -249,6 +281,8 @@ public partial class BossLevel1 : CharacterBody3D
 	public bool IsChargingPhase => !_isDead && _phase == BossPhase.Charging;
 
 	private float _danceTimeLeft;
+	private float _danceElapsed;
+	private bool _surpriseChargeFromDance;
 	private float _postDanceWaitLeft;
 	private bool _waitingAfterDance;
 	private float _chargeTimeLeft;
@@ -284,6 +318,7 @@ public partial class BossLevel1 : CharacterBody3D
 
 	// Horjahdus (block stagger)
 	private bool _staggerActive;
+	private bool _staggerFromSpinBlock;
 	private float _staggerTimeLeft;
 	private Vector3 _staggerDirection;
 	private Tween _staggerTween;
@@ -291,6 +326,8 @@ public partial class BossLevel1 : CharacterBody3D
 	// Todellinen paikka edellisellä framella — jumiutuminen mitataan positiodeltasta
 	private Vector3 _prevPosition;
 	private float _realStuckTimer;
+	private Vector3 _chargeSteerDir = Vector3.Forward;
+	private float _cachedBossPlanarRadius;
 
 	// #region agent log
 	private static readonly string _agentLogPath = "debug-1be988.log";
@@ -370,12 +407,13 @@ public partial class BossLevel1 : CharacterBody3D
 		_animationPlayer.AnimationFinished += OnBossAnimationFinished;
 
 		_animationPlayer.Play(TanssiKlipinNimi);
-		_danceTimeLeft = (float)GD.RandRange(TanssiKestoMinSekuntia, TanssiKestoMaxSekuntia);
+		ScheduleNextDanceCycle();
 		_phase = BossPhase.Dancing;
 
 		ApplyBossTextures();
 		ApplyStandVerticalAdjustments();
 		SetupDanceHighlightLight();
+		CacheBossCapsuleRadius();
 
 		EmitSignal(SignalName.BossHealthChanged, _bossHealth, BossMaksimiTerveys);
 	}
@@ -689,7 +727,8 @@ public partial class BossLevel1 : CharacterBody3D
 
 		if (_phase == BossPhase.Charging && !_isDead)
 		{
-			SnapChargeBodyToFloor();
+			if (!_staggerFromSpinBlock || Velocity.Y <= 0.05f)
+				SnapChargeBodyToFloor();
 			if (!_chargingKickActive && !_hitReactPlaying && !_staggerActive)
 				TryChargeSeparationUnstick(dt);
 		}
@@ -723,21 +762,56 @@ public partial class BossLevel1 : CharacterBody3D
 			if (_postDanceWaitLeft <= 0f)
 			{
 				_waitingAfterDance = false;
-				BeginCharge();
+				BeginCharge(fromCurrentDanceSpot: false);
 			}
 			return;
 		}
 
+		_danceElapsed += dt;
 		_danceTimeLeft -= dt;
-		if (_danceTimeLeft > 0f) return;
+
+		if (_surpriseChargeFromDance && _danceElapsed >= TanssistaSuoraSyöksyMinTanssiSekuntia)
+		{
+			RefreshPlayerRefs();
+			float playerDist = GetPlanarDistToPlayer();
+			if (playerDist <= TanssistaSuoraSyöksyAggressiivinenEtäisyys
+				|| (_danceTimeLeft <= 0f && playerDist <= TanssistaSuoraSyöksyLaukaisuEtäisyys))
+			{
+				BeginCharge(fromCurrentDanceSpot: true);
+				return;
+			}
+		}
+
+		if (_danceTimeLeft > 0f)
+			return;
+
+		if (_surpriseChargeFromDance)
+		{
+			BeginCharge(fromCurrentDanceSpot: true);
+			return;
+		}
 
 		_waitingAfterDance = true;
 		_postDanceWaitLeft = Mathf.Max(0f, ViiveTanssinJälkeenSekuntia);
 		if (_postDanceWaitLeft <= 0f)
 		{
 			_waitingAfterDance = false;
-			BeginCharge();
+			BeginCharge(fromCurrentDanceSpot: false);
 		}
+	}
+
+	private void ScheduleNextDanceCycle()
+	{
+		_danceElapsed = 0f;
+		_surpriseChargeFromDance = GD.Randf() < Mathf.Clamp(TanssistaSuoraSyöksyTodennäköisyys, 0f, 1f);
+		if (_surpriseChargeFromDance)
+		{
+			float minD = Mathf.Max(0.35f, TanssistaSuoraSyöksyMinTanssiSekuntia);
+			float maxD = Mathf.Max(minD + 0.1f, TanssistaSuoraSyöksyMaxTanssiSekuntia);
+			_danceTimeLeft = (float)GD.RandRange(minD, maxD);
+		}
+		else
+			_danceTimeLeft = (float)GD.RandRange(TanssiKestoMinSekuntia, TanssiKestoMaxSekuntia);
 	}
 
 	private void FaceTowardActiveCamera()
@@ -801,23 +875,34 @@ public partial class BossLevel1 : CharacterBody3D
 	// SYÖKSYN ALOITUS
 	// ─────────────────────────────────────────────
 
-	private void BeginCharge()
+	private void BeginCharge(bool fromCurrentDanceSpot = false)
 	{
 		UpdateDanceHighlightLight(false);
 		_phase = BossPhase.Charging;
 		_chargingKickActive = false;
 		_kickTriggeredThisCharge = false;
 		_staggerActive = false;
-		_chargeRoutePhase = ChargeRoutePhase.Circuit;
-		_circuitElapsed = 0f;
-		_closingElapsed = 0f;
+		_staggerFromSpinBlock = false;
 		_mmaKickFallbackPending = false;
 		_chargeOrbitSign = GD.Randf() < 0.5f ? 1f : -1f;
 		CollisionMask = SyöksyTörmäysMaski;
 
-		Vector3 edge = PickArenaEdgeTowardPlayerOrRandom();
-		edge.Y = _floorY;
-		GlobalPosition = edge;
+		if (fromCurrentDanceSpot)
+		{
+			GlobalPosition = _standWorldPos;
+			_chargeRoutePhase = ChargeRoutePhase.Closing;
+			_circuitElapsed = SyöksyKiertoKestoSekuntia;
+			_closingElapsed = 0f;
+		}
+		else
+		{
+			Vector3 edge = PickArenaEdgeTowardPlayerOrRandom();
+			edge.Y = _floorY;
+			GlobalPosition = edge;
+			_chargeRoutePhase = ChargeRoutePhase.Circuit;
+			_circuitElapsed = 0f;
+			_closingElapsed = 0f;
+		}
 
 		FaceTowardPlayerFlat();
 
@@ -834,6 +919,7 @@ public partial class BossLevel1 : CharacterBody3D
 		initDir.Y = 0f;
 		if (initDir.LengthSquared() < 0.01f) initDir = Vector3.Forward;
 		else initDir = initDir.Normalized();
+		_chargeSteerDir = initDir;
 		float vy = IsOnFloor() ? 0f : Velocity.Y;
 		Velocity = new Vector3(initDir.X * SyöksyNopeus, vy, initDir.Z * SyöksyNopeus);
 		_chargeTimeLeft = SyöksyMaksimiKestoSekuntia;
@@ -856,11 +942,7 @@ public partial class BossLevel1 : CharacterBody3D
 				? toPlayerNorm.Cross(Vector3.Up).Normalized() * _chargeOrbitSign
 				: Vector3.Forward);
 
-		// Pieni wobble-efekti tekee liikkeestä orgaanisemman
-		float wobble = Mathf.Sin(_circuitElapsed * 2.5f) * 0.25f;
-		tangent = tangent.Rotated(Vector3.Up, wobble).Normalized();
-
-		// Sekoita tangentista kohti pelaajaa (orbit-paino säädettävissä)
+		// Pieni sekoitus tangentista kohti pelaajaa (orbit-paino säädettävissä)
 		float orb = Mathf.Clamp(SyöksyKiertoOrbitPaino, 0f, 1f);
 		Vector3 toP = toPlayerNorm.LengthSquared() > 0.01f ? toPlayerNorm : tangent;
 		Vector3 mix = tangent * orb + toP * (1f - orb);
@@ -936,27 +1018,7 @@ public partial class BossLevel1 : CharacterBody3D
 		// Spin-hyökkäys käynnissä — bossi liikkuu kohti pelaajaa koko animaation ajan (In Place -animaatio, liike koodissa)
 		if (_chargingKickActive)
 		{
-			ApplyChargeVerticalPhysics(dt);
-			if (!_kickDamageAppliedThisKick && _player != null && GodotObject.IsInstanceValid(_player))
-			{
-				Vector3 toP = _player.GlobalPosition - GlobalPosition;
-				toP.Y = 0f;
-				float dist = toP.Length();
-				if (dist > 0.5f)
-				{
-					Vector3 slideDir = toP.Normalized();
-					Velocity = new Vector3(slideDir.X * SpinHyökkäysNopeus, Velocity.Y, slideDir.Z * SpinHyökkäysNopeus);
-					FaceTowardPlayerFlat();
-				}
-				else
-				{
-					Velocity = new Vector3(0f, Velocity.Y, 0f);
-				}
-			}
-			else
-			{
-				Velocity = new Vector3(0f, Velocity.Y, 0f);
-			}
+			ProcessSpinAttackMovement(dt);
 			return;
 		}
 
@@ -1003,17 +1065,26 @@ public partial class BossLevel1 : CharacterBody3D
 		Vector3 steer;
 		if (_chargeRoutePhase == ChargeRoutePhase.Circuit)
 		{
-			// Kiertovaihe: tangentti + pieni vetovoima pelaajaan
 			Vector3 circuitDir = ComputeCircuitSteerPlanar(toPlayerDir);
 			steer = AdjustChargeDirForObstacles(circuitDir);
 		}
 		else
 		{
-			// Sulkemisvaihe: suoraan pelaajaan — EI esteiden kiertoa, MoveAndSlide hoitaa liukumisen
-			steer = toPlayerDir.LengthSquared() > 0.01f ? toPlayerDir : -GlobalTransform.Basis.Z with { Y = 0f };
-			if (steer.LengthSquared() > 0.01f) steer = steer.Normalized();
+			steer = toPlayerDir.LengthSquared() > 0.01f ? toPlayerDir : _chargeSteerDir;
+			if (steer.LengthSquared() > 0.01f)
+			{
+				steer = steer.Normalized();
+				var space = GetWorld3D()?.DirectSpaceState;
+				if (space != null)
+				{
+					Vector3 from = GlobalPosition + Vector3.Up * SyöksyEsteSäteenAlkuY;
+					if (RayChargeBlocked(space, from, steer, Mathf.Max(0.45f, SyöksyEsteSäde)))
+						steer = AdjustChargeDirForObstacles(steer);
+				}
+			}
 		}
 
+		steer = SmoothChargeSteer(steer, dt);
 		Velocity = new Vector3(steer.X * SyöksyNopeus, Velocity.Y, steer.Z * SyöksyNopeus);
 		FacePlanarDirection(steer);
 		ApplyChargeVerticalPhysics(dt);
@@ -1050,7 +1121,7 @@ public partial class BossLevel1 : CharacterBody3D
 			{
 				AgentDebugNdjson("H5", "stuck_return_dance",
 					$"{{\"stuckTime\":{_realStuckTimer:F2},\"dist\":{planarDistPlayer:F2}}}");
-				ReturnToDance();
+				ReturnToDance(anchorDanceAtCurrentPosition: true);
 				return;
 			}
 		}
@@ -1059,7 +1130,7 @@ public partial class BossLevel1 : CharacterBody3D
 		if (_chargeTimeLeft <= 0f
 			|| Mathf.Abs(GlobalPosition.X) > AreenanReunanPuolikas + 1.5f
 			|| Mathf.Abs(GlobalPosition.Z) > AreenanReunanPuolikas + 1.5f)
-			ReturnToDance();
+			ReturnToDance(anchorDanceAtCurrentPosition: true);
 	}
 
 	private void ApplyChargeVerticalPhysics(float dt)
@@ -1068,6 +1139,139 @@ public partial class BossLevel1 : CharacterBody3D
 			Velocity = new Vector3(Velocity.X, Velocity.Y - 35f * dt, Velocity.Z);
 		else
 			Velocity = new Vector3(Velocity.X, 0f, Velocity.Z);
+	}
+
+	private void ProcessSpinAttackMovement(float dt)
+	{
+		ApplyChargeVerticalPhysics(dt);
+		RefreshPlayerRefs();
+
+		if (_player != null && GodotObject.IsInstanceValid(_player))
+		{
+			Vector3 toP = _player.GlobalPosition - GlobalPosition;
+			toP.Y = 0f;
+			float dist = toP.Length();
+			if (dist > 0.12f)
+			{
+				Vector3 slideDir = toP / dist;
+				Velocity = new Vector3(slideDir.X * SpinHyökkäysNopeus, Velocity.Y, slideDir.Z * SpinHyökkäysNopeus);
+				FaceTowardPlayerFlat();
+			}
+			else
+				Velocity = new Vector3(0f, Velocity.Y, 0f);
+		}
+		else
+			Velocity = new Vector3(0f, Velocity.Y, 0f);
+
+		TryApplySpinHitDuringWindow();
+	}
+
+	private Vector3 SmoothChargeSteer(Vector3 targetSteer, float dt)
+	{
+		targetSteer.Y = 0f;
+		if (targetSteer.LengthSquared() < 1e-6f)
+			return _chargeSteerDir.LengthSquared() > 1e-6f ? _chargeSteerDir : Vector3.Forward;
+
+		targetSteer = targetSteer.Normalized();
+		if (_chargeSteerDir.LengthSquared() < 1e-6f)
+		{
+			_chargeSteerDir = targetSteer;
+			return _chargeSteerDir;
+		}
+
+		float t = Mathf.Clamp(dt * Mathf.Max(1f, SyöksyOhjausPehmennys), 0f, 1f);
+		_chargeSteerDir = _chargeSteerDir.Lerp(targetSteer, t).Normalized();
+		return _chargeSteerDir;
+	}
+
+	private void RefreshPlayerRefs()
+	{
+		if (_player == null || !GodotObject.IsInstanceValid(_player))
+		{
+			_player = GetTree().GetFirstNodeInGroup("player") as Node3D;
+			_playerController = _player as PlayerController;
+		}
+		else if (_playerController == null || !GodotObject.IsInstanceValid(_playerController))
+			_playerController = _player as PlayerController;
+	}
+
+	private void CacheBossCapsuleRadius()
+	{
+		var cap = GetNodeOrNull<CollisionShape3D>("CollisionShape3D")?.Shape as CapsuleShape3D;
+		if (cap == null)
+		{
+			_cachedBossPlanarRadius = 2.4f;
+			return;
+		}
+
+		Vector3 scale = GlobalTransform.Basis.Scale;
+		_cachedBossPlanarRadius = cap.Radius * Mathf.Max(scale.X, scale.Z);
+	}
+
+	private float GetBossPlanarRadius()
+	{
+		if (_cachedBossPlanarRadius <= 0.01f)
+			CacheBossCapsuleRadius();
+		return Mathf.Max(0.5f, _cachedBossPlanarRadius);
+	}
+
+	private float GetPlayerPlanarRadius()
+	{
+		if (_player == null || !GodotObject.IsInstanceValid(_player))
+			return 0.5f;
+
+		var cap = _player.GetNodeOrNull<CollisionShape3D>("CollisionShape3D")?.Shape as CapsuleShape3D;
+		if (cap == null)
+			return 0.5f;
+
+		Vector3 scale = _player.GlobalTransform.Basis.Scale;
+		return cap.Radius * Mathf.Max(scale.X, scale.Z);
+	}
+
+	private float GetSpinHitReachPlanar()
+		=> GetBossPlanarRadius() + GetPlayerPlanarRadius() + Mathf.Max(0.15f, SpinOsumaEtäisyys);
+
+	private float GetPlanarDistToPlayer()
+	{
+		if (_player == null || !GodotObject.IsInstanceValid(_player))
+			return float.MaxValue;
+		Vector3 w = _player.GlobalPosition - GlobalPosition;
+		w.Y = 0f;
+		return w.Length();
+	}
+
+	private bool IsPlayerInSpinHitRange()
+		=> GetPlanarDistToPlayer() <= GetSpinHitReachPlanar();
+
+	private float GetSpinAnimProgressFraction()
+	{
+		if (_animationPlayer == null || !_animationPlayer.HasAnimation(SpinKlipinNimi))
+			return 0f;
+
+		var anim = _animationPlayer.GetAnimation(SpinKlipinNimi);
+		float len = anim.Length > 0.02f ? (float)anim.Length : SpinFallbackPituusSekuntia;
+		if (len <= 0.02f)
+			return 0f;
+		return Mathf.Clamp((float)_animationPlayer.CurrentAnimationPosition / len, 0f, 1f);
+	}
+
+	private bool IsInsideSpinHitWindow()
+	{
+		float p = GetSpinAnimProgressFraction();
+		float start = Mathf.Clamp(SpinOsumaIkkunaAlku, 0f, 0.95f);
+		float end = Mathf.Clamp(SpinOsumaIkkunaLoppu, start + 0.05f, 1f);
+		return p >= start && p <= end;
+	}
+
+	private void TryApplySpinHitDuringWindow()
+	{
+		if (_kickDamageAppliedThisKick || !_chargingKickActive || _isDead)
+			return;
+		if (!IsInsideSpinHitWindow() || !IsPlayerInSpinHitRange())
+			return;
+
+		_kickDamageAppliedThisKick = true;
+		TryKickContactDamage(spinAttack: true);
 	}
 
 	// ─────────────────────────────────────────────
@@ -1114,16 +1318,15 @@ public partial class BossLevel1 : CharacterBody3D
 	private void OnSpinContactMoment()
 	{
 		if (_isDead || !_chargingKickActive || _kickDamageAppliedThisKick) return;
+		RefreshPlayerRefs();
 		if (_player == null || !GodotObject.IsInstanceValid(_player)) return;
 
-		Vector3 diff = _player.GlobalPosition - GlobalPosition;
-		diff.Y = 0f;
-		float dist = diff.Length();
-
-		if (dist > SpinOsumaEtäisyys)
+		float dist = GetPlanarDistToPlayer();
+		float reach = GetSpinHitReachPlanar();
+		if (dist > reach)
 		{
 			AgentDebugNdjson("H4", "spin_miss_too_far",
-				$"{{\"dist\":{dist:F2},\"maxHitRange\":{SpinOsumaEtäisyys:F2}}}");
+				$"{{\"dist\":{dist:F2},\"maxHitRange\":{reach:F2}}}");
 			return;
 		}
 
@@ -1138,7 +1341,7 @@ public partial class BossLevel1 : CharacterBody3D
 		_mmaKickFallbackPending = false;
 		_chargingKickActive = false;
 		if (_phase == BossPhase.Charging && !_staggerActive)
-			ReturnToDance();
+			ReturnToDance(anchorDanceAtCurrentPosition: true);
 	}
 
 	/// <summary>
@@ -1147,6 +1350,7 @@ public partial class BossLevel1 : CharacterBody3D
 	/// </summary>
 	private void TryKickContactDamage(bool spinAttack = false)
 	{
+		RefreshPlayerRefs();
 		if (_playerController == null || _isDead) return;
 
 		Vector3 threatFromBoss = GlobalPosition + Vector3.Up * OsumaKeskusOffsetY;
@@ -1157,9 +1361,9 @@ public partial class BossLevel1 : CharacterBody3D
 			threatFromBoss = xz + Vector3.Up * OsumaKeskusOffsetY;
 		}
 
-		float blockHalfAngle = spinAttack
+		float blockHalfAngle = spinAttack && SpinTorjuntaKilpiPuolikulma > 0f
 			? SpinTorjuntaKilpiPuolikulma
-			: _playerController.KilpiTorjuntaPuolikulma;
+			: 0f;
 
 		if (_playerController.IsBlockingEffectiveAgainst(threatFromBoss, blockHalfAngle))
 		{
@@ -1175,7 +1379,7 @@ public partial class BossLevel1 : CharacterBody3D
 				$"{{\"distToPlayer\":{_dLog:F2},\"horjahdusM\":{TorjuntaHorjahdusVoima:F2},\"spin\":{spinAttack.ToString().ToLowerInvariant()}}}");
 			// #endregion
 			_playerController.NotifyBossLevel1StrikeBlocked();
-			BeginBlockStagger();
+			BeginBlockStagger(fromSpinBlock: spinAttack);
 			return;
 		}
 
@@ -1187,15 +1391,17 @@ public partial class BossLevel1 : CharacterBody3D
 		}
 	}
 
-	/// <summary>Bossi horjahtaa taaksepäin kun pelaaja torjuu kilvellä.</summary>
-	private void BeginBlockStagger()
+	/// <summary>Bossi horjahtaa kun pelaaja torjuu kilvellä. Spin: pomppaa ylöspäin.</summary>
+	private void BeginBlockStagger(bool fromSpinBlock = false)
 	{
 		_chargingKickActive = false;
 		_mmaKickFallbackPending = false;
 		_staggerActive = true;
-		_staggerTimeLeft = TorjuntaHorjahdusKesto + TorjuntaPalautumisViive;
+		_staggerFromSpinBlock = fromSpinBlock;
+		_staggerTimeLeft = fromSpinBlock
+			? TorjuntaYlöspomppuKesto + TorjuntaPalautumisViive
+			: TorjuntaHorjahdusKesto + TorjuntaPalautumisViive;
 
-		// Suunta: pelaajasta poispäin
 		if (_player != null && GodotObject.IsInstanceValid(_player))
 		{
 			Vector3 away = GlobalPosition - _player.GlobalPosition;
@@ -1203,27 +1409,44 @@ public partial class BossLevel1 : CharacterBody3D
 			_staggerDirection = away.LengthSquared() > 0.01f ? away.Normalized() : -GlobalTransform.Basis.Z;
 		}
 		else
-		{
 			_staggerDirection = -GlobalTransform.Basis.Z;
-		}
 
-		// Visuaalinen horjahdus: BossVisual heilahtaa taaksepäin
 		var visual = GetNodeOrNull<Node3D>("BossVisual");
-		if (visual != null && GodotObject.IsInstanceValid(visual))
+		if (fromSpinBlock)
 		{
-			Vector3 pushLocal = GlobalTransform.Basis.Inverse() * (_staggerDirection * 0.6f);
-			_staggerTween?.Kill();
-			_staggerTween = CreateTween();
-			_staggerTween.TweenProperty(visual, "position", pushLocal, TorjuntaHorjahdusKesto * 0.3f)
-				.SetTrans(Tween.TransitionType.Quad).SetEase(Tween.EaseType.Out);
-			_staggerTween.TweenProperty(visual, "position", Vector3.Zero, TorjuntaHorjahdusKesto * 0.7f)
-				.SetTrans(Tween.TransitionType.Sine).SetEase(Tween.EaseType.InOut);
+			Velocity = new Vector3(
+				_staggerDirection.X * TorjuntaKilvestäHorisontaalinenTyöntö,
+				TorjuntaYlöspomppuNopeus,
+				_staggerDirection.Z * TorjuntaKilvestäHorisontaalinenTyöntö);
+
+			if (visual != null && GodotObject.IsInstanceValid(visual))
+			{
+				_staggerTween?.Kill();
+				_staggerTween = CreateTween();
+				_staggerTween.TweenProperty(visual, "position", new Vector3(0f, 0.95f, 0f), TorjuntaYlöspomppuKesto * 0.32f)
+					.SetTrans(Tween.TransitionType.Quad).SetEase(Tween.EaseType.Out);
+				_staggerTween.TweenProperty(visual, "position", Vector3.Zero, TorjuntaYlöspomppuKesto * 0.68f)
+					.SetTrans(Tween.TransitionType.Bounce).SetEase(Tween.EaseType.Out);
+			}
+
+			GetOrFindCamera()?.ShakeImpulse(0.16f, 0.24f);
+		}
+		else
+		{
+			if (visual != null && GodotObject.IsInstanceValid(visual))
+			{
+				Vector3 pushLocal = GlobalTransform.Basis.Inverse() * (_staggerDirection * 0.6f);
+				_staggerTween?.Kill();
+				_staggerTween = CreateTween();
+				_staggerTween.TweenProperty(visual, "position", pushLocal, TorjuntaHorjahdusKesto * 0.3f)
+					.SetTrans(Tween.TransitionType.Quad).SetEase(Tween.EaseType.Out);
+				_staggerTween.TweenProperty(visual, "position", Vector3.Zero, TorjuntaHorjahdusKesto * 0.7f)
+					.SetTrans(Tween.TransitionType.Sine).SetEase(Tween.EaseType.InOut);
+			}
+
+			GetOrFindCamera()?.ShakeImpulse(0.12f, 0.18f);
 		}
 
-		// Kamera-shake pelaajalle (onnistunut torjunta tuntuu hyvältä)
-		GetOrFindCamera()?.ShakeImpulse(0.12f, 0.18f);
-
-		// Pysäytä juoksuanimaatio ja toista hit_react jos löytyy
 		if (_animationPlayer != null && _animationPlayer.HasAnimation(OsumaKlipinNimi))
 		{
 			_animationPlayer.SpeedScale = 1f;
@@ -1231,19 +1454,36 @@ public partial class BossLevel1 : CharacterBody3D
 		}
 	}
 
-	/// <summary>Horjahduksen fysiikka: liu'u taaksepäin hidastuva.</summary>
+	/// <summary>Horjahduksen fysiikka: spin-kilpi = ylöspomppu, muuten liuku taaksepäin.</summary>
 	private void ProcessStagger(float dt)
 	{
 		_staggerTimeLeft -= dt;
 
-		// Horjahdusliike (ensimmäinen osa ajasta)
+		if (_staggerFromSpinBlock)
+		{
+			if (!IsOnFloor())
+				Velocity = new Vector3(Velocity.X, Velocity.Y - 38f * dt, Velocity.Z);
+			else if (Velocity.Y > 0f)
+				Velocity = new Vector3(Velocity.X * 0.94f, Velocity.Y - 38f * dt, Velocity.Z * 0.94f);
+			else
+				Velocity = new Vector3(Velocity.X * 0.86f, 0f, Velocity.Z * 0.86f);
+
+			if (_staggerTimeLeft <= 0f)
+			{
+				_staggerActive = false;
+				_staggerFromSpinBlock = false;
+				Velocity = Vector3.Zero;
+				ReturnToDance(anchorDanceAtCurrentPosition: true);
+			}
+			return;
+		}
+
 		float staggerMoveDuration = TorjuntaHorjahdusKesto;
 		float elapsed = (TorjuntaHorjahdusKesto + TorjuntaPalautumisViive) - _staggerTimeLeft;
 
 		if (elapsed < staggerMoveDuration)
 		{
 			float progress = elapsed / staggerMoveDuration;
-			// Hidastava liike: nopeampi alussa, pysähtyy lopussa
 			float speedFactor = Mathf.Max(0f, 1f - progress * progress);
 			float staggerSpeed = (TorjuntaHorjahdusVoima / staggerMoveDuration) * speedFactor;
 			Velocity = new Vector3(
@@ -1252,14 +1492,11 @@ public partial class BossLevel1 : CharacterBody3D
 				_staggerDirection.Z * staggerSpeed);
 		}
 		else
-		{
 			Velocity = new Vector3(0f, IsOnFloor() ? 0f : Velocity.Y - 35f * dt, 0f);
-		}
 
 		if (_staggerTimeLeft <= 0f)
 		{
 			_staggerActive = false;
-			// Älä teleporttaa alkuperäiseen tanssipisteeseen torjunnan jälkeen (näytti bugimaiselta hypyltä).
 			ReturnToDance(anchorDanceAtCurrentPosition: true);
 		}
 	}
@@ -1270,6 +1507,7 @@ public partial class BossLevel1 : CharacterBody3D
 	{
 		_chargingKickActive = false;
 		_staggerActive = false;
+		_staggerFromSpinBlock = false;
 		if (anchorDanceAtCurrentPosition)
 			_standWorldPos = GlobalPosition;
 		else
@@ -1292,7 +1530,7 @@ public partial class BossLevel1 : CharacterBody3D
 		_phase = BossPhase.Dancing;
 		_waitingAfterDance = false;
 		_postDanceWaitLeft = 0f;
-		_danceTimeLeft = (float)GD.RandRange(TanssiKestoMinSekuntia, TanssiKestoMaxSekuntia);
+		ScheduleNextDanceCycle();
 		if (_animationPlayer.HasAnimation(TanssiKlipinNimi))
 			_animationPlayer.Play(TanssiKlipinNimi);
 		if (_animationPlayer != null)
@@ -1322,7 +1560,7 @@ public partial class BossLevel1 : CharacterBody3D
 			_mmaKickFallbackPending = false;
 			_chargingKickActive = false;
 			if (!_isDead && !_staggerActive)
-				ReturnToDance();
+				ReturnToDance(anchorDanceAtCurrentPosition: true);
 		}
 	}
 
@@ -1574,14 +1812,12 @@ public partial class BossLevel1 : CharacterBody3D
 
 	private void TryChargeSeparationUnstick(float dt)
 	{
-		// Kerää törmäysnormaalit seinistä/esteistä (ei lattiasta, ei pelaajasta)
 		Vector3 accum = Vector3.Zero;
 		for (int i = 0; i < GetSlideCollisionCount(); i++)
 		{
 			var col = GetSlideCollision(i);
 			Vector3 n = col.GetNormal();
-			if (n.Y > 0.62f) continue; // lattia
-			// Varmista ettei törmäys ole pelaajaan
+			if (n.Y > 0.62f) continue;
 			if (_player is CollisionObject3D pc && col.GetCollider() == pc) continue;
 			Vector3 flat = new(n.X, 0f, n.Z);
 			if (flat.LengthSquared() > 1e-5f)
@@ -1591,7 +1827,8 @@ public partial class BossLevel1 : CharacterBody3D
 		if (accum.LengthSquared() < 1e-8f)
 			return;
 
-		GlobalPosition += accum.Normalized() * Mathf.Clamp(dt * 6f, 0f, 0.22f);
+		float push = _chargeRoutePhase == ChargeRoutePhase.Closing ? 9f : 6f;
+		GlobalPosition += accum.Normalized() * Mathf.Clamp(dt * push, 0f, 0.28f);
 	}
 
 	private Vector3 PickRandomArenaEdge()

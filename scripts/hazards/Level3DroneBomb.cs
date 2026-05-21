@@ -13,9 +13,13 @@ public partial class Level3DroneBomb : RigidBody3D
 	[Export] public float ElinaikaSek = 18f;
 	[Export] public float PainovoimaSkaala = 1.35f;
 	[Export] public float FallbackSphereRadius = 0.28f;
+	/// <summary>Kun pommi osuu maastoon, bossi voi saada osuman tämän XZ-säteen sisällä (ei vain suoraan päällä).</summary>
+	[Export] public float RäjähdysSädeXZ = 5.5f;
+	[Export] public float RäjähdysSädeY = 8f;
 
 	private bool _hitConsumed;
 	private double _alive;
+	private bool _explosionChecked;
 
 	public override void _Ready()
 	{
@@ -25,7 +29,16 @@ public partial class Level3DroneBomb : RigidBody3D
 		MaxContactsReported = 4;
 		CollisionLayer = BossLevel3.DroneBombPhysicsLayer;
 		CollisionMask = 1;
+		BodyEntered += OnBodyEntered;
 		BuildVisual();
+	}
+
+	private void OnBodyEntered(Node body)
+	{
+		if (_hitConsumed || _explosionChecked || body == null)
+			return;
+		_explosionChecked = true;
+		TryProximityBossHit();
 	}
 
 	private void BuildVisual()
@@ -96,4 +109,17 @@ public partial class Level3DroneBomb : RigidBody3D
 	}
 
 	private void DeferredFree() => QueueFree();
+
+	private void TryProximityBossHit()
+	{
+		var boss = GetTree()?.GetFirstNodeInGroup("level3_boss") as BossLevel3;
+		if (boss == null || !GodotObject.IsInstanceValid(boss))
+			return;
+		var d = GlobalPosition - boss.GlobalPosition;
+		if (new Vector2(d.X, d.Z).Length() > RäjähdysSädeXZ)
+			return;
+		if (Mathf.Abs(d.Y) > RäjähdysSädeY)
+			return;
+		boss.TryApplyDroneBombHit(this);
+	}
 }
