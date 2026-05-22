@@ -19,7 +19,6 @@
 2. [.NET SDK](https://dotnet.microsoft.com/download), joka vastaa Godotin odotuksia.
 3. Kloonaa repo ja avaa **`project.godot`** Godotissa → **Run** (F5).
 
-**Pääikkuna:** `run/main_scene` osoittaa tällä hetkellä `scenes/ui/main_menu.tscn`.
 
 **C#-käännös (CI tai terminaali):**
 

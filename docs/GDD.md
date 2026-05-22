@@ -2,7 +2,7 @@
 
 **Projekti:** Game Over  
 **Versio:** 0.2 — Päivitetty asiakaspalaverin jälkeen  / 0.3 päivitetty uusien ideoiden myötä
-**Päivämäärä:** 2025  
+**Päivämäärä:** 2026  
 **Tekijä:** Joonas Eskelinen  
 **Asiakas:** Pelihuone GameOver  
 **GitHub:** https://github.com/JoonasEskelinen/game-over
@@ -18,11 +18,10 @@
 ### 1.2 Genre
 - 2.5D sivulta kuvattu action-platformer
 - Liike myös osittain pystysuunnassa (ei pelkästään vaaka)
-- Yksinpeli + paikallinen co-op (2 pelaajaa)
 
 ### 1.3 Kohderyhmä
 - Peliluolan asiakkaat (kaikenikäiset)
-- Retropelien nostalgikot (TMNT-tyylinen arcade-tunnelma)
+- Retropelien nostalgikot
 - Steam-pelaajat
 
 ### 1.4 Tunnelma & Tyyli
