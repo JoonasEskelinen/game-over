@@ -50,6 +50,29 @@ public partial class CameraFollow : Camera3D
 	/// </summary>
 	[Export] public bool SideScrollerWallClamp = false;
 
+	/// <summary>
+	/// Kiinteä sivunäkymän kulma (exportatut yaw/pitch) — ei LookAt pivotiin. Estää putkeen kääntymisen ja valaistusnykyt.
+	/// </summary>
+	[Export] public bool SideScrollerFixedSideView = true;
+
+	/// <summary>Kerroin <see cref="Offset"/>.Length() — seinäclamp rajaa lopullisen etäisyyden (esim. 1.1 level_2).</summary>
+	[Export] public float SideScrollerDistanceMultiplier = 1f;
+
+	/// <summary>Katselun pitch (°). &lt; 0 = sama kuin <see cref="SideScrollerPitchDeg"/>. Loivempi = pelaaja näkyy paremmin reunalla.</summary>
+	[Export] public float SideScrollerLookPitchDeg = -1f;
+
+	/// <summary>Kiinteän sivunäkymän katsepisteen Y-bias pivotiin nähden (m).</summary>
+	[Export] public float SideScrollerLookPivotYOffset = 0.1f;
+
+	/// <summary>
+	/// Side-scroller: kameran pivotin Z ei seuraa pelaajan syvyyttä (vain X + Y).
+	/// Estää pelaajan katoamisen kun kävelee kameraa kohti (+Z) — seinäclamp + Z-seuranta vetävät kameran liian lähelle.
+	/// </summary>
+	[Export] public bool SideScrollerFixedPivotDepth = false;
+
+	/// <summary>Kiinteä pivot-Z maailmakoordinaateissa kun <see cref="SideScrollerFixedPivotDepth"/> on päällä.</summary>
+	[Export] public float SideScrollerPivotDepthZ = 0f;
+
 	[ExportGroup("Level 1 boss — tanssikamera")]
 	[Export] public bool EnableBossDanceCamera = true;
 	/// <summary>
@@ -103,6 +126,10 @@ public partial class CameraFollow : Camera3D
 
 	private bool _hadBossEncounterFraming;
 
+	/// <summary>Side-scroller + seinäclamp: tasoitettu kohde (estää pomppimisen seinää pitkin kävellessä).</summary>
+	private Vector3 _wallClampSmoothedTarget;
+	private bool _wallClampSmoothingActive;
+
 	// Screen shake
 	private float _shakeAmplitude;
 	private float _shakeDecayDuration = 0.25f;
@@ -151,7 +178,7 @@ public partial class CameraFollow : Camera3D
 			o = new Vector3(0f, 2f, 10f);
 		if (SideScrollerLock)
 		{
-			_distance = o.Length();
+			_distance = o.Length() * Mathf.Max(0.85f, SideScrollerDistanceMultiplier);
 			if (_distance < 0.01f)
 				_distance = 16f;
 			_yaw = Mathf.DegToRad(SideScrollerYawDeg);
@@ -168,6 +195,7 @@ public partial class CameraFollow : Camera3D
 		if (_player != null && SideScrollerLock)
 			CallDeferred(nameof(DeferredSnapSideScrollerToPlayer));
 
+		_wallClampSmoothingActive = false;
 		_level3Drone = ResolveLevel3DroneNode3D();
 	}
 
@@ -199,6 +227,14 @@ public partial class CameraFollow : Camera3D
 			return n3;
 		GD.PrintErr($"CameraFollow: Level3DroneFollowPath osoittaa {node.GetType().Name}, odotettiin Node3D.");
 		return null;
+	}
+
+	/// <summary>Side-scroller pivot: X/Y seuraa kohdetta; Z valinnainen kiinteä raide.</summary>
+	private Vector3 GetSideScrollerPivotFollow(Node3D pivotSubject)
+	{
+		Vector3 p = pivotSubject.GlobalPosition;
+		float pivotZ = SideScrollerFixedPivotDepth ? SideScrollerPivotDepthZ : p.Z;
+		return new Vector3(p.X, p.Y + PivotHeight, pivotZ);
 	}
 
 	private bool TryGetNodeFromPath(NodePath path, out Node node)
@@ -246,7 +282,7 @@ public partial class CameraFollow : Camera3D
 		var pivotSubject = GetCameraPivotSubject3D();
 		if (pivotSubject == null || !pivotSubject.IsInsideTree())
 			return;
-		var pivotFollow = pivotSubject.GlobalPosition + new Vector3(0f, PivotHeight, 0f);
+		var pivotFollow = GetSideScrollerPivotFollow(pivotSubject);
 		float cp = Mathf.Cos(_pitch);
 		var dir = new Vector3(Mathf.Sin(_yaw) * cp, Mathf.Sin(_pitch), Mathf.Cos(_yaw) * cp);
 		if (dir.LengthSquared() < 1e-6f)
@@ -256,6 +292,46 @@ public partial class CameraFollow : Camera3D
 		GlobalPosition = pivotFollow + dir * _distance;
 		if (SideScrollerWallClamp)
 			GlobalPosition = ShortenCameraTargetAgainstWalls(pivotFollow, GlobalPosition, dir);
+		ApplySideScrollerOrientation(pivotFollow);
+	}
+
+	/// <summary>Offset-suunta yaw/pitch-exporteista (pivot → kamera).</summary>
+	private Vector3 GetSideScrollerViewDirection()
+		=> GetSideScrollerDirectionFromPitch(_pitch);
+
+	private Vector3 GetSideScrollerLookDirection()
+	{
+		float lookPitch = SideScrollerLookPitchDeg >= 0f
+			? Mathf.Clamp(Mathf.DegToRad(SideScrollerLookPitchDeg), _minPitchRad, _maxPitchRad)
+			: _pitch;
+		return GetSideScrollerDirectionFromPitch(lookPitch);
+	}
+
+	private Vector3 GetSideScrollerDirectionFromPitch(float pitchRad)
+	{
+		float cp = Mathf.Cos(pitchRad);
+		var d = new Vector3(Mathf.Sin(_yaw) * cp, Mathf.Sin(pitchRad), Mathf.Cos(_yaw) * cp);
+		if (d.LengthSquared() < 1e-8f)
+			return Vector3.Back;
+		return d.Normalized();
+	}
+
+	/// <summary>
+	/// Sivunäkymä: kiinteä kulma. LookAt pivotiin kääntää kameran putkeen kun pelaaja on edessä (miekka mustana).
+	/// </summary>
+	private void ApplySideScrollerOrientation(Vector3 pivotFollow)
+	{
+		if (SideScrollerLock && SideScrollerFixedSideView)
+		{
+			Vector3 lookDir = GetSideScrollerLookDirection();
+			Vector3 lookTarget = GlobalPosition - lookDir;
+			lookTarget.Y = pivotFollow.Y + SideScrollerLookPivotYOffset;
+			if (GlobalPosition.DistanceSquaredTo(lookTarget) < 1e-8f)
+				lookTarget = pivotFollow;
+			GlobalTransform = new Transform3D(Basis.Identity, GlobalPosition).LookingAt(lookTarget, Vector3.Up);
+			return;
+		}
+
 		if (pivotFollow.DistanceSquaredTo(GlobalPosition) > 1e-6f)
 			LookAt(pivotFollow, Vector3.Up);
 	}
@@ -266,14 +342,51 @@ public partial class CameraFollow : Camera3D
 		var spaceState = GetWorld3D()?.DirectSpaceState;
 		if (spaceState == null)
 			return targetPos;
-		var wallQuery = PhysicsRayQueryParameters3D.Create(pivotFollow, targetPos);
+
+		float rayLen = pivotFollow.DistanceTo(targetPos);
+		if (rayLen < 0.08f)
+			return targetPos;
+
+		// Aloita hieman pivotista kameraan — vähemmän osumia hahmon juuren / reunaseinään kiinni.
+		Vector3 rayStart = pivotFollow + dir * Mathf.Min(0.5f, rayLen * 0.14f);
+		var wallQuery = PhysicsRayQueryParameters3D.Create(rayStart, targetPos);
 		wallQuery.CollideWithAreas = false;
 		if (_player is CollisionObject3D playerCol)
 			wallQuery.Exclude = new Godot.Collections.Array<Rid> { playerCol.GetRid() };
 		var wallHit = spaceState.IntersectRay(wallQuery);
 		if (wallHit.Count > 0 && wallHit.ContainsKey("position"))
-			return (Vector3)wallHit["position"] + dir * -0.2f;
+		{
+			Vector3 hitPos = (Vector3)wallHit["position"];
+			Vector3 n = wallHit.ContainsKey("normal") ? (Vector3)wallHit["normal"] : -dir;
+			if (n.LengthSquared() < 1e-8f)
+				n = -dir;
+			n = n.Normalized();
+			Vector3 pulled = hitPos + n * 0.3f;
+			float idealAlong = (targetPos - pivotFollow).Dot(dir);
+			float pulledAlong = Mathf.Clamp((pulled - pivotFollow).Dot(dir), 0.35f, idealAlong);
+			return pivotFollow + dir * pulledAlong;
+		}
+
 		return targetPos;
+	}
+
+	private Vector3 ApplySideScrollerWallTargetSmoothing(Vector3 targetPos, float dt)
+	{
+		if (!SideScrollerWallClamp || !SideScrollerLock)
+		{
+			_wallClampSmoothingActive = false;
+			return targetPos;
+		}
+
+		if (!_wallClampSmoothingActive)
+		{
+			_wallClampSmoothedTarget = GlobalPosition;
+			_wallClampSmoothingActive = true;
+		}
+
+		float t = 1f - Mathf.Exp(-14f * Mathf.Max(0f, dt));
+		_wallClampSmoothedTarget = _wallClampSmoothedTarget.Lerp(targetPos, t);
+		return _wallClampSmoothedTarget;
 	}
 
 	/// <summary>Lyhyt intro: siirtyy kohteeseen, pysähtyy, palaa seurantaan.</summary>
@@ -344,7 +457,9 @@ public partial class CameraFollow : Camera3D
 		var pivotSubject = GetCameraPivotSubject3D();
 		if (pivotSubject == null || !pivotSubject.IsInsideTree())
 			return;
-		var pivotFollow = pivotSubject.GlobalPosition + new Vector3(0f, PivotHeight, 0f);
+		var pivotFollow = SideScrollerLock && SideScrollerFixedPivotDepth
+			? GetSideScrollerPivotFollow(pivotSubject)
+			: pivotSubject.GlobalPosition + new Vector3(0f, PivotHeight, 0f);
 
 		if (BossEncounterFramingWholeFight && !SideScrollerLock)
 		{
@@ -383,6 +498,7 @@ public partial class CameraFollow : Camera3D
 		bool skipWallRay = SideScrollerLock && SideScrollerSkipWallRayAndSnap && !SideScrollerWallClamp;
 		if (spaceState != null && !skipWallRay)
 			targetPos = ShortenCameraTargetAgainstWalls(pivotFollow, targetPos, dir);
+		targetPos = ApplySideScrollerWallTargetSmoothing(targetPos, dt);
 
 		if (_cinemaPhase >= 0)
 		{
@@ -508,13 +624,14 @@ public partial class CameraFollow : Camera3D
 			}
 		}
 
-		bool sideScrollerSnap = SideScrollerLock && SideScrollerSkipWallRayAndSnap;
-		float t = sideScrollerSnap
+		// Seinäclamp: ei välitöntä snapia (level_2 putki) — estää pomppimisen reunaa pitkin kävellessä.
+		bool sideScrollerSnap = SideScrollerLock && SideScrollerSkipWallRayAndSnap && !SideScrollerWallClamp;
+		float followT = sideScrollerSnap
 			? 1f
-			: Mathf.Clamp(FollowSpeed * dt, 0f, 1f);
-		GlobalPosition = GlobalPosition.Lerp(targetPos, t);
+			: Mathf.Clamp(FollowSpeed * (SideScrollerWallClamp ? 2.4f : 1f) * dt, 0f, 1f);
+		GlobalPosition = GlobalPosition.Lerp(targetPos, followT);
 		ApplyScreenShake(dt);
-		LookAt(pivotFollow, Vector3.Up);
+		ApplySideScrollerOrientation(pivotFollow);
 	}
 
 	private bool ShouldBossCloseupDanceCamera()

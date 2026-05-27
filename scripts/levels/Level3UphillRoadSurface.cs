@@ -2,8 +2,8 @@ using System;
 using Godot;
 
 /// <summary>
-/// Level 3 mäkitie: näytteenotto suoraan <c>UphillRoad</c> CSGBox3D-geometriasta (render + editor-koordinaatit).
-/// Fysiikan CSG-törmäys voi poiketa hieman — tämä poistaa "puoliksi tien sisässä" -spawnit kun käytetään pintaa.
+/// Level 3 mÃ¤kitie: nÃ¤ytteenotto suoraan <c>UphillRoad</c> CSGBox3D-geometriasta (render + editor-koordinaatit).
+/// Fysiikan CSG-tÃ¶rmÃ¤ys voi poiketa hieman â€” tÃ¤mÃ¤ poistaa "puoliksi tien sisÃ¤ssÃ¤" -spawnit kun kÃ¤ytetÃ¤Ã¤n pintaa.
 /// </summary>
 public static class Level3UphillRoadSurface
 {
@@ -25,7 +25,7 @@ public static class Level3UphillRoadSurface
 	}
 
 	/// <summary>
-	/// Palauttaa tien yläpinnan pisteen annetulla maailman XZ:llä ja ulososoittavan yksikkönormaalin.
+	/// Palauttaa tien ylÃ¤pinnan pisteen annetulla maailman XZ:llÃ¤ ja ulososoittavan yksikkÃ¶normaalin.
 	/// </summary>
 	public static bool TrySampleTopFaceWorldAtXZ(Node3D boxNode, float worldX, float worldZ, out Vector3 surfaceWorld, out Vector3 outwardNormal)
 	{
@@ -70,6 +70,64 @@ public static class Level3UphillRoadSurface
 		local.Y = topLocalY;
 
 		surfaceWorld = gt * local;
+		return true;
+	}
+
+	public static bool TryGetCsgCylinderParams(Node3D cylinderNode, out float radius, out float height)
+	{
+		radius = 0f;
+		height = 0f;
+		if (cylinderNode == null || !GodotObject.IsInstanceValid(cylinderNode))
+			return false;
+		if (!cylinderNode.IsClass("CSGCylinder3D"))
+			return false;
+
+		Variant r = cylinderNode.Get("radius");
+		Variant h = cylinderNode.Get("height");
+		if (r.VariantType != Variant.Type.Float || h.VariantType != Variant.Type.Float)
+			return false;
+
+		radius = r.AsSingle();
+		height = h.AsSingle();
+		return radius > 1e-4f && height > 1e-4f;
+	}
+
+	/// <summary>
+	/// CSGCylinder3D:n yläpinta (esim. RoundaboutDeck). XZ rajataan ympyrän sisään <paramref name="edgeInset"/>-marginaalilla.
+	/// </summary>
+	public static bool TrySampleCsgCylinderTopAtXZ(
+		Node3D cylinderNode,
+		float worldX,
+		float worldZ,
+		float edgeInset,
+		out Vector3 surfaceWorld,
+		out Vector3 outwardNormal)
+	{
+		surfaceWorld = default;
+		outwardNormal = Vector3.Up;
+		if (!TryGetCsgCylinderParams(cylinderNode, out float radius, out float height))
+			return false;
+
+		Transform3D gt = cylinderNode.GlobalTransform;
+		Vector3 axisY = gt.Basis.Y;
+		float axisLen = axisY.Length();
+		if (axisLen < 1e-5f)
+			return false;
+		axisY /= axisLen;
+
+		outwardNormal = axisY.Dot(Vector3.Up) >= 0f ? axisY : -axisY;
+		float halfH = height * 0.5f;
+		float topLocalY = outwardNormal.Dot(axisY) >= 0f ? halfH : -halfH;
+
+		Transform3D inv = gt.AffineInverse();
+		Vector3 localProbe = inv * new Vector3(worldX, gt.Origin.Y, worldZ);
+		Vector2 localXz = new Vector2(localProbe.X, localProbe.Z);
+
+		float maxR = Mathf.Max(0.35f, radius - Mathf.Max(0f, edgeInset));
+		if (localXz.Length() > maxR)
+			localXz = localXz.Normalized() * maxR;
+
+		surfaceWorld = gt * new Vector3(localXz.X, topLocalY, localXz.Y);
 		return true;
 	}
 

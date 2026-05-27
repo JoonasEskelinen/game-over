@@ -17,10 +17,11 @@ Juoksunopeus = 5.0
 PuremanHystereesi = 0.52
 PuremanVahinkoAloitusViive = 0.0
 PuremanVahinkoMinAnimVaihe = 0.28
-OsumaKeskikorkeus = 0.58
+OsumaKeskikorkeus = 0.88
 MiekkaOsumaViive = 0.08
+RaskasIskuLisäKoetuskorkeus = 1.18
 "RaskasIskuAktivoitumisenLisäviive" = 0.14
-"RaskasIskuLäheisyysYlikirjoitus" = 0.82
+"RaskasIskuLäheisyysYlikirjoitus" = 1.4
 KuolemanKutistumisKesto = 0.72
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1311952832]

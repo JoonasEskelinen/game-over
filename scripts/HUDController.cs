@@ -4,17 +4,20 @@ public partial class HUDController : CanvasLayer
 {
 	private ProgressBar _healthBar;
 	private ProgressBar _heavyAttackBar;
+	private ProgressBar _droneBombBar;
 	private ProgressBar _bossHealthBar;
 	private Label _bossBarTitle;
 	private Label _r1Label;
+	private Label _droneBombLabel;
 	private HBoxContainer _livesRow;
 	private PlayerController _player;
+	private Level3SpecialDrone _level3Drone;
 	private int _prevLivesForPulse = -1;
 	private BossLevel1 _boss1HudSubscribed;
 	private int _boss1HudLastCur = int.MinValue;
 	private int _boss1HudLastMax;
 
-	private enum BossBarTitleStyleKind { Default, ShadowFang, Level2 }
+	private enum BossBarTitleStyleKind { Default, ShadowFang, Level2, FinalBoss }
 	private BossBarTitleStyleKind _bossBarTitleStyle = BossBarTitleStyleKind.Default;
 
 	// Värit
@@ -23,6 +26,8 @@ public partial class HUDController : CanvasLayer
 	private static readonly Color _hpBg         = new(0.08f, 0.08f, 0.08f, 0.85f);
 	private static readonly Color _heavyFill    = new(0.95f, 0.75f, 0.10f, 1f);
 	private static readonly Color _heavyBg      = new(0.08f, 0.08f, 0.08f, 0.85f);
+	private static readonly Color _droneBombFill = new(0.22f, 0.88f, 0.38f, 1f);
+	private static readonly Color _droneBombBg   = new(0.06f, 0.10f, 0.08f, 0.88f);
 	private static readonly Color _bossFill     = new(0.80f, 0.10f, 0.10f, 1f);
 	private static readonly Color _bossBg       = new(0.08f, 0.08f, 0.08f, 0.85f);
 	private static readonly Color _bossGold     = new(0.95f, 0.70f, 0.05f, 1f);
@@ -34,8 +39,13 @@ public partial class HUDController : CanvasLayer
 	/// <summary>Level 2 boss — sähköinen otsikko HUDissa.</summary>
 	private static readonly Color _bossL2TitleCol        = new(0.72f, 0.96f, 1f, 1f);
 	private static readonly Color _bossL2TitleOutlineCol = new(0.04f, 0.12f, 0.18f, 0.92f);
+	/// <summary>Level 3 — kultainen finaaliotsikko.</summary>
+	private static readonly Color _bossL3TitleCol        = new(1f, 0.86f, 0.38f, 1f);
+	private static readonly Color _bossL3TitleOutlineCol = new(0.12f, 0.02f, 0.04f, 0.96f);
+	private static readonly Color _bossL3TitleShadowCol  = new(0.75f, 0.22f, 0.04f, 0.55f);
 	private const int _bossTitleFontSizeDefault = 11;
 	private const int _bossTitleFontSizeStyledBoss = 16;
+	private const int _bossTitleFontSizeFinalBoss = 18;
 	private static readonly Color _borderColor  = new(0.25f, 0.25f, 0.25f, 1f);
 	private static readonly Color _heartFull    = new(0.95f, 0.18f, 0.22f, 1f);
 	private static readonly Color _heartEmpty   = new(0.22f, 0.22f, 0.26f, 0.55f);
@@ -44,12 +54,14 @@ public partial class HUDController : CanvasLayer
 	{
 		_healthBar      = GetNode<ProgressBar>("HealthBar");
 		_heavyAttackBar = GetNodeOrNull<ProgressBar>("HeavyAttackCooldownBar");
+		_droneBombBar   = GetNodeOrNull<ProgressBar>("DroneBombReloadBar");
 		_bossHealthBar  = GetNodeOrNull<ProgressBar>("BossHealthBar");
 		_livesRow       = GetNodeOrNull<HBoxContainer>("LivesRow");
 
 		SetupLayout();
 		StyleHealthBar();
 		StyleHeavyBar();
+		StyleDroneBombBar();
 		StyleBossBar();
 
 		if (_bossHealthBar != null)
@@ -161,6 +173,36 @@ public partial class HUDController : CanvasLayer
 			_r1Label.Visible = false;
 		}
 
+		if (_droneBombBar != null)
+		{
+			_droneBombBar.SetAnchorsPreset(Control.LayoutPreset.CenterBottom);
+			_droneBombBar.AnchorLeft = 0.5f;
+			_droneBombBar.AnchorRight = 0.5f;
+			_droneBombBar.OffsetLeft = -110f;
+			_droneBombBar.OffsetRight = 110f;
+			_droneBombBar.OffsetTop = -54f;
+			_droneBombBar.OffsetBottom = -34f;
+			_droneBombBar.ShowPercentage = false;
+			_droneBombBar.Visible = false;
+
+			_droneBombLabel = new Label
+			{
+				Text = "R2  💣",
+				Visible = false,
+			};
+			_droneBombLabel.SetAnchorsPreset(Control.LayoutPreset.CenterBottom);
+			_droneBombLabel.AnchorLeft = 0.5f;
+			_droneBombLabel.AnchorRight = 0.5f;
+			_droneBombLabel.OffsetLeft = -110f;
+			_droneBombLabel.OffsetRight = 110f;
+			_droneBombLabel.OffsetTop = -72f;
+			_droneBombLabel.OffsetBottom = -56f;
+			_droneBombLabel.HorizontalAlignment = HorizontalAlignment.Center;
+			_droneBombLabel.AddThemeColorOverride("font_color", _droneBombFill);
+			_droneBombLabel.AddThemeFontSizeOverride("font_size", 12);
+			AddChild(_droneBombLabel);
+		}
+
 		// Boss HP — oikea yläkulma: käytä offsetteja (Anchor 1,1 + Position/Size voi antaa 0-leveyden Godot 4:ssa).
 		if (_bossHealthBar != null)
 		{
@@ -262,6 +304,26 @@ public partial class HUDController : CanvasLayer
 		_bossBarTitleStyle = BossBarTitleStyleKind.Level2;
 	}
 
+	private void ApplyBossBarTitleStyleFinalBoss()
+	{
+		if (_bossBarTitle == null) return;
+		_bossBarTitle.OffsetTop = -4;
+		_bossBarTitle.OffsetBottom = 24;
+		_bossBarTitle.AddThemeFontSizeOverride("font_size", _bossTitleFontSizeFinalBoss);
+		_bossBarTitle.AddThemeColorOverride("font_color", _bossL3TitleCol);
+		_bossBarTitle.AddThemeConstantOverride("outline_size", 4);
+		_bossBarTitle.AddThemeColorOverride("font_outline_color", _bossL3TitleOutlineCol);
+		_bossBarTitle.AddThemeColorOverride("font_shadow_color", _bossL3TitleShadowCol);
+		_bossBarTitle.AddThemeConstantOverride("shadow_offset_x", 0);
+		_bossBarTitle.AddThemeConstantOverride("shadow_offset_y", 3);
+		if (_bossHealthBar != null)
+		{
+			_bossHealthBar.OffsetTop = 28;
+			_bossHealthBar.OffsetBottom = 50;
+		}
+		_bossBarTitleStyle = BossBarTitleStyleKind.FinalBoss;
+	}
+
 	private void RestoreDefaultBossBarTheme()
 	{
 		StyleBossBar();
@@ -293,6 +355,19 @@ public partial class HUDController : CanvasLayer
 		theme.SetStylebox("fill",       "ProgressBar", fill);
 		theme.SetStylebox("background", "ProgressBar", bg);
 		_heavyAttackBar.Theme = theme;
+	}
+
+	private void StyleDroneBombBar()
+	{
+		if (_droneBombBar == null) return;
+
+		var fill = MakeStyleBox(_droneBombFill, _borderColor, cornerRadius: 3);
+		var bg   = MakeStyleBox(_droneBombBg,   _borderColor, cornerRadius: 3);
+
+		var theme = new Theme();
+		theme.SetStylebox("fill",       "ProgressBar", fill);
+		theme.SetStylebox("background", "ProgressBar", bg);
+		_droneBombBar.Theme = theme;
 	}
 
 	private void StyleBossBar()
@@ -332,6 +407,7 @@ public partial class HUDController : CanvasLayer
 	{
 		UpdateBossBar();
 		UpdateHeavyBar();
+		UpdateDroneBombBar();
 	}
 
 	private void UpdateBossBar()
@@ -395,12 +471,15 @@ public partial class HUDController : CanvasLayer
 			_boss1HudLastCur = int.MinValue;
 			RestoreDefaultBossBarTheme();
 
-			if (_bossBarTitleStyle != BossBarTitleStyleKind.Default)
-				ApplyBossBarTitleStyleDefault();
+			if (_bossBarTitleStyle != BossBarTitleStyleKind.FinalBoss)
+				ApplyBossBarTitleStyleFinalBoss();
 			_bossHealthBar.Visible = true;
 			if (_bossBarTitle != null)
 			{
-				_bossBarTitle.Text = "Boss — Level 3";
+				string display = string.IsNullOrWhiteSpace(boss3.HudDisplayName)
+					? "Final Boss"
+					: boss3.HudDisplayName.Trim();
+				_bossBarTitle.Text = display;
 				_bossBarTitle.Visible = true;
 			}
 			int maxHp = Mathf.Max(1, boss3.GetBossMaxHealth());
@@ -521,6 +600,26 @@ public partial class HUDController : CanvasLayer
 		theme.SetStylebox("fill", "ProgressBar", fill);
 		theme.SetStylebox("background", "ProgressBar", bg);
 		_bossHealthBar.Theme = theme;
+	}
+
+	private void UpdateDroneBombBar()
+	{
+		if (_droneBombBar == null)
+			return;
+
+		if (_level3Drone == null || !GodotObject.IsInstanceValid(_level3Drone) || !_level3Drone.IsInsideTree())
+			_level3Drone = GetTree()?.GetFirstNodeInGroup("level3_special_drone") as Level3SpecialDrone;
+
+		bool show = _level3Drone != null && GodotObject.IsInstanceValid(_level3Drone)
+			&& _level3Drone.ShouldShowBombReloadHud();
+		_droneBombBar.Visible = show;
+		if (_droneBombLabel != null)
+			_droneBombLabel.Visible = show;
+
+		if (!show || _level3Drone == null)
+			return;
+
+		_droneBombBar.Value = _level3Drone.GetBombReloadFill01() * 100.0;
 	}
 
 	private void UpdateHeavyBar()

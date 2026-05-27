@@ -12,7 +12,7 @@ using Godot;
 /// BOSSIN KÄYTTÄYTYMINEN:
 /// 1. Dancing-vaihe: bossi tanssii paikallaan satunnaisen ajan
 /// 2. Charging-vaihe: areenan reunalta → kierto kentällä → suora linjaus → spin
-/// 3. Bossi voi ottaa vahinkoa vain tanssiessaan — vain R1 (vahinko ≥ 3) rekisteröityy
+/// 3. Bossi voi ottaa vahinkoa vain tanssiessaan — vain R1 (vahinko ≥ 3); <see cref="BossR1OsumiaKuolemaan"/> lyöntiä kaataa
 /// 4. Spin osuu pelaajaan lähietäisyydellä — 1 HP ellei torjuta kilvellä (miekka+kilpi)
 /// 5. Kilven torjunta: bossi pomppaa ylöspäin — selkeä onnistumispalaute
 /// </summary>
@@ -130,8 +130,11 @@ public partial class BossLevel1 : CharacterBody3D
 	/// <summary>Kiertokeskus XZ-maailmassa (yleensä 0,0 — areenan keskipiste).</summary>
 	[Export] public Vector2 SyöksyKiertoKeskipisteXZ = Vector2.Zero;
 
-	/// <summary>Maksimi-HP.</summary>
-	[Export] public int BossMaksimiTerveys = 30;
+	/// <summary>Montako R1-lyöntiä (pelaajan vahinko ≥ 3, yksi osuma / swing) tarvitaan bossin kaatamiseen.</summary>
+	[Export] public int BossR1OsumiaKuolemaan = 3;
+
+	/// <summary>Maksimi-HP (= <see cref="BossR1OsumiaKuolemaan"/>, yksi HP per R1-osuma).</summary>
+	public int BossMaksimiTerveys { get; private set; }
 
 	private int _bossHealth;
 
@@ -374,6 +377,7 @@ public partial class BossLevel1 : CharacterBody3D
 
 	public override void _Ready()
 	{
+		BossMaksimiTerveys = Mathf.Max(1, BossR1OsumiaKuolemaan);
 		_bossHealth = BossMaksimiTerveys;
 
 		CollisionLayer = 2;
@@ -2267,7 +2271,8 @@ public partial class BossLevel1 : CharacterBody3D
 
 	private void ApplySwordHitFromPlayer(int dmg)
 	{
-		TakeDamage(dmg);
+		// Yksi R1-swing = yksi boss-HP (riippumatta pelaajan vahinkoluvusta 3).
+		TakeDamage(1);
 		_playerController.NotifyMeleeHitLanded();
 		_hasBeenHitThisSwing = true;
 		PlaySwordHitSfx();

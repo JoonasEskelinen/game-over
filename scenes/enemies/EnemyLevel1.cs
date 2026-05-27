@@ -50,10 +50,13 @@ public partial class EnemyLevel1 : CharacterBody3D
 	[Export] public float PuremanKorkeusToleranssi = 2.35f;
 
 	[ExportGroup("Purema: vahinko")]
-	/// <summary>Pureman XZ-säde = <see cref="PuremanTilaEtäisyys"/> + tämä (m) — vastaa näkyvää puremaa, ei pelkkää tiukkaa etäisyyttä.</summary>
+	/// <summary>
+	/// Vara-arvo Inspectorissa; puremavaurio käyttää samaa sädettä kuin sticky-vyöhyke
+	/// (<see cref="PuremanHystereesi"/> / <see cref="PuremanLaajennettuHystereesi"/>).
+	/// </summary>
 	[Export] public float PuremanVahinkoTasoLisä = 0.38f;
 
-	/// <summary>Puremavaurion enimmäiskorkeusero pelaajaan (m).</summary>
+	/// <summary>Vara-arvo; vahinko käyttää <see cref="GetBiteStickyHeightTol"/>-logiikkaa purematilassa.</summary>
 	[Export] public float PuremanVahinkoKorkeusToleranssi = 2.05f;
 
 	/// <summary>
@@ -73,13 +76,16 @@ public partial class EnemyLevel1 : CharacterBody3D
 	// --- Miekan osuma ---
 
 	[ExportGroup("Miekan osuma: sijainti")]
-	/// <summary>Osumapisteiden korkeus juuresta (m) — nelijalkaiselle tyypillisesti rintakehä.</summary>
-	[Export] public float OsumaKeskikorkeus = 0.68f;
+	/// <summary>Osumapisteiden korkeus juuresta (m) — nelijalkaisen susen rintakehä (kapseli ~1.7 m).</summary>
+	[Export] public float OsumaKeskikorkeus = 0.88f;
 
 	/// <summary>
 	/// Metrejä <see cref="OsumaKeskikorkeus"/>-pisteestä ylöspäin: useita koetinkorkeuksia (rintakehän eri kohdat).
 	/// </summary>
-	[Export] public float[] MiekkaOsumaKorkeusSiirtymät = { -0.22f, 0f, 0.28f, 0.52f };
+	[Export] public float[] MiekkaOsumaKorkeusSiirtymät = { -0.2f, 0f, 0.24f, 0.5f, 0.78f };
+
+	/// <summary>R1: ylimääräinen koetinkorkeus (m) hartioita / selkää vasten (sama idea kuin EnemyLevel2).</summary>
+	[Export] public float RaskasIskuLisäKoetuskorkeus = 1.18f;
 
 	[ExportGroup("Miekan osuma: ajoitus")]
 	/// <summary>Lisäviive sekunteina osumaikkunan alkuun (<c>GetMeleeStrikeWindowStart()</c> + tämä).</summary>
@@ -224,43 +230,44 @@ public partial class EnemyLevel1 : CharacterBody3D
 			_biteTimer -= dt;
 			if (_biteTimer <= 0f && CanApplyBiteDamageByAnimPhase())
 			{
-				TryApplyBiteDamage();
-				_biteTimer = _biteInterval;
+				// Nollaa väli vain kun purema oikeasti osuu tai torjutaan — ei joka animaatiokierroksella
+				// (aiemmin tiukempi vahinkosäde + aina _biteInterval → animaatio ilman HP:tä).
+				if (TryApplyBiteDamage())
+					_biteTimer = _biteInterval;
 			}
 		}
 
-		// Miekan osuma: R2 yksi kohde/swing; R1 cleave — PlayerController.TryClaimEnemyHeavyCleaveHit (max 2)
+		// Miekan osuma: R2 yksi kohde/swing; R1 cleave (max 2 susia / swing) — sama malli kuin EnemyLevel2.
 		if (_playerController != null && _playerController.IsMeleeAttackActive())
 		{
 			float animTime = _playerController.GetAttackAnimationTime();
-			bool heavy = _playerController.IsHeavyMeleeAttackActive()
-				|| (_playerController.GetMeleeAttackDamage() >= 3 && _playerController.IsMeleeAttackActive());
-			float osumaViive = heavy && RaskasIskuAktivoitumisenLisäviive > 0f
-				? RaskasIskuAktivoitumisenLisäviive
-				: MiekkaOsumaViive;
-			float hitFrom = _playerController.GetMeleeStrikeWindowStart() + Mathf.Max(0f, osumaViive);
+			bool r1Swing = _playerController.GetMeleeAttackDamage() >= 3
+				|| _playerController.IsHeavyMeleeAttackActive();
+			float hitFrom = _playerController.GetMeleeStrikeWindowStart() + MiekkaOsumaViive;
+			if (r1Swing && RaskasIskuAktivoitumisenLisäviive > 0f)
+				hitFrom += RaskasIskuAktivoitumisenLisäviive;
 
 			if (animTime >= hitFrom && !_hasBeenHitThisSwing)
 			{
-				Vector3 bodyBase = GlobalPosition;
-				var offsets = MiekkaOsumaKorkeusSiirtymät;
-				if (offsets == null || offsets.Length == 0)
-					offsets = new[] { 0f };
+				var heights = MiekkaOsumaKorkeusSiirtymät;
+				if (heights == null || heights.Length == 0)
+					heights = new[] { 0f };
+				int extraProbe = r1Swing && RaskasIskuLisäKoetuskorkeus > 0.01f ? 1 : 0;
+				float proxOverride = r1Swing ? GetR1CleaveProximityMax() : -1f;
 
-				float proxOverride = heavy && RaskasIskuLäheisyysYlikirjoitus > 0f
-					? RaskasIskuLäheisyysYlikirjoitus
-					: -1f;
-
-				for (int i = 0; i < offsets.Length; i++)
+				for (int pi = 0; pi < heights.Length + extraProbe; pi++)
 				{
-					Vector3 p = bodyBase + Vector3.Up * (OsumaKeskikorkeus + offsets[i]);
+					float h = pi < heights.Length
+						? OsumaKeskikorkeus + heights[pi]
+						: RaskasIskuLisäKoetuskorkeus;
+					Vector3 p = GlobalPosition + Vector3.Up * h;
 					bool can = proxOverride >= 0f
 						? _playerController.CanApplyMeleeHitAtWorldPoint(p, proxOverride)
 						: _playerController.CanApplyMeleeHitAtWorldPoint(p);
 					if (!can)
 						continue;
 
-					bool claimed = heavy
+					bool claimed = r1Swing
 						? _playerController.TryClaimEnemyHeavyCleaveHit(Mathf.Max(1, RaskasIskuCleaveKohteet))
 						: _playerController.TryClaimEnemyMeleeHit();
 					if (!claimed)
@@ -274,11 +281,7 @@ public partial class EnemyLevel1 : CharacterBody3D
 			}
 		}
 		else
-		{
-			// Lyönti loppui — nollataan omat ja pelaajan swingivaraus
 			_hasBeenHitThisSwing = false;
-			_playerController?.ClearEnemyHitThisSwing();
-		}
 
 		Velocity = velocity;
 		MoveAndSlide();
@@ -314,31 +317,59 @@ public partial class EnemyLevel1 : CharacterBody3D
 		}
 	}
 
-	private void TryApplyBiteDamage()
+	/// <summary>
+	/// R1-cleave: vähintään sticky-purema-säde + marginaali, jotta edessä ja takana oleva susi osuu samaan swingiin.
+	/// </summary>
+	private float GetR1CleaveProximityMax()
 	{
-		if (_playerController == null || _player == null || !_player.IsInsideTree()) return;
+		float sticky = GetBiteStickyPlanarDist() + 0.18f;
+		return RaskasIskuLäheisyysYlikirjoitus > 0f
+			? Mathf.Max(RaskasIskuLäheisyysYlikirjoitus, sticky)
+			: sticky;
+	}
+
+	/// <summary>Sama XZ-säde ja korkeus kuin purematilan sticky-vyöhykkeellä (attack / extended melee).</summary>
+	private float GetBiteStickyPlanarDist()
+	{
+		float stickMargin = Mathf.Max(PuremanHystereesi, PuremanLaajennettuHystereesi);
+		return PuremanTilaEtäisyys + Mathf.Max(0f, stickMargin);
+	}
+
+	private float GetBiteStickyHeightTol()
+		=> Mathf.Max(1.9f, PuremanKorkeusToleranssi);
+
+	/// <returns>True jos purema käsiteltiin (vahinko tai kilven torjunta).</returns>
+	private bool TryApplyBiteDamage()
+	{
+		if (_playerController == null || _player == null || !_player.IsInsideTree()) return false;
 
 		float planarDist = PlanarDistanceTo(_player.GlobalPosition);
 		float heightDiff = Mathf.Abs(_player.GlobalPosition.Y - GlobalPosition.Y);
-		float maxPlanar = PuremanTilaEtäisyys + Mathf.Max(0f, PuremanVahinkoTasoLisä);
-		if (planarDist > maxPlanar || heightDiff > PuremanVahinkoKorkeusToleranssi)
-			return;
+		if (planarDist > GetBiteStickyPlanarDist() || heightDiff > GetBiteStickyHeightTol())
+			return false;
 
 		Vector3 threat = GlobalPosition.Lerp(_player.GlobalPosition, 0.35f);
-		if (_playerController.IsBlockingEffectiveAgainst(threat))
+		bool blocked = _playerController.IsBlockingEffectiveAgainst(threat);
+		// Lähietäisyyden purema: kilpi ylhäällä + uhka suunnassa riittää (sama idea kuin Boss L1 spin).
+		if (!blocked && _playerController.IsShieldBlockHeldLive() && planarDist <= PuremanTilaEtäisyys + 0.55f)
+			blocked = _playerController.IsBlockingEffectiveAgainst(threat, 72f);
+
+		if (blocked)
 		{
 			GD.Print("Isku torjuttu kilpella!");
-			return;
+			_playerController.NotifyBossLevel1StrikeBlocked();
+			return true;
 		}
 
 		var health = _player.GetNodeOrNull<HealthComponent>("HealthComponent");
-		if (health == null) { GD.PrintErr("HealthComponent puuttuu!"); return; }
+		if (health == null) { GD.PrintErr("HealthComponent puuttuu!"); return false; }
 
 		// Noin 1/3 max-HP per purema → kolme osumaa vie yhden elämän, kun MaxHealth = 3.
 		int biteDamage = Mathf.Max(1, Mathf.CeilToInt(health.MaxHealth / 3f));
 		health.TakeDamage(biteDamage);
 		_playerController?.NotifyLevel1BiteHit();
 		_biteSFX?.Play();
+		return true;
 	}
 
 	private static float PlanarDistanceTo(Vector3 from, Vector3 to)

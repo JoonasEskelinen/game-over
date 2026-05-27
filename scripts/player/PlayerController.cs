@@ -243,12 +243,18 @@ public partial class PlayerController : CharacterBody3D
 			return false;
 		float half = shieldHalfAngleDegreesOverride > 0f ? shieldHalfAngleDegreesOverride : KilpiTorjuntaPuolikulma;
 
-		// Kameran suunta: blokatessa ei voi kääntyä — uhka arvioidaan sen mukaan mihin pelaaja katsoo.
-		Vector3 camFwd = GetCameraFlatForwardForShield();
+		// Kamera kohti uhkaa (blokatessa ei voi kääntyä liikkeellä — raaka -Z jätti level_1-suden läpi).
+		Vector3 camFwd = GetCameraFlatShieldForwardTowardThreat(threatWorldPosition);
 		if (IsShieldBlockFacingArcWithForward(GlobalPosition, threatWorldPosition, half, camFwd))
 			return true;
 
-		return IsShieldBlockFacingArc(GlobalPosition, threatWorldPosition, half, flipShieldFacing180);
+		// Hahmo: Mixamo-kilpi -Z tai +Z — ensin vihollisen preferoima, sitten toinen akseli.
+		if (IsShieldBlockFacingArc(GlobalPosition, threatWorldPosition, half, flipShieldFacing180))
+			return true;
+		if (IsShieldBlockFacingArc(GlobalPosition, threatWorldPosition, half, !flipShieldFacing180))
+			return true;
+
+		return false;
 	}
 
 	/// <summary>Live-kilpitarkistus (ei riipu _isBlocking-välimuistista — vihollinen voi ajaa ennen pelaajaa).</summary>
@@ -684,14 +690,19 @@ public partial class PlayerController : CharacterBody3D
 	/// <summary>R2-iskun teräkartion puolikulma (asteita). R1 käyttää <see cref="TeräkaariPuolikulmaRaskas"/>.</summary>
 	[Export] public float TeräkaariPuolikulmaKevyt = 50f;
 
-	/// <summary>R1: vain teräkartio — hieman leveämpi kuin ennen (edessä oleva vihollinen rekisteröityy luotettavammin).</summary>
-	[Export] public float TeräkaariPuolikulmaRaskas = 42f;
+	/// <summary>R1: teräkartio (jos cleave pois päältä). Cleave käyttää <see cref="R1CleavePuolikulma"/>.</summary>
+	[Export] public float TeräkaariPuolikulmaRaskas = 54f;
+
+	/// <summary>
+	/// R1 cleave: puolikulma (°) pelaajan rintapisteestä XZ-tasossa. 180° = edessä, takana ja sivut lähellä.
+	/// </summary>
+	[Export] public float R1CleavePuolikulma = 180f;
 
 	/// <summary>Max etäisyys osumapisteestä iskulinjaan (metriä), R2.</summary>
 	[Export] public float KevytIskuLäheisyysMaksimi = 0.92f;
 
-	/// <summary>Max etäisyys iskulinjaan, R1.</summary>
-	[Export] public float RaskasIskuLäheisyysMaksimi = 0.58f;
+	/// <summary>Max etäisyys pelaajan rintatasoon XZ:ssä, R1 cleave (vihollisen proxOverride voi laajentaa).</summary>
+	[Export] public float RaskasIskuLäheisyysMaksimi = 1.35f;
 
 	/// <summary>Facing-kartion origo: rintakorkeus hahmomallista (ei CharacterBody3D jalkojen juurta).</summary>
 	[Export] public float IskunRintaKorkeus = 0.88f;
@@ -846,6 +857,21 @@ public partial class PlayerController : CharacterBody3D
 	private float GetCurrentBladeArcHalfAngleDeg()
 		=> _attackDamage >= 3 ? TeräkaariPuolikulmaRaskas : TeräkaariPuolikulmaKevyt;
 
+	/// <summary>R1: etäisyys osumapisteestä pelaajan rintatasoon XZ:ssä (ei vain terän suuntaan).</summary>
+	private float GetR1CleavePlanarDistance(Vector3 worldPoint)
+	{
+		var o = MeleeArcOriginWorld();
+		float dx = worldPoint.X - o.X;
+		float dz = worldPoint.Z - o.Z;
+		return Mathf.Sqrt(dx * dx + dz * dz);
+	}
+
+	private bool IsPointInR1CleaveArc(Vector3 worldPoint)
+	{
+		float half = Mathf.Clamp(R1CleavePuolikulma, 1f, 180f);
+		return IsWithinFacingArcFromOrigin(MeleeArcOriginWorld(), worldPoint, half);
+	}
+
 	private bool IsPointInMeleeHitBladeArcWithHalfAngle(Vector3 worldPoint, float halfAngleDeg)
 	{
 		GetMeleeHitSegment(out Vector3 a, out Vector3 b);
@@ -872,13 +898,18 @@ public partial class PlayerController : CharacterBody3D
 		if (!IsInsideTree() || !IsMeleeAttackActive() || !IsSwordWeaponMode())
 			return false;
 		float maxDist = proximityMaxOverride >= 0f ? proximityMaxOverride : GetMeleeHitProximityMax();
+
+		if (_attackDamage >= 3)
+		{
+			// R1 cleave: lähellä pelaajaa kaikkiin suuntiin (edessä + takana), ei vain terän etukaarella.
+			if (GetR1CleavePlanarDistance(worldPoint) > maxDist)
+				return false;
+			return IsPointInR1CleaveArc(worldPoint);
+		}
+
 		if (GetMeleeHitDistanceToPoint(worldPoint) > maxDist)
 			return false;
-		bool blade = IsPointInMeleeHitBladeArc(worldPoint);
-		bool facing = IsPointInMeleeHitFacingArc(worldPoint);
-		if (_attackDamage >= 3)
-			return blade;
-		return blade && facing;
+		return IsPointInMeleeHitBladeArc(worldPoint) && IsPointInMeleeHitFacingArc(worldPoint);
 	}
 
 	public float GetMeleeHitProximityMax()
@@ -1226,6 +1257,7 @@ public partial class PlayerController : CharacterBody3D
 		{
 			_isSitting = !_isSitting;
 			_isAttacking = false;
+			ClearEnemyHitThisSwing();
 			_meleeStrikeClip = default;
 			_grabbedBody = null;
 			_isBlocking  = false;
@@ -1260,6 +1292,7 @@ public partial class PlayerController : CharacterBody3D
 
 			_weaponMode = _weaponMode == WeaponMode.Normal ? WeaponMode.SwordShield : WeaponMode.Normal;
 			_isAttacking = false;
+			ClearEnemyHitThisSwing();
 			_meleeStrikeClip = default;
 			_grabbedBody = null;
 			_isBlocking  = false;
@@ -1637,6 +1670,7 @@ public partial class PlayerController : CharacterBody3D
 		if (animName == "mixamo_com_005")
 		{
 			_isAttacking = false;
+			ClearEnemyHitThisSwing();
 			_meleeStrikeClip = default;
 			_meleeHitStopTimer = 0f;
 			_meleeStrikeSfxPlayedThisSwing = false;
@@ -1648,6 +1682,7 @@ public partial class PlayerController : CharacterBody3D
 		if (animName == "mixamo_com_010")
 		{
 			_isAttacking = false;
+			ClearEnemyHitThisSwing();
 			_meleeStrikeClip = default;
 			_meleeHitStopTimer = 0f;
 			_meleeStrikeSfxPlayedThisSwing = false;
@@ -1705,6 +1740,7 @@ public partial class PlayerController : CharacterBody3D
 		GlobalPosition = position;
 		Velocity       = Vector3.Zero;
 		_isAttacking   = false;
+		ClearEnemyHitThisSwing();
 		_meleeStrikeClip = default;
 		_meleeSwingElapsed = 0f;
 		_meleeStrikeSfxPlayedThisSwing = false;

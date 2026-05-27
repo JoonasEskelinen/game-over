@@ -1,23 +1,24 @@
-[gd_scene load_steps=3 format=3 uid="uid://b7l3bossroot01"]
+[gd_scene format=3 uid="uid://v5int6h28x41"]
 
-[ext_resource type="Script" path="res://scripts/enemies/BossLevel3.cs" id="1_script"]
-[ext_resource type="PackedScene" uid="uid://txqyy43ursth" path="res://assets/models/Level3_BossEnemy/boss_level3.glb" id="2_visual"]
+[ext_resource type="Script" uid="uid://hfv0sexjcjrr" path="res://scripts/enemies/BossLevel3.cs" id="1_script"]
+[ext_resource type="PackedScene" uid="uid://cfs87iv2logfo" path="res://scenes/enemies/boss_level_3_visual.tscn" id="2_visual"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_hurt"]
-radius = 3.8
-height = 7.5
+radius = 1.0511475
+height = 2.102295
 
-[node name="BossLevel3" type="Node3D"]
+[node name="BossLevel3" type="Node3D" unique_id=1592174043]
 script = ExtResource("1_script")
-PelaajaAktivointiSädeXZ = 46.0
+HudDisplayName = "Final Boss"
+PommiVahinkoPerOsuma = 5
 
-[node name="Visual" parent="." instance=ExtResource("2_visual")]
+[node name="Visual" parent="." unique_id=1191358797 instance=ExtResource("2_visual")]
+transform = Transform3D(8, 0, 0, 0, 8, 0, 0, 0, 8, 0, -0.10321391, 0)
 
-[node name="HurtArea" type="Area3D" parent="."]
+[node name="HurtArea" type="Area3D" parent="." unique_id=473903579]
 collision_mask = 8192
-monitoring = true
 monitorable = false
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="HurtArea"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.8, 0)
+[node name="CollisionShape3D" type="CollisionShape3D" parent="HurtArea" unique_id=671544569]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.6719484, 0)
 shape = SubResource("CapsuleShape3D_hurt")

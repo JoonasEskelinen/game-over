@@ -21,8 +21,8 @@ TanssiKestoMaxSekuntia = 7.5
 "SyöksyMaksimiKestoSekuntia" = 8.0
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1088415914]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.4491416, 2.4332252, -0.009433342)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.4491416, 2.442995, -0.009433342)
 shape = SubResource("CapsuleShape3D_boss")
 
 [node name="Dancing" parent="." unique_id=666478246 instance=ExtResource("2_4pk4r")]
-transform = Transform3D(600, 0, 0, 0, 600, 0, 0, 0, 600, -0.549, -0.549, 0.112)
+transform = Transform3D(600, 0, 0, 0, 600, 0, 0, 0, 600, -0.549, -0.88733417, 0.11200001)

@@ -14,7 +14,6 @@
 [ext_resource type="Script" uid="uid://b7k3m2n8pqxw1" path="res://scripts/levels/Level3GroundAlign.cs" id="13_l3align"]
 [ext_resource type="Script" uid="uid://c7rockspwnl31" path="res://scripts/levels/Level3RollingRockSpawner.cs" id="14_rocksp"]
 [ext_resource type="PackedScene" uid="uid://butvkmvducgo3" path="res://scenes/hazards/RollingRockLevel3.tscn" id="15_rockscn"]
-[ext_resource type="Script" uid="uid://b8l3towrbss1" path="res://scripts/levels/Level3TowerBossRockThrower.cs" id="16_tboss"]
 [ext_resource type="PackedScene" uid="uid://v5int6h28x41" path="res://scenes/enemies/boss_level_3.tscn" id="17_boss3"]
 [ext_resource type="Script" uid="uid://cw6u05mm1rl3m" path="res://scripts/levels/LevelMusicPlayer.cs" id="18_lvlbgm"]
 [ext_resource type="Script" uid="uid://tdh57ghrgew8" path="res://scripts/levels/Level3SpecialDrone.cs" id="19_l3drone"]
@@ -156,7 +155,6 @@ transform = Transform3D(0.8, 0, 0, 0, 0.8, 0, 0, 0, 0.8, 0, 0, 0)
 rotation_order = 5
 script = ExtResource("14_rocksp")
 KivienSkena = ExtResource("15_rockscn")
-"IlmestymisväliMaxSek" = 4.0
 
 [node name="World" type="Node3D" parent="." unique_id=1066280580]
 
@@ -223,24 +221,24 @@ material_override = SubResource("StandardMaterial3D_ugcn1")
 size = Vector3(0.001, 20.580322, 40.37451)
 
 [node name="RingSegSouth" type="CSGBox3D" parent="World/PlateauRingWalls" unique_id=3001308]
-transform = Transform3D(-0.7578208, 0.6523467, 0.012302704, -0.015278234, 0.0011084201, -0.99988276, -0.65228415, -0.7579204, 0.009126785, -21.480576, 15.093052, -20.517803)
+transform = Transform3D(-0.7578208, 0.6523467, 0.012302704, -0.015278234, 0.0011084201, -0.99988276, -0.65228415, -0.7579204, 0.009126785, 20.931885, 24.335419, -70.00895)
 material_override = SubResource("StandardMaterial3D_pimnq")
-size = Vector3(0.55, 26.385712, 37.583862)
+size = Vector3(0.55, 156.76207, 55.92624)
 
 [node name="RingSegSouth2" type="CSGBox3D" parent="World/PlateauRingWalls" unique_id=436983383]
-transform = Transform3D(0.7124915, 0.7016086, -0.010109182, -0.015278234, 0.0011084188, -0.99988276, -0.70151454, 0.7125621, 0.011509088, 27.101936, 15.336872, -23.283905)
+transform = Transform3D(0.7124915, 0.7016086, -0.010109182, -0.015278234, 0.0011084188, -0.99988276, -0.70151454, 0.7125621, 0.011509088, 37.475044, 24.730839, -12.953092)
 material_override = SubResource("StandardMaterial3D_pimnq")
-size = Vector3(0.55, 26.385712, 37.583862)
+size = Vector3(0.55, 55.68492, 56.341522)
 
 [node name="RingSegSouth4" type="CSGBox3D" parent="World/PlateauRingWalls" unique_id=1074058956]
-transform = Transform3D(-0.3112244, 0.9503188, 0.0058089793, -0.015278232, 0.0011084196, -0.99988276, -0.9502138, -0.3112772, 0.014174286, -5.5940704, 12.825413, -29.916836)
+transform = Transform3D(-0.3112244, 0.9503188, 0.0058089793, -0.015278232, 0.0011084196, -0.99988276, -0.9502138, -0.3112772, 0.014174286, 34.957222, 23.349747, -43.367878)
 material_override = SubResource("StandardMaterial3D_pimnq")
-size = Vector3(0.55, 19.916, 37.583862)
+size = Vector3(0.55, 105.38659, 58.540253)
 
 [node name="RingSegSouth3" type="CSGBox3D" parent="World/PlateauRingWalls" unique_id=1203839552]
-transform = Transform3D(0.7550247, -0.65558153, -0.012263564, -0.015278233, 0.0011084195, -0.99988276, 0.65551853, 0.755124, -0.009179306, 19.40429, 17.098492, 25.149677)
+transform = Transform3D(0.7550247, -0.65558153, -0.012263564, -0.015278233, 0.0011084195, -0.99988276, 0.65551853, 0.755124, -0.009179306, 19.52562, 26.990917, 25.240494)
 material_override = SubResource("StandardMaterial3D_pimnq")
-size = Vector3(0.55, 29.008774, 37.583862)
+size = Vector3(0.55, 29.008774, 57.371033)
 
 [node name="RoundaboutDeck" type="CSGCylinder3D" parent="World" unique_id=974303120]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 91.15391, 22.53965, 0.075930595)
@@ -312,9 +310,9 @@ material_override = SubResource("StandardMaterial3D_2bnyt")
 size = Vector3(125.14457, 93.35983, 0.65)
 
 [node name="BackdropMetsaEast" type="CSGBox3D" parent="World" unique_id=3001310]
-transform = Transform3D(1, 0, 0, 0, 0.010052949, -0.99994946, 0, 0.99994946, 0.010052949, 120.403465, 38.23007, 0.025198758)
+transform = Transform3D(1, 0, 0, 0, 0.010052949, -0.99994946, 0, 0.99994946, 0.010052949, 120.403465, 43.06863, -0.023445513)
 material_override = SubResource("StandardMaterial3D_n6eey")
-size = Vector3(0.65, 70, 61.668213)
+size = Vector3(0.65, 70, 71.345825)
 
 [node name="BackdropMetsaPlusZ" type="CSGBox3D" parent="World" unique_id=3001311]
 transform = Transform3D(-0.999948, 0.0101926075, 0, -0.0101926075, -0.999948, 0, 0, 0, 1, 93.52051, 40.134186, 30.642982)
@@ -322,9 +320,9 @@ material_override = SubResource("StandardMaterial3D_qi5uv")
 size = Vector3(69.20508, 68, 0.65)
 
 [node name="BackdropMetsaMinusZ" type="CSGBox3D" parent="World" unique_id=3001312]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 98.32886, 37.640297, -30.322834)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 102.80286, 44.03196, -30.322834)
 material_override = SubResource("StandardMaterial3D_f6egh")
-size = Vector3(95.51709, 68, 0.65)
+size = Vector3(104.46509, 80.783325, 0.65)
 
 [node name="BackdropMetsaWest" type="CSGBox3D" parent="World" unique_id=3001313]
 transform = Transform3D(1, 0, 0, 0, 0.00073309336, 0.9999997, 0, -0.9999997, 0.00073309336, -61.130894, -11.498551, -8.022359)
@@ -370,11 +368,11 @@ transform = Transform3D(30, 0, 0, 0, 30, 0, 0, 0, 30, 107.529495, 37.71131, -18.
 
 [node name="TowerBossRockThrower" type="Node3D" parent="World/puijontorni" unique_id=1531585100]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.038, 0)
-script = ExtResource("16_tboss")
-RollingRockScene = ExtResource("15_rockscn")
 
 [node name="BossLevel3" parent="World/puijontorni/TowerBossRockThrower" unique_id=1531585101 instance=ExtResource("17_boss3")]
-transform = Transform3D(0.14338696, 0, -0.13942799, 0, 0.19999993, 0, 0.13942799, 0, 0.14338696, -0.05858183, -0.06930506, 0.038704872)
+transform = Transform3D(0.24999994, 0, 0, 0, 0.24999994, 0, 0, 0, 0.24999994, 0.087291956, -0.1519841, -0.054115176)
+KatseenKiertoAstetta = 15.0
+RollingRockScene = ExtResource("15_rockscn")
 
 [node name="CommonTree_51" parent="World" unique_id=261912648 instance=ExtResource("10_t4")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 116.40967, 22.721554, -16.965181)

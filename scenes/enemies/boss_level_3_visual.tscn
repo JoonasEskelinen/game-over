@@ -1,0 +1,14 @@
+[gd_scene format=3 uid="uid://cfs87iv2logfo"]
+
+[ext_resource type="PackedScene" uid="uid://dubxcfmuugxto" path="res://assets/models/Level3_BossEnemy/Throw.fbx" id="1_throw"]
+
+[node name="BossLevel3Visual" type="Node3D"]
+
+[node name="FacingPivot" type="Node3D" parent="."]
+
+[node name="Character" parent="FacingPivot" instance=ExtResource("1_throw")]
+transform = Transform3D(0.14338696, 0, -0.13942799, 0, 0.19999993, 0, 0.13942799, 0, 0.14338696, -0.05858183, 0.15, 0.038704872)
+
+[node name="RockSpawnPoint" type="Marker3D" parent="FacingPivot"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.055, 0.28, -0.08)
+gizmo_extents = 0.35

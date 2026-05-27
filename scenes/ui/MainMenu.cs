@@ -340,46 +340,38 @@ public partial class MainMenu : Control
 	}
 
 	private const string InstructionsBbcode =
-		"[b]Tervetuloa Game Overiin[/b]\n" +
-		"Ohjaa Game Over -hahmoa kolmen maailman läpi: taistele bossien kimppuun, kerää erikoisaseita ja etene pelihuoneesta metsään ja eteenpäin. Pelissä yhdistyvät arcade-toiminta, miekka ja kilpi sekä hauskat erikoisaseet.\n\n" +
+		"[center][font_size=24][b]GAME OVER[/b][/font_size][/center]\n" +
+		"[center]Toiminta- ja seikkailupeli · Pelihuone GameOver[/center]\n\n" +
 
-		"[b]Ohjain (DualSense / vastaava)[/b]\n" +
-		"• [b]Vasen tatti[/b] — liiku\n" +
-		"• [b]L2[/b] — kilpi (pidä pohjassa)\n" +
-		"• [b]R2[/b] — miekan kevyt isku (tai erikoisaseen isku istuessa)\n" +
-		"• [b]R1[/b] — miekan voimakas lyönti\n" +
-		"• [b]Neliö □[/b] — tartu ja työnnä esineitä\n" +
-		"• [b]Ympyrä ○[/b] — istu / erikoisase-tila\n" +
-		"• [b]Kolmio △[/b] — miekka ja kilpi päälle tai pois\n" +
-		"• Valikossa: [b]Cross ✕[/b] vahvistaa valinnan, [b]Esc[/b] sulkee\n\n" +
+		"[b]Tavoite[/b]\n" +
+		"Selviydy kolmen maailman läpi, voita päävastustajat ja löydä tie eteenpäin. Tutki kenttiä — ratkaisut ja erikoisaseet avautuvat pelatessa. Elämät ja edistyminen tallentuvat automaattisesti.\n\n" +
 
-		"[b]Mitä pelissä on[/b]\n" +
-		"Kolme kenttää, jokaisessa omat viholliset ja loppuvastus. Voitetun bossin jälkeen eteneminen avautuu — etsi reitti eteenpäin.\n\n" +
+		"[b]Ohjain — perustoiminnot[/b]\n" +
+		"[table=2]\n" +
+		"[cell][b]Vasen tatti[/b][/cell][cell]Liiku[/cell]\n" +
+		"[cell][b]Kolmio △[/b][/cell][cell]Miekka ja kilpi päälle / pois[/cell]\n" +
+		"[cell][b]L2[/b][/cell][cell]Kilpi (pidä pohjassa)[/cell]\n" +
+		"[cell][b]R2[/b][/cell][cell]Kevyt miekan isku[/cell]\n" +
+		"[cell][b]R1[/b][/cell][cell]Voimakas miekan isku[/cell]\n" +
+		"[cell][b]Neliö □[/b][/cell][cell]Tartu ja työnnä esineitä[/cell]\n" +
+		"[cell][b]Ympyrä ○[/b][/cell][cell]Istu / erikoisase-tila[/cell]\n" +
+		"[/table]\n\n" +
 
-		"[b]1. kenttä — Arcade-sali[/b]\n" +
-		"Salissa kelluu arcade-joystick. Mene sen luo ja paina [b]neliötä □[/b] — vipu aktivoituu, vihollisia ilmestyy kentälle ja taistelu alkaa. Voita bossi, poimi joystick [b]neliöllä □[/b] uudelleen ja astu lattian aukon kautta seuraavaan maailmaan.\n\n" +
-
-		"[b]2. kenttä — Metsä[/b]\n" +
-		"Kerätty joystick kulkee mukana. Paina [b]ympyrää ○[/b] istuaksesi — kissa tulee avuksi. [b]R2[/b] iskee hämähäkkejä, myös kattoon kiipeäviä.\n\n" +
-
-		"[b]3. kenttä — Drone[/b]\n" +
-		"Istu [b]ympyrällä ○[/b] ja ohjaa dronella: [b]vasen tatti[/b] liikuttaa, [b]oikea tatti ylös/alas[/b] säätää korkeutta. [b]R2[/b] pudottaa pommeja bossia vastaan.\n\n" +
+		"[b]Taistelu[/b]\n" +
+		"• [b]Miekka ja kilpi[/b] — aktivoi kolmiolla △. R2 on nopea isku, R1 voimakas (lyhyempi lataus).\n" +
+		"• [b]Kilpi[/b] — pidä L2 pohjassa ja suuntaudu uhkauksen puoleen. Torjuttu isku ei vie terveyttä.\n" +
+		"• [b]Terveys[/b] — osumat kuluttavat energiapalkkia. Energia loppuu → menetät yhden elämän. Kaikki elämät loppuvat → peli päättyy.\n" +
+		"• [b]Ympäristö[/b] — tartu ja työnnä esineitä (□). Jotkin kohteet voivat avata uusia mahdollisuuksia.\n\n" +
 
 		"[b]Vinkkejä[/b]\n" +
-		"• [b]Kolmio △[/b] 1. kentässä: joystick kerättynä istutat hahmon joystick käteen (valmistautuminen erikoisaseisiin).\n" +
-		"• [b]Neliö □[/b] + liike: työnnä ilmakiekko-pöytää ja muita esineitä — hyödyllistä taistelussa.\n" +
-		"• [b]L2[/b]: kilpi torjuu edestä tulevat iskut — käännä hahmo uhkauksen suuntaan.\n" +
-		"• [b]R2[/b] nopeaan peräkkäin, [b]R1[/b] voimakkaaseen iskuun (lyhyt latausaika).\n" +
-		"• HUD näyttää terveyden ja elämät. Elämät loppuvat → Game Over.\n\n" +
+		"• R1 on voimakkaampi kuin R2, mutta sitä ei voi käyttää yhtä usein peräkkäin.\n" +
+		"• Istu- ja erikoisasetilat (○) muuttavat, mitä painikkeet tekevät — kokeile turvallisissa paikoissa.\n" +
+		"• HUD näyttää terveyden, elämät ja raskaan iskun latauksen.\n" +
+		"• Päävastustajilla on omat rytminsä — tarkkaile ennen kuin hyökkäät.\n\n" +
 
-		"[b]Näppäimistö[/b]\n" +
-		"• Liike: [b]W A S D[/b] · Tartu: [b]E[/b] · Istu: [b]I[/b] · Hyökkäys: [b]F[/b]\n" +
-		"Miekan vaihto ja erikoisaseet on suunniteltu ensisijaisesti ohjaimelle (△ / ○).\n\n" +
+		"[b]Tallennus ja uusi peli[/b]\n" +
+		"Edistyminen ja elämät tallentuvat automaattisesti. [b]Uusi peli[/b] aloittaa kampanjan alusta.\n\n" +
 
-		"[b]Tallennus[/b]\n" +
-		"Kerätty joystick ja elämät tallentuvat automaattisesti. [b]Uusi peli[/b] aloittaa kampanjan arcade-salista alusta.\n\n" +
-
-		"[b]Peliohjeet[/b]\n" +
-		"[b]Vasen tatti ylös/alas[/b] scrollaa tätä tekstiä. [b]Cross ✕[/b] tai [b]Esc[/b] sulkee ikkunan.";
+		"[font_size=12][i]Tämä ikkuna: vasen tatti ylös/alas scrollaa tekstiä. Esc sulkee.[/i][/font_size]";
 
 }

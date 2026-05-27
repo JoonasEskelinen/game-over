@@ -1,9 +1,10 @@
+﻿using System;
 using Godot;
 
 /// <summary>
-/// Level 3: tornin katolla oleva hahmo (stattinen glb) heittää samaa <see cref="RollingRockLevel3"/>-kiveä
-/// kuin mäen vieritys, kohti pelaajaa satunnaisella XZ-leviämällä.
+/// Vanhentunut: kivenheitto ja animaatiot ovat nyt <see cref="BossLevel3"/>-luokassa.
 /// </summary>
+[Obsolete("Käytä BossLevel3 — heitto, hyppy ja kuolema-animaatiot siellä.")]
 public partial class Level3TowerBossRockThrower : Node3D
 {
 	[Export] public PackedScene RollingRockScene;
@@ -26,7 +27,6 @@ public partial class Level3TowerBossRockThrower : Node3D
 	private Node3D _player;
 	private bool _throwingStopped;
 
-	/// <summary>Kutsutaan kun bossi kaatuu — ei uusia kiviä.</summary>
 	public void StopThrowing()
 	{
 		_throwingStopped = true;

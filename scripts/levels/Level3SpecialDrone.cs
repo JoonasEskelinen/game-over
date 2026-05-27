@@ -18,10 +18,11 @@ public partial class Level3SpecialDrone : CharacterBody3D
 	[Export] public float ActivateHeightAbovePlayer = 4.5f;
 	[Export] public Vector3 ActivateSpawnOffset = new(0.6f, 0f, 0f);
 	[Export] public float VisualUniformScale = 1f;
-	[Export] public float PommiJäähdytysSek = 0.9f;
+	/// <summary>Aika ennen seuraavaa pommia (HUD täyttää palkin tällä).</summary>
+	[Export] public float PommiLatausSek = 5f;
 	[Export] public Vector3 PommiSpawnOffset = new(0f, -0.35f, 0f);
-	/// <summary>Kuinka kaukana pelaajasta dronen saa lentää (XZ) — estää pommit bossille kentän alusta.</summary>
-	[Export] public float MaxEtäisyysPelaajastaXZ = 24f;
+	/// <summary>Kuinka kaukana pelaajasta dronen saa lentää (XZ). Boss-torni vaatii ~50 m+.</summary>
+	[Export] public float MaxEtäisyysPelaajastaXZ = 58f;
 	/// <summary>Vain yksi elossa oleva pommi kerrallaan.</summary>
 	[Export] public int MaxAktiivisetPommit = 1;
 	[Export] public float PommiLiipaisinLaukaisu = 0.4f;
@@ -29,21 +30,51 @@ public partial class Level3SpecialDrone : CharacterBody3D
 	[Export] public float PommiPikaVetoMinimi = 0.38f;
 	[Export] public float PommiPikaVetoNousu = 0.12f;
 	/// <summary>Oikea tat Y: kuinka nopeasti manuaalinen korkeusoffset kasvaa (m/s suuntaan).</summary>
-	[Export] public float KorkeusSäätöNopeus = 7f;
-	[Export] public float KorkeusSäätöMinOffset = -6f;
-	[Export] public float KorkeusSäätöMaxOffset = 22f;
+	[Export] public float KorkeusSäätöNopeus = 9f;
+	[Export] public float KorkeusSäätöMinOffset = -8f;
+	[Export] public float KorkeusSäätöMaxOffset = 48f;
+	/// <summary>Absoluuttinen Y-katto (metriä). 0 = ei rajaa.</summary>
+	[Export] public float TaivasYlaRajaY = 56f;
+	[Export] public NodePath TorniPoikkeusPolku = "../World/puijontorni";
+	[Export] public NodePath PlateauRenkaanPoikkeusPolku = "../World/PlateauRingWalls";
 
 	private PlayerController _player;
 	private Node3D _visual;
 	private bool _wasSpecialActive;
-	private float _bombCooldown;
+	private float _bombReloadRemaining;
 	private float _targetHoverY;
 	private float _manualHeightOffset;
 	private bool _bombAttackArmed = true;
 	private float _bombAttackStrengthPrev;
+	private readonly Godot.Collections.Array<Rid> _hoverRayExclude = new();
+
+	/// <summary>1 = pommi valmis, 0 = juuri pudotettu / aktiivinen pommi estää.</summary>
+	public float GetBombReloadFill01()
+	{
+		if (CanDropBombIgnoringInput())
+			return 1f;
+		if (_bombReloadRemaining > 0f && PommiLatausSek > 0.01f)
+			return Mathf.Clamp(1f - _bombReloadRemaining / PommiLatausSek, 0f, 1f);
+		return 0f;
+	}
+
+	public bool ShouldShowBombReloadHud() =>
+		_player != null && GodotObject.IsInstanceValid(_player)
+		&& _player.IsSpecialWeaponJoystickContextActive()
+		&& IsInsideTree();
+
+	private bool CanDropBombIgnoringInput()
+	{
+		if (_bombReloadRemaining > 0f)
+			return false;
+		if (MaxAktiivisetPommit > 0 && CountActiveBombs() >= MaxAktiivisetPommit)
+			return false;
+		return true;
+	}
 
 	public override void _Ready()
 	{
+		AddToGroup("level3_special_drone");
 		MotionMode = MotionModeEnum.Floating;
 		UpDirection = Vector3.Up;
 		FloorStopOnSlope = false;
@@ -54,6 +85,7 @@ public partial class Level3SpecialDrone : CharacterBody3D
 		if (BombScene == null)
 			BombScene = GD.Load<PackedScene>("res://scenes/hazards/Level3DroneBomb.tscn");
 		BuildVisual();
+		Callable.From(SetupFlyThroughCollisionExceptions).CallDeferred();
 		Visible = false;
 		if (_visual != null)
 			_visual.Visible = false;
@@ -103,11 +135,55 @@ public partial class Level3SpecialDrone : CharacterBody3D
 		_visual.Scale = Vector3.One * VisualUniformScale;
 	}
 
+	private void SetupFlyThroughCollisionExceptions()
+	{
+		_hoverRayExclude.Clear();
+		if (_player != null && GodotObject.IsInstanceValid(_player))
+			_hoverRayExclude.Add(_player.GetRid());
+		_hoverRayExclude.Add(GetRid());
+
+		var levelRoot = FindLevelRoot() as Node;
+		if (levelRoot == null)
+			return;
+
+		if (HasExportNodePath(TorniPoikkeusPolku))
+			RegisterFlyThroughSubtree(levelRoot.GetNodeOrNull(TorniPoikkeusPolku));
+		else
+			RegisterFlyThroughSubtree(levelRoot.GetNodeOrNull("World/puijontorni"));
+
+		if (HasExportNodePath(PlateauRenkaanPoikkeusPolku))
+			RegisterFlyThroughSubtree(levelRoot.GetNodeOrNull(PlateauRenkaanPoikkeusPolku));
+		else
+			RegisterFlyThroughSubtree(levelRoot.GetNodeOrNull("World/PlateauRingWalls"));
+	}
+
+	private void RegisterFlyThroughSubtree(Node node)
+	{
+		if (node == null)
+			return;
+		RegisterFlyThroughRecursive(node);
+	}
+
+	private void RegisterFlyThroughRecursive(Node node)
+	{
+		if (node is CollisionObject3D co)
+		{
+			AddCollisionExceptionWith(co);
+			_hoverRayExclude.Add(co.GetRid());
+		}
+
+		foreach (Node child in node.GetChildren())
+			RegisterFlyThroughRecursive(child);
+	}
+
+	private static bool HasExportNodePath(NodePath path) =>
+		path != null && !path.IsEmpty;
+
 	public override void _PhysicsProcess(double delta)
 	{
 		float dt = (float)delta;
-		if (_bombCooldown > 0f)
-			_bombCooldown = Mathf.Max(0f, _bombCooldown - dt);
+		if (_bombReloadRemaining > 0f)
+			_bombReloadRemaining = Mathf.Max(0f, _bombReloadRemaining - dt);
 
 		if (_player == null || !GodotObject.IsInstanceValid(_player) || !_player.IsInsideTree())
 			_player = GetTree().GetFirstNodeInGroup("player") as PlayerController;
@@ -145,8 +221,6 @@ public partial class Level3SpecialDrone : CharacterBody3D
 			UpdateHoverTargetFromGround();
 		}
 
-		// Oikea tat Y — sama InputMap kuin kameran orbit (level 3:ssa kamera ei lue tätä side-scroll -tilassa).
-		// Miinus: tat ylös = dronen nosto, alas = lasku (orbit-akseli oli päinvastoin).
 		float lookY = -Input.GetAxis("cam_look_up", "cam_look_down");
 		_manualHeightOffset += lookY * KorkeusSäätöNopeus * dt;
 		_manualHeightOffset = Mathf.Clamp(_manualHeightOffset, KorkeusSäätöMinOffset, KorkeusSäätöMaxOffset);
@@ -182,6 +256,7 @@ public partial class Level3SpecialDrone : CharacterBody3D
 		Velocity = new Vector3(wish.X, yVel, wish.Z);
 		MoveAndSlide();
 		ClampHorizontalDistanceFromPlayer();
+		ClampSkyCeiling();
 
 		if (_player.SyvyysliikeKäytössä)
 		{
@@ -200,10 +275,7 @@ public partial class Level3SpecialDrone : CharacterBody3D
 		if (space == null)
 			return;
 
-		var exclude = new Godot.Collections.Array<Rid>();
-		exclude.Add(GetRid());
-		if (_player != null && GodotObject.IsInstanceValid(_player))
-			exclude.Add(_player.GetRid());
+		var exclude = new Godot.Collections.Array<Rid>(_hoverRayExclude);
 
 		bool TryRay(Vector3 from, Vector3 to, out float groundY)
 		{
@@ -213,26 +285,24 @@ public partial class Level3SpecialDrone : CharacterBody3D
 			q.Exclude = exclude;
 			q.CollideWithAreas = false;
 			var hit = space.IntersectRay(q);
-			if (hit.Count > 0 && hit["position"].VariantType == Variant.Type.Vector3)
-			{
-				groundY = hit["position"].AsVector3().Y;
-				return true;
-			}
-			return false;
+			if (hit.Count == 0 || hit["position"].VariantType != Variant.Type.Vector3)
+				return false;
+
+			Vector3 n = hit.TryGetValue("normal", out var nObj)
+				? ((Vector3)nObj).Normalized()
+				: Vector3.Up;
+			if (n.Dot(Vector3.Up) < 0.45f)
+				return false;
+
+			groundY = hit["position"].AsVector3().Y;
+			return true;
 		}
 
 		var from = GlobalPosition + Vector3.Up * 0.5f;
 		var to = GlobalPosition + Vector3.Down * 120f;
 		if (TryRay(from, to, out float gy))
 		{
-			float want = gy + HoverGroundClearance;
-			if (want > GlobalPosition.Y + 0.35f)
-			{
-				var fromHigh = GlobalPosition + Vector3.Up * 12f;
-				if (TryRay(fromHigh, GlobalPosition + Vector3.Down * 140f, out gy))
-					want = gy + HoverGroundClearance;
-			}
-			_targetHoverY = want + _manualHeightOffset;
+			_targetHoverY = gy + HoverGroundClearance + _manualHeightOffset;
 			return;
 		}
 
@@ -244,6 +314,17 @@ public partial class Level3SpecialDrone : CharacterBody3D
 
 		if (_player != null && GodotObject.IsInstanceValid(_player))
 			_targetHoverY = _player.GlobalPosition.Y + ActivateHeightAbovePlayer + _manualHeightOffset;
+	}
+
+	private void ClampSkyCeiling()
+	{
+		if (TaivasYlaRajaY <= 0f)
+			return;
+		if (GlobalPosition.Y <= TaivasYlaRajaY)
+			return;
+		GlobalPosition = new Vector3(GlobalPosition.X, TaivasYlaRajaY, GlobalPosition.Z);
+		if (Velocity.Y > 0f)
+			Velocity = new Vector3(Velocity.X, 0f, Velocity.Z);
 	}
 
 	private void ClampHorizontalDistanceFromPlayer()
@@ -272,9 +353,7 @@ public partial class Level3SpecialDrone : CharacterBody3D
 
 	private void TryDropBomb()
 	{
-		if (_bombCooldown > 0f)
-			return;
-		if (MaxAktiivisetPommit > 0 && CountActiveBombs() >= MaxAktiivisetPommit)
+		if (!CanDropBombIgnoringInput())
 			return;
 
 		float analog = _player != null && GodotObject.IsInstanceValid(_player)
@@ -296,7 +375,7 @@ public partial class Level3SpecialDrone : CharacterBody3D
 			return;
 		}
 
-		_bombCooldown = PommiJäähdytysSek;
+		_bombReloadRemaining = Mathf.Max(0.05f, PommiLatausSek);
 		var parent = FindLevelRoot();
 		if (parent == null)
 		{

@@ -1,18 +1,25 @@
 # Tekninen arkkitehtuuridokumentti — Game Over
 
-**Versio:** elää repossa (päivitä tämä otsikko tai git-tag merkittävissä välietapeissa)  
-**Pelimoottori:** Godot 4.x, **C# / .NET**  
+**Päivitetty:** 2026-05  
+**Pelimoottori:** Godot 4.6, **C# / .NET 8**  
 **Renderöinti:** Forward Plus (`project.godot`)  
 **Fysiikka 3D:** Jolt Physics
 
-Tämä dokumentti kuvaa **nykytilan**. Kun skenejä tai vastuita siirretään, päivitä vastaavat kohdat.
+Tekninen kuvaus reposta — päivitän tätä kun rakenne tai vastuut muuttuvat merkittävästi.
+
+Alkuperäinen visio: [GDD.md](GDD.md). Toteutus on 3D + C#, ei 2D SubViewport -putki.
 
 ---
 
 ## 1. Sovelluksen käynnistys
 
-- **`run/main_scene`:** `scenes/ui/main_menu.tscn`
-- **Autoloadit:** ei määritelty `project.godot`-issa tällä hetkellä; pelitila ja äänet hoidetaan pääosin scene-puun nodeilla ja skripteillä.
+| Asetus | Arvo |
+|--------|------|
+| **Main scene** | `scenes/ui/main_menu.tscn` |
+| **Autoload: GameState** | `scripts/GameState.cs` — joystick-lippu, scene-lataus, debug-näppäimet |
+| **Autoload: LoadingOverlay** | `scripts/ui/LoadingOverlay.cs` — spinner kenttävaihdoissa |
+
+**Scene-kulku:** `main_menu` → `loading_screen` → kampanjakentät → `game_over` (elämät 0).
 
 ---
 
@@ -21,100 +28,158 @@ Tämä dokumentti kuvaa **nykytilan**. Kun skenejä tai vastuita siirretään, p
 | Polku | Rooli |
 |-------|--------|
 | `scripts/player/` | `PlayerController`, `HealthComponent`, tangenttikorjaukset |
-| `scripts/enemies/` | `BossLevel1`, `EnemyBasic`, playtest-kamera |
-| `scripts/levels/` | Boss-director, arcade-fysiikka, scatter, checkpoint, exit, kill zone, aalto-director |
-| `scripts/` (juuri) | `CameraFollow`, `HUDController` |
-| `scripts/util/` | Yleiset apuskriptit (esim. mesh) |
-| `scenes/characters/` | Pelaajan `CharacterBody3D` + instanssi `gameover_character` |
-| `scenes/enemies/` | Vihollisten scenet; osa logiikasta `EnemyLevel1.cs` scenen vieressä |
-| `scenes/levels/` | Kentät, `EnemySpawner.cs`, testi- ja tuotantotason scenet |
-| `scenes/ui/` | Valikot, HUD, game over |
-| `assets/models/` | Mixamo/FBX, boss, susi, arcade-paketti, luonto |
-| `assets/audio/` | Musiikki ja SFX |
+| `scripts/enemies/` | `BossLevel1`–`BossLevel3`, spawnerit, playtest-kamera |
+| `scripts/levels/` | Boss-directorit, arcade-fysiikka, scatter, exit, musiikki, L2/L3 erikoisaseet |
+| `scripts/hazards/` | Kattohämähäkki (L2), vierivä kivi ja drone-pommi (L3) |
+| `scripts/ui/` | `LoadingOverlay`, `HudJoystickPreview` |
+| `scripts/` (juuri) | `CameraFollow`, `GameState`, `HUDController`, `LeverTrigger` |
+| `scripts/util/` | Mesh-apuskriptit |
+| `scenes/enemies/` | Vihollisten scenet; `EnemyLevel1.cs` scenen vieressä, muut vastaavasti |
+| `scenes/levels/` | Kentät + `EnemySpawner.cs`, `JoystickLever.cs` |
+| `scenes/ui/` | Valikot, HUD, latausruutu |
+| `assets/models/` | Mixamo/FBX, bossit, viholliset, arcade, luonto |
 
 ---
 
-## 3. Pelaaja (node-rakenne, käsite)
+## 3. Pelaaja
 
-`scenes/characters/player.tscn`:
+**Scene:** `scenes/characters/player.tscn`
 
-- **`CharacterBody3D`** (`PlayerController.cs`) — ryhmä **`player`** (haetaan koodissa `GetTree().GetFirstNodeInGroup("player")`).
-- **`HealthComponent`** — elinvoima / vahinko.
-- **`gameover_character`** (PackedScene) — varsinainen mesh + animaatiot (Mixamo).
-- Törmäys: `CapsuleShape3D`; debug-mesh voi olla piilotettu.
+- **`CharacterBody3D`** + `PlayerController.cs` — ryhmä **`player`**
+- **`HealthComponent`** — HP ja elämät (`user://savegame.cfg`)
+- **`gameover_character`** (PackedScene) — mesh + Mixamo-animaatiot
 
-Keskeiset vastuut `PlayerController.cs`: liike (myös syvyysakseli kun käytössä), hyppy, miekka (R2/R1), kilpi (L2), tarttuminen `grabbable`-ryhmään, asemodet, animaatioiden ohjaus.
+**Keskeiset mekaniikat (`PlayerController.cs`):**
+
+| Ominaisuus | Kuvaus |
+|------------|--------|
+| Liike | XZ + valinnainen syvyysakseli (`SyvyysliikeKäytössä`) |
+| R2 | Kevyt miekan isku, vahinko 1 |
+| R1 | Raskas isku, vahinko 3, cooldown-HUD, cleave (max 2 kohdetta / swing) |
+| Kilpi | L2, vain miekka+kilpi -tilassa; `IsBlockingEffectiveAgainst()` |
+| Asemodet | `Normal` ↔ `SwordShield` (`toggle_weapon`) |
+| Tarttuminen | `grab` → lähin `grabbable`-ryhmän `RigidBody3D` |
+| Drone (L1) | Kun `HasJoystick` + level_1: kolmio → istu + drone-konteksti |
+| Respawn | `Checkpoint.LastPosition` (oletus jos checkpointia ei ole) |
 
 ---
 
 ## 4. Kamera
 
-- **`CameraFollow.cs`** — seuraa pelaajaa; tukee mm. boss-tilanteisiin liittyviä blendejä / erikoistiloja (tarkista skriptin exportit ja kenttäkohtainen wiring).
+**`CameraFollow.cs`** — seuraa pelaajaa; boss- ja drone-tilanteissa erikoisasetuksia (exportit + kenttäkohtainen wiring level_3:ssa).
 
 ---
 
-## 5. Viholliset ja boss
+## 5. Viholliset, bossit ja hazardit
 
-- **`EnemyLevel1.cs`** / `EnemyLevel1.tscn` — tason vihollinen (esim. susi), purema, torjunta kilvellä (`PlayerController.IsBlockingEffectiveAgainst`).
-- **`BossLevel1.cs`** — level 1 -boss: tanssi-/syöksyfaset, MMA-potku (vahinko vain potkussa), miekan osumat, tanssivalo (SpotLight3D), musiikki; ryhmä **`level1_boss`**.
-- **`EnemySpawner.cs`** — spawnauslogiikka (ryhmä **`enemy`** spawneille).
+| Tyyppi | Scene | Skripti |
+|--------|-------|---------|
+| EnemyLevel1 (susi) | `EnemyLevel1.tscn` | `scenes/enemies/EnemyLevel1.cs` |
+| EnemyLevel2 (lisko) | `enemy_level_2.tscn` | `scenes/enemies/EnemyLevel2.cs` |
+| EnemyLevel3 (käärme) | `Enemy_Level3.tscn` | `scenes/enemies/EnemyLevel3.cs` |
+| BossLevel1 | `BossLevel1.tscn` | `scripts/enemies/BossLevel1.cs` — ryhmä **`level1_boss`** |
+| BossLevel2 | `boss_level_2.tscn` | `scripts/enemies/BossLevel2.cs` |
+| BossLevel3 | `boss_level_3.tscn` | `scripts/enemies/BossLevel3.cs` |
+| Level2CeilingSpider | `level2_ceiling_spider.tscn` | `scripts/hazards/Level2CeilingSpider.cs` |
+| RollingRockLevel3 | `RollingRockLevel3.tscn` | `scripts/hazards/RollingRockLevel3.cs` |
+| Level3DroneBomb | `Level3DroneBomb.tscn` | `scripts/hazards/Level3DroneBomb.cs` |
+
+**Spawnerit:**
+
+- L1: `scenes/levels/EnemySpawner.cs` (aktivoituu `JoystickLever`-palkista)
+- L2: `EnemyLevel2Spawner.cs`, `Level2CeilingSpiderSpawner.cs`
+- L3: `EnemyLevel3Spawner.cs`, `Level3RollingRockSpawner.cs`
+
+`EnemyBasic.cs` + `ArenaWaveDirector.cs` ovat repossa mutta **eivät ole kytketty** mihinkään kenttään.
 
 ---
 
-## 6. Tasot ja ohjaus
+## 6. Tasot
 
-Esimerkkejä (nimet voivat laajentua):
+| Scene | Juuri | Keskeiset skriptit |
+|-------|-------|-------------------|
+| `level_1.tscn` | `Level 1` | `Level1ArcadePhysicsSetup`, `Level1BossDirector`, `EnemySpawner`, `JoystickLever`, `Level1ExitHole` → L2, `LevelMusicPlayer` |
+| `level_2.tscn` | `level_2` | `EnemyLevel2Spawner`, `Level2CeilingSpiderSpawner`, `Level2SpecialCat`, `Level2CrateKokis`, `Level2BossExit` → L3, `LevelMusicPlayer` |
+| `level_3.tscn` | `Level3` | `Level3SpecialDrone`, `Level3GroundAlign`, `Level3RoadCenterDashes`, `Level3DeckParkingMarkings`, spawnerit, `LevelMusicPlayer` |
+| `test_level.tscn` | `testnode` | Vain `CameraFollow` + peruslattia |
 
-| Scene / skripti | Tehtävä |
-|-----------------|--------|
-| `level_1.tscn` | Pääkenttä / arena-tyyppinen kooste (pelaaja, propsit, boss-setup) |
-| `Level1BossDirector.cs` | Bossin ja kameran / draaman synkronointi |
-| `Level1ArcadePhysicsSetup.cs` | Arcade-objektien fysiikka; `grabbable`-ryhmä |
-| `ForestScatter.cs` | Luonnon propit (instanssit / suorituskyky — Pi-tavoite) |
-| `Checkpoint.cs`, `LevelExit.cs`, `KillZone.cs` | Eteminen / kuolema |
-| `ArenaWaveDirector.cs` | Aaltopohjainen logiikka (jos käytössä kentällä) |
+**Eteneminen:**
 
-Tarkka node-puu on kussakin `.tscn`-tiedostossa — älä kopioi vanhoja 2D-puita tästä dokumentista, vaan editori.
+- L1 → L2: `Level1ExitHole` (reikä lattiaan bossin jälkeen)
+- L2 → L3: `Level2BossExit` (seinäreikä; kissa joystick-kontekstissa)
+- L3: **ei vielä exitiä** seuraavaan kenttään
+
+**Apuskriptit (ei kaikissa kentissä käytössä):**
+
+- `Checkpoint.cs` — ei kytketty `.tscn`:iin; pelaaja lukee silti `LastPosition`-staattisen
+- `LevelExit.cs` — geneerinen exit; oletus `NextScene` vanhentunut, ei käytössä
+- `KillZone.cs` — kuolema-alue (jos kentällä instanssoitu)
+- `ForestScatter.cs` — proseduraalinen metsä; **ei instanssoitu** nykyisiin kenttiin (L3 käyttää manuaalisia puita)
 
 ---
 
 ## 7. UI
 
-- `main_menu.tscn` + `MainMenu.cs`
-- `hud.tscn` + `HUDController.cs`
-- `game_over.tscn` + `GameOver.cs`
+| Scene | Skripti | Tehtävä |
+|-------|---------|---------|
+| `main_menu.tscn` | `MainMenu.cs` | Uusi peli, ohjeet, poistu; gamepad-navigaatio |
+| `loading_screen.tscn` | `LoadingScreen.cs` | Threaded load `GameState.PendingLoadScenePath` |
+| `hud.tscn` | `HUDController.cs` | HP, elämät, R1-cooldown, boss-HP, drone-pommilataus |
+| `game_over.tscn` | `GameOver.cs` | Game over -overlay, uusi peli / päävalikko |
 
 ---
 
-## 8. Input
+## 8. GameState ja tallennus
 
-Kaikki määritellään Godotin **Project → Project Settings → Input Map** -kautta; lähde totuus on `project.godot` `[input]`-osio. C# käyttää `Input.GetAxis` / `Input.IsActionPressed` -tyylisiä kutsuja action-nimillä (`move_left`, `attack`, `block`, …).
+**`GameState`** (autoload):
 
----
+- `HasJoystick` — tallennetaan `user://savegame.cfg` (`progress/has_joystick`)
+- `BeginSceneLoad(path)` — asettaa ladattavan kentän + näyttää overlayn
 
-## 9. Suorituskyky ja Raspberry Pi 5
-
-- Tavoite: pelattavuus **heikolla integroidulla GPU:lla** (Pi 5).
-- Käytännössä: vältä turhia draw calleja ja varjoja, LOD / presetit / scatter-luvut, testaa **ARM64**-build oikealla laitteella ennen julkaisua.
-- Projektissa voi olla Cursor-sääntö `.cursor/rules/raspberry-pi5-target.mdc` — täydentää tätä dokumenttia.
+**`HealthComponent`:** elämät samaan `savegame.cfg`-tiedostoon.
 
 ---
 
-## 10. Riippuvuudet ja työkalut
+## 9. Input
 
-- **C#:** `GameOver.csproj`, assembly name `GameOver` (`project.godot` → `[dotnet]`).
-- **Addons:** esim. `addons/Godot-Mixamo-Animation-Retargeter-main` — retarget / animaatioputki editorissa.
+Lähde totuus: `project.godot` → `[input]`. C# käyttää `Input.IsActionPressed("attack")` jne.
 
----
-
-## 11. Historia vs. toteutus
-
-Alkuperäinen suunnitelma voi sisältää 2D / HD-2D -elementtejä (GDD:n visio). **Nykyinen toteutus** on pääosin **3D-skenet + C#**. Vanhat kaaviot, jotka viittaavat vain `CharacterBody2D` / SubViewport-pikseliputkeen, eivät kuvaa tätä branchia — päivitä ne tähän dokumenttiin tai merkitse arkistoksi erikseen.
+Tärkeimmät actionit: `move_*`, `jump`, `block`, `attack`, `attack_r1`, `grab`, `toggle_weapon`, `sit`, `cam_look_*`.
 
 ---
 
-## 12. Liitteet
+## 10. Erikoisaseet (kenttäkohtaiset)
 
-- [README.md](README.md) — käynnistys ja kansiorakenne  
-- [GDD.md](GDD.md) — pelisuunnitelma  
-- [CHANGELOG.md](CHANGELOG.md) — mitä muuttui versiosta toiseen  
+| Kenttä | Skripti | Toiminta |
+|--------|---------|----------|
+| Level 1 | `JoystickLever` + drone | Joystick-palkki → `HasJoystick`; istu + drone-konteksti |
+| Level 2 | `Level2SpecialCat.cs` | Istu + joystick; R2 vs kattohämähäkki |
+| Level 3 | `Level3SpecialDrone.cs` | Istu + joystick; R2 pudottaa `Level3DroneBomb` |
+
+---
+
+## 11. Suorituskyky ja Raspberry Pi 5
+
+Pi 5 (8 GB) on min-spec / peliluolatavoite — oletan heikkoa integroitua GPU:ta ja ei työpöytäluokan CPU:ta.
+
+- Julkaisu: **linux-arm64** -export, testaan buildin oikealla laitteella ennen käyttöönottoa.
+- Grafiikka: vältän tuhansia erillisiä draw calleja; suosin vähemmän instansseja, MultiMeshia tai LOD:ia. Pi-buildissä kevennän varjoja ja valaistusta.
+- **Ei vielä keskitettyä `PiLow`-presettiä** — säädän Inspector-exporteilla (`ForestScatter.TotalTrees`, arcade-kerrokset, varjot). Uudet raskaat efektit vain optioina tai presetin takana.
+- Käyttöönotto Pi:llä: [RASPBERRY_PI5_KOTIKONSOLI.md](RASPBERRY_PI5_KOTIKONSOLI.md).
+
+---
+
+## 12. Riippuvuudet
+
+- **C#:** `GameOver.csproj` → `net8.0`, Godot.NET.Sdk 4.6.1
+- **Addons:** `addons/Godot-Mixamo-Animation-Retargeter-main`
+
+---
+
+## 13. Liitteet
+
+- [README.md](README.md) — käynnistys ja kansiorakenne
+- [GDD.md](GDD.md) — alkuperäinen suunnitelma
+- [LEVEL3_GUIDE.md](LEVEL3_GUIDE.md) — Level 3 -kentän opas
+- [RASPBERRY_PI5_KOTIKONSOLI.md](RASPBERRY_PI5_KOTIKONSOLI.md) — Pi-käyttöönotto
+- [CHANGELOG.md](CHANGELOG.md) — versiohistoria

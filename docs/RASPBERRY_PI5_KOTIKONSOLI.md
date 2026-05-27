@@ -6,9 +6,10 @@
 |---|---|
 | **Nimi** | Game Over |
 | **Tyyli** | 2.5D-toiminta — 3D-maailma, sivukamera (kiinteä Z) |
-| **Pelimoottori** | Godot **4.6** (projektin `config/features`), **C# / .NET 8** (`GameOver.csproj`) |
+| **Pelimoottori** | Godot **4.6** (projektin `config/features`), **C# / .NET 8** (`GameOver.csproj`, Godot.NET.Sdk 4.6.1) |
 | **Fysiikka** | Jolt Physics |
-| **Julkaisu / integraatiot** | GodotSteam (Steam Windows/Linux); Pi-kotikonsoli = suora export, ei Steamia |
+| **Autoloadit** | `GameState`, `LoadingOverlay` |
+| **Julkaisu / integraatiot** | GodotSteam (Steam Windows/Linux); Pi-kotikonsoli = suora **linux-arm64** -export, ei Steamia |
 
 **Kohdealustat ja tavoite-FPS** (GDD, luku 6.1 — [GDD.md](GDD.md)):
 
@@ -30,11 +31,11 @@
 - **Näppäimistö** — kehitys ja testaus.
 - Haptinen palaute: mahdollinen myöhemmin (GDD).
 
-Tarkempi suunnitelma: [GDD.md](GDD.md). Arkkitehtuuriviittaus: [README.md](README.md).
+Alkuperäinen suunnitelma: [GDD.md](GDD.md). Tekninen rakenne: [ARCHITECTURE.md](ARCHITECTURE.md). Käynnistys: [README.md](README.md).
 
 ---
 
-Tämä dokumentti on tarkoitettu luettavaksi **selaimessa** (esim. VS Code / Cursorin Markdown-esikatselu, GitHub, tai tiedosto vedettynä selaimen ikkunaan): rakenne on jaettu otsikoihin ja komentolohkoihin, joita voi kopioida suoraan Pi:lle. Alla: käyttöjärjestelmästä kiosk-tilaan ja ohjaimeen — **linux-arm64** -export ja kevyt grafiikkaprofiili Pi 5:lle.
+Käyttöönotto Pi 5:lle kotikonsolina: käyttöjärjestelmästä kiosk-tilaan ja ohjaimeen. Komentolohkot voi kopioida suoraan Pi:lle. Tavoite on **linux-arm64** -export ja kevyt grafiikkaprofiili Pi 5:lle.
 
 ---
 
@@ -94,7 +95,7 @@ Varmuuskopioi ennen muokkausta:
 sudo cp /boot/firmware/config.txt /boot/firmware/config.txt.bak
 ```
 
-**Pi‑vaikutus peliin:** tämä projekti tavoittelee heikkoa integroitua GPU:ta — pidä sisäinen renderöintiresoluusio ja varjot maltillisina (ks. laatupresetti / Compatibility-export).
+**Pi‑vaikutus peliin:** tavoitteena on heikko integroitu GPU — pidän sisäisen renderöintiresoluution ja varjot maltillisina. Repossa **ei vielä keskitettyä `PiLow`-presettiä**; säädän kenttäkohtaisesti (esim. `ForestScatter.TotalTrees`, varjot pois, Compatibility-export).
 
 ### 2.3 Vähemmän “työpöytäkuormaa” kiosk-tilassa
 
@@ -163,7 +164,7 @@ sudo usermod -aG input $USER
 - Export-preset kohteelle **Linux / arm64** (tai “Linux ARM64”), **Release**, ja projektin mukaan **Compatibility**-renderöijä Pi-suorituskyvyn vuoksi (ks. [GDD.md](GDD.md)).
 - .NET **linux-arm64** -julkaisu: varmista, että exportattu paketti sisältää tarvittavat natiivikirjastot ja että ajat testin oikealla Pi 5:llä tai vastaavalla ARM64-ympäristöllä.
 
-Tarkat export-asetukset elävät projektissa — päivitä tämä kohta, kun ensimmäinen toimiva **arm64**-paketti on varmistettu.
+Tarkat export-asetukset elävät projektissa — kirjataan tähän kun ensimmäinen toimiva **arm64**-paketti on varmistettu.
 
 ### 5.2 Minne asennat pelin Pi:llä
 
@@ -274,7 +275,8 @@ Tämä on jo pidemmälle viety; Desktop + autostart on usein nopein polku **ensi
 
 ## 7. Suorituskyky ja vakaus (lyhyt checklist)
 
-- [ ] Export: **arm64**, **Release**, **Compatibility** (tai mitä projektin Pi-preset sanoo).
+- [ ] Export: **arm64**, **Release**, **Compatibility** (Forward Plus vain PC-kehityksessä).
+- [ ] Testaa kolme kampanjakenttää (`level_1`–`level_3`) — instanssimäärät ja varjot eri kentillä.
 - [ ] Näyttö: natiiviresoluutio; ei tarpeettomia skaalauksia.
 - [ ] Taustasovellukset ja selaimet kiinni pelitilassa.
 - [ ] Lämpö: varmista ilmanvaihto/kotelo — throttling laskee FPS:ää.
@@ -312,4 +314,4 @@ Kun ensimmäinen **linux-arm64** -export on valmis, kannattaa kirjata tähän:
 
 ---
 
-*Dokumentin tarkoitus on nopeuttaa Pi 5 -kotikonsolin käyttöönottoa; rakennetta voi laajentaa (esim. Steam Link, verkkopelit) erillisillä liitteillä.*
+*Muistilista Pi 5 -kotikonsolin käyttöönottoon. Tarvittaessa laajennan erillisillä liitteillä (esim. Steam Link, verkkopelit).*

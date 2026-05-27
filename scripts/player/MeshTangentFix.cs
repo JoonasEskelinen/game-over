@@ -7,16 +7,26 @@ using Godot;
 /// </summary>
 public static class MeshTangentFix
 {
-	public static void ApplyToSubtree(Node root)
+	public static void ApplyToSubtree(Node root, Func<Node, bool> skipNode = null)
 	{
 		if (root == null) return;
-		FixRecursive(root);
+		FixRecursive(root, skipNode);
 	}
 
-	private static void FixRecursive(Node node)
+	private static void FixRecursive(Node node, Func<Node, bool> skipNode)
 	{
+		if (skipNode != null && skipNode(node))
+			return;
+
 		if (node is MeshInstance3D mi && mi.Mesh != null)
 		{
+			if (mi.Skeleton != null || mi.GetSkin() != null)
+			{
+				foreach (Node c in node.GetChildren())
+					FixRecursive(c, skipNode);
+				return;
+			}
+
 			try
 			{
 				mi.Mesh = EnsureMeshAttributes(mi.Mesh);
@@ -28,7 +38,7 @@ public static class MeshTangentFix
 		}
 
 		foreach (Node c in node.GetChildren())
-			FixRecursive(c);
+			FixRecursive(c, skipNode);
 	}
 
 	public static Mesh EnsureMeshAttributes(Mesh mesh)

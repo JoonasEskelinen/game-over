@@ -296,6 +296,7 @@ StopWhenBossGroupAppears = true
 script = ExtResource("19_bossdir")
 BossScene = ExtResource("20_bossscn")
 BossStandOffsetLocal = Vector3(0, 0, -2.1)
+BossFloorRayHitYOffset = 0.0
 
 [node name="HUD" parent="." unique_id=499664610 instance=ExtResource("17_bahl2")]
 
