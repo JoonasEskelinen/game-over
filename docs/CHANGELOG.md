@@ -33,7 +33,7 @@ Versiointi noudattaa [Semantic Versioning](https://semver.org/) -periaatetta.
 
 ---
 
-## [0.1.0] — 2025-XX-XX
+## [0.1.0] — 2026
 
 ### Lisätty
 - Pelaajahahmon perusliike (kävely, hyppy)

@@ -16,7 +16,7 @@ Alkuperäinen visio: [GDD.md](GDD.md). Toteutus on 3D + C#, ei 2D SubViewport -p
 | Asetus | Arvo |
 |--------|------|
 | **Main scene** | `scenes/ui/main_menu.tscn` |
-| **Autoload: GameState** | `scripts/GameState.cs` — joystick-lippu, scene-lataus, debug-näppäimet |
+| **Autoload: GameState** | `scripts/GameState.cs` — gameover-kuva, scene-lataus
 | **Autoload: LoadingOverlay** | `scripts/ui/LoadingOverlay.cs` — spinner kenttävaihdoissa |
 
 **Scene-kulku:** `main_menu` → `loading_screen` → kampanjakentät → `game_over` (elämät 0).
